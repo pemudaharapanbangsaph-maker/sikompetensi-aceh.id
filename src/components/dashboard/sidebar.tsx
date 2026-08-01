@@ -180,13 +180,13 @@ function SidebarItem({
       <button
         onClick={() => item.view && onSelect(item.view)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200',
-          isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100 hover:bg-white/10',
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
+          isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
           collapsed && 'justify-center px-0'
         )}
         title={collapsed ? item.label : undefined}
       >
-        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-green-400" />}
+        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-green-400 shadow-sm shadow-green-400/50" />}
         {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
         {!collapsed && <span className="truncate">{item.label}</span>}
       </button>
@@ -205,13 +205,13 @@ function SidebarItem({
             }
           }}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200',
-            isParentActive ? 'bg-white/15 text-white font-medium' : 'text-blue-100 hover:bg-white/10',
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
+            isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
             collapsed && 'justify-center px-0'
           )}
           title={collapsed ? item.label : undefined}
         >
-          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-green-400" />}
+          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-green-400 shadow-sm shadow-green-400/50" />}
           {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
           {!collapsed && (
             <>
@@ -232,11 +232,11 @@ function SidebarItem({
                   key={child.key}
                   onClick={() => child.view && onSelect(child.view)}
                   className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200',
+                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out',
                     childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10'
                   )}
                 >
-                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors duration-200', childActive ? 'bg-green-400' : 'bg-blue-300/50')} />
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-green-400 scale-125' : 'bg-blue-300/50')} />
                   <span className="truncate">{child.label}</span>
                 </button>
               )
