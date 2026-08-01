@@ -53,7 +53,7 @@ export function LoginPage() {
         <div className="login-bg-pattern absolute inset-0 z-0" />
 
         {/* Centered Content */}
-        <div className="login-hero-center text-center px-12">
+            <div className="login-hero-center text-center px-12 pt-16 lg:pt-8" style="justify-content: flex-start;">
           {/* Logo PEMDA Aceh */}
           <LogoPancaCita size={140} className="drop-shadow-2xl" />
           <p className="text-white/80 text-sm font-bold uppercase tracking-[0.2em] mt-4">
