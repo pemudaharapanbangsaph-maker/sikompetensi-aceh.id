@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, type ReactNode } from 'react'
+import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -204,6 +204,33 @@ export function DataTable<T>({
   )
 }
 
+// Animated number counter hook
+function useAnimatedNumber(target: number, duration = 800): number {
+  const [current, setCurrent] = useState(0)
+  const startTime = useRef<number | null>(null)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (typeof target !== 'number' || isNaN(target) || target === 0) {
+      return
+    }
+    startTime.current = null
+    const animate = (timestamp: number) => {
+      if (!startTime.current) startTime.current = timestamp
+      const progress = Math.min((timestamp - startTime.current) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      setCurrent(Math.round(eased * target))
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate)
+      }
+    }
+    rafRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [target, duration])
+
+  return current
+}
+
 // Stat card component
 export function StatCard({
   title, value, icon: Icon, color = 'blue', subtitle, trend,
@@ -215,22 +242,30 @@ export function StatCard({
   subtitle?: string
   trend?: { value: string; up: boolean }
 }) {
-  const colors: Record<string, { bg: string; text: string; ring: string; hover: string }> = {
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100', hover: 'hover:shadow-blue-200/50' },
-    green: { bg: 'bg-green-50', text: 'text-green-600', ring: 'ring-green-100', hover: 'hover:shadow-green-200/50' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100', hover: 'hover:shadow-amber-200/50' },
-    purple: { bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-100', hover: 'hover:shadow-purple-200/50' },
-    red: { bg: 'bg-red-50', text: 'text-red-600', ring: 'ring-red-100', hover: 'hover:shadow-red-200/50' },
-    slate: { bg: 'bg-slate-100', text: 'text-slate-600', ring: 'ring-slate-200', hover: 'hover:shadow-slate-300/50' },
+  const colors: Record<string, { bg: string; text: string; ring: string; hover: string; shadow: string }> = {
+    blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100', hover: 'hover:shadow-blue-200/40', shadow: 'shadow-blue-100/60' },
+    green: { bg: 'bg-green-50', text: 'text-green-600', ring: 'ring-green-100', hover: 'hover:shadow-green-200/40', shadow: 'shadow-green-100/60' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100', hover: 'hover:shadow-amber-200/40', shadow: 'shadow-amber-100/60' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-100', hover: 'hover:shadow-purple-200/40', shadow: 'shadow-purple-100/60' },
+    red: { bg: 'bg-red-50', text: 'text-red-600', ring: 'ring-red-100', hover: 'hover:shadow-red-200/40', shadow: 'shadow-red-100/60' },
+    slate: { bg: 'bg-slate-100', text: 'text-slate-600', ring: 'ring-slate-200', hover: 'hover:shadow-slate-300/40', shadow: 'shadow-slate-200/60' },
   }
   const c = colors[color]
+  const numericValue = typeof value === 'number' ? value : parseInt(String(value), 10)
+  const isNumeric = typeof value === 'number' || (!isNaN(numericValue) && String(value) === String(numericValue))
+  const animatedValue = useAnimatedNumber(isNumeric ? numericValue : 0, 800)
+  const displayValue = isNumeric ? animatedValue : value
+
   return (
-    <Card className={cn('border-slate-100 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-1', c.hover)}>
+    <Card className={cn(
+      'border-slate-100 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg',
+      c.hover
+    )}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
-            <p className="text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{value}</p>
+            <p className="text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{displayValue}</p>
             {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
             {trend && (
               <p className={cn('text-xs font-medium mt-1 flex items-center gap-1', trend.up ? 'text-green-600' : 'text-red-600')}>
@@ -238,7 +273,7 @@ export function StatCard({
               </p>
             )}
           </div>
-          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center ring-4 transition-transform duration-200 group-hover:scale-110', c.bg, c.text, c.ring)}>
+          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center ring-4 transition-transform duration-200 hover:scale-110', c.bg, c.text, c.ring)}>
             <Icon className="w-5 h-5" />
           </div>
         </div>
