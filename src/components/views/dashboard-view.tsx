@@ -168,7 +168,13 @@ export function DashboardView() {
           <CardContent className="p-0">
             <div className="space-y-2 max-h-[260px] overflow-y-auto px-4 pb-4">
               {stats.jadwalTerdekat.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-8">Tidak ada jadwal mendatang</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                  <Calendar className="w-7 h-7 text-slate-300" />
+                </div>
+                <p className="text-sm font-medium text-slate-400">Belum ada jadwal mendatang</p>
+                <p className="text-xs text-slate-300 mt-1">Jadwal pelatihan & uji kompetensi akan tampil di sini</p>
+              </div>
               ) : stats.jadwalTerdekat.map((j, i) => {
                 const isAngkatan = 'tanggalMulai' in j
                 const tanggal = isAngkatan ? j.tanggalMulai : j.tanggalUji
@@ -211,7 +217,13 @@ export function DashboardView() {
         <CardContent className="p-0">
           <div className="divide-y divide-slate-100">
             {stats.aktivitasTerbaru.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">Belum ada aktivitas</p>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                  <Activity className="w-7 h-7 text-slate-300" />
+                </div>
+                <p className="text-sm font-medium text-slate-400">Belum ada aktivitas terbaru</p>
+                <p className="text-xs text-slate-300 mt-1">Aktivitas pengguna akan tampil di sini</p>
+              </div>
             ) : stats.aktivitasTerbaru.map((a) => (
               <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${

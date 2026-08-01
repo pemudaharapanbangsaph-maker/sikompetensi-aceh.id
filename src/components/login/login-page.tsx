@@ -49,41 +49,16 @@ export function LoginPage() {
     <div className="min-h-screen flex">
       {/* ===== Left side - Branding (Dark Forest Green) ===== */}
       <div className="login-bg hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative z-10">
-        {/* Logo Pancasila - Top Left */}
-        <div className="flex items-center gap-3 text-white relative z-10">
-          <LogoPancaCita size={56} className="flex-shrink-0 drop-shadow-md" />
-          <div>
-            <p className="text-lg font-bold leading-tight">SIKOMPETENSI ACEH</p>
-            <p className="text-[10px] text-green-100 tracking-widest font-medium">CORPORATE UNIVERSITY</p>
-          </div>
+        {/* Footer - Top Left */}
+        <div className="text-white text-sm font-semibold relative z-10">
+          Badan Pengembangan Sumber Daya Manusia Aceh
         </div>
 
-        {/* Main Content */}
-        <div className="text-white max-w-md relative z-10">
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-sm font-bold text-[#D4AF37] tracking-widest uppercase mb-4"
-          >
-            Pemerintah Aceh
-          </motion.p>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl xl:text-5xl font-bold leading-tight mb-5"
-          >
-            Membangun ASN Aceh yang profesional dan berintegritas
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-green-100 text-base leading-relaxed"
-          >
-            Satu pintu untuk pelatihan, pengembangan kompetensi, dan sertifikasi aparatur di lingkungan Pemerintah Aceh.
-          </motion.p>
+        {/* Centered Hero Content */}
+        <div className="login-hero-center">
+          <LogoPancaCita size={100} className="drop-shadow-lg" />
+          <p className="text-white text-2xl font-bold mt-4">SIKOMPETENSI ACEH</p>
+          <p className="text-xs tracking-[0.3em] text-green-200 mt-1">CORPORATE UNIVERSITY</p>
         </div>
 
         {/* Open Book Illustration (decorative) */}
@@ -95,10 +70,8 @@ export function LoginPage() {
           <path d="M200 80 L 310 75 M200 100 L 310 95 M200 120 L 310 115 M200 140 L 310 135 M200 160 L 310 155 M200 180 L 310 175" stroke="white" strokeWidth="1.5" opacity="0.6" />
         </svg>
 
-        {/* Footer - Bottom Left */}
-        <div className="text-white text-sm font-semibold relative z-10">
-          Badan Pengembangan Sumber Daya Manusia Aceh
-        </div>
+        {/* Spacer to balance the top footer text */}
+        <div className="relative z-10" />
       </div>
 
       {/* ===== Right side - Login Form (Light Cream) ===== */}
@@ -213,7 +186,7 @@ export function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-[#1B5E20] hover:bg-[#2E7D32] text-white font-semibold text-base rounded-lg shadow-sm transition-colors"
+                className="login-btn w-full h-12 bg-gradient-to-r from-green-700 to-green-500 hover:from-green-800 hover:to-green-600 hover:-translate-y-0.5 shadow-lg hover:shadow-xl shadow-green-500/25 text-white font-semibold text-base rounded-lg transition-all"
               >
                 {loading ? (
                   <>
