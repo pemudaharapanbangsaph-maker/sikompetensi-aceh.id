@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import type { DashboardStats } from '@/lib/types'
+import { useNavStore } from '@/store/auth-store'
 import { StatCard, PageHeader } from '@/components/shared/data-table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,17 +11,18 @@ import { Button } from '@/components/ui/button'
 import {
   BookOpen, Users, Award, ClipboardList, Activity, TrendingUp,
   Calendar, CheckCircle2, XCircle, UserCheck, BarChart3, Clock,
+  Plus, ArrowRight,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, LineChart, Line,
+  PieChart, Pie, Cell, Legend,
 } from 'recharts'
-import { formatDateTime, formatTanggalSingkat } from '@/components/shared/ui-helpers'
-import Link from 'next/link'
+import { formatDateTime } from '@/components/shared/ui-helpers'
 
 const COLORS = ['#0F4C81', '#198754', '#d97706', '#7c3aed', '#dc2626']
 
 export function DashboardView() {
+  const { setActiveView } = useNavStore()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -48,10 +50,38 @@ export function DashboardView() {
     )
   }
 
+  // Check if dashboard is essentially empty (no data)
+  const isEmpty =
+    stats.totalPelatihan === 0 &&
+    stats.totalPeserta === 0 &&
+    stats.totalUjiKompetensi === 0 &&
+    stats.totalAnalisis === 0
+
   return (
     <div className="space-y-5">
       <PageHeader title="Selamat Datang di Sistem Informasi Kompetensi Teknis" description="Ringkasan aktivitas dan statistik Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti BPSDM Aceh" />
 
+      {/* Empty State */}
+      {isEmpty ? (
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-8">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center mb-6 shadow-sm">
+              <ClipboardList className="w-12 h-12 text-slate-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-700">Belum ada analisis kebutuhan diklat</h3>
+            <p className="text-sm text-slate-400 mt-2 text-center max-w-md">Klik <span className="font-semibold text-[#1B5E20]">Tambah Analisis</span> untuk memulai mengelola kebutuhan diklat di sistem ini.</p>
+            <Button
+              onClick={() => setActiveView('analisis-input')}
+              className="mt-6 bg-gradient-to-r from-green-700 to-emerald-500 hover:from-green-800 hover:to-emerald-600 hover:-translate-y-0.5 shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Tambah Analisis
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={{ value: '12% bulan ini', up: true }} />
@@ -247,6 +277,8 @@ export function DashboardView() {
           </div>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   )
 }
