@@ -47,34 +47,55 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* ===== Left side - Branding (Dark Forest Green) ===== */}
-      <div className="login-bg hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative z-10">
-        {/* Footer - Top Left */}
-        <div className="text-white text-sm font-semibold relative z-10">
-          Badan Pengembangan Sumber Daya Manusia Aceh
+      {/* ===== Left side - Branding (Deep Forest Green) ===== */}
+      <div className="login-bg hidden lg:flex lg:w-1/2 flex-col relative z-10 overflow-hidden">
+        {/* Background pattern watermark */}
+        <div className="login-bg-pattern absolute inset-0 z-0" />
+
+        {/* Centered Content */}
+        <div className="login-hero-center text-center px-12">
+          {/* Logo PEMDA Aceh */}
+          <LogoPancaCita size={140} className="drop-shadow-2xl" />
+          <p className="text-white/80 text-sm font-bold uppercase tracking-[0.2em] mt-4">
+            Pemerintah Aceh
+          </p>
+
+          {/* App Name */}
+          <div className="mt-6">
+            <p className="text-white text-3xl font-extrabold tracking-wide">SIKOMPETENSI ACEH</p>
+            <p className="text-sm tracking-[0.35em] text-green-200/80 mt-2 font-medium">CORPORATE UNIVERSITY</p>
+          </div>
+
+          {/* Gold Divider */}
+          <div className="flex items-center justify-center mt-6 mb-6">
+            <div className="h-[1px] w-16 bg-gradient-to-r from-transparent to-amber-400/60" />
+            <div className="h-[2px] w-24 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
+            <div className="h-[1px] w-16 bg-gradient-to-l from-transparent to-amber-400/60" />
+          </div>
+
+          {/* Gold Subtitle */}
+          <p className="text-amber-300/90 text-xs font-semibold uppercase tracking-[0.3em]">
+            Pemerintah Aceh
+          </p>
+
+          {/* Main Heading */}
+          <h2 className="text-white text-2xl lg:text-3xl font-bold mt-4 leading-relaxed max-w-md mx-auto">
+            MEMBANGUN ASN Aceh yang profesional dan berintegritas
+          </h2>
+
+          {/* Description Paragraph */}
+          <p className="text-white/60 text-sm mt-4 max-w-sm mx-auto leading-relaxed">
+            Satu pintu untuk mengelola analisis kebutuhan diklat, pelatihan, dan sertifikasi kompetensi teknis aparatur sipil negara di Aceh.
+          </p>
         </div>
 
-        {/* Centered Hero Content */}
-        <div className="login-hero-center">
-          <LogoPancaCita size={100} className="drop-shadow-lg" />
-          <p className="text-white text-2xl font-bold mt-4">SIKOMPETENSI ACEH</p>
-          <p className="text-xs tracking-[0.3em] text-green-200 mt-1">CORPORATE UNIVERSITY</p>
-        </div>
-
-        {/* Open Book Illustration (decorative) */}
-        <svg className="login-book" viewBox="0 0 360 280" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M180 60 C 140 40, 80 40, 30 55 L 30 220 C 80 205, 140 205, 180 225 L 180 60 Z" fill="white" />
-          <path d="M180 60 C 220 40, 280 40, 330 55 L 330 220 C 280 205, 220 205, 180 225 L 180 60 Z" fill="white" />
-          <line x1="180" y1="60" x2="180" y2="225" stroke="white" strokeWidth="2" />
-          <path d="M50 80 L 160 75 M50 100 L 160 95 M50 120 L 160 115 M50 140 L 160 135 M50 160 L 160 155 M50 180 L 160 175" stroke="white" strokeWidth="1.5" opacity="0.6" />
-          <path d="M200 80 L 310 75 M200 100 L 310 95 M200 120 L 310 115 M200 140 L 310 135 M200 160 L 310 155 M200 180 L 310 175" stroke="white" strokeWidth="1.5" opacity="0.6" />
-        </svg>
-
-        {/* Spacer to balance the top footer text */}
-        <div className="relative z-10" />
+        {/* Decorative circles */}
+        <div className="absolute top-20 right-10 w-40 h-40 rounded-full bg-white/[0.03]" />
+        <div className="absolute bottom-32 right-20 w-24 h-24 rounded-full bg-white/[0.04]" />
+        <div className="absolute top-40 left-8 w-16 h-16 rounded-full bg-white/[0.02]" />
       </div>
 
-      {/* ===== Right side - Login Form (Light Cream) ===== */}
+      {/* ===== Right side - Login Form (Light) ===== */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-[#FAFAFA]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -84,12 +105,12 @@ export function LoginPage() {
         >
           {/* Mobile branding (only on small screens) */}
           <div className="lg:hidden flex flex-col items-center mb-8">
-            <LogoPancaCita size={64} className="mb-3 drop-shadow-md" />
-            <h1 className="text-xl font-bold text-[#1B5E20] text-center">SIKOMPETENSI ACEH</h1>
-            <p className="text-[10px] text-slate-500 tracking-widest text-center mt-1">CORPORATE UNIVERSITY</p>
+            <LogoPancaCita size={80} className="mb-3 drop-shadow-lg" />
+            <h1 className="text-2xl font-extrabold text-[#1B5E20] text-center tracking-wide">SIKOMPETENSI ACEH</h1>
+            <p className="text-[11px] text-slate-500 tracking-[0.3em] text-center mt-1.5 font-medium">CORPORATE UNIVERSITY</p>
           </div>
 
-          {/* Form - flat, no card */}
+          {/* Form */}
           <div className="px-2">
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-slate-900">Masuk</h2>
@@ -159,7 +180,7 @@ export function LoginPage() {
                   onChange={(e) => setRemember(e.target.checked)}
                   className="w-4 h-4 rounded border-slate-300 text-[#1B5E20] focus:ring-[#1B5E20]/20 cursor-pointer"
                 />
-                <Label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">Ingat saya (7 hari)</Label>
+                <Label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">Ingat aku (7 hari)</Label>
               </div>
 
               {/* Error */}
@@ -186,7 +207,7 @@ export function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="login-btn w-full h-12 bg-gradient-to-r from-green-700 to-green-500 hover:from-green-800 hover:to-green-600 hover:-translate-y-0.5 shadow-lg hover:shadow-xl shadow-green-500/25 text-white font-semibold text-base rounded-lg transition-all"
+                className="login-btn w-full h-12 bg-[#1e5631] hover:bg-[#174428] text-white font-semibold text-base rounded-lg shadow-lg shadow-green-900/20 hover:shadow-xl hover:shadow-green-900/30 hover:-translate-y-0.5 transition-all duration-300"
               >
                 {loading ? (
                   <>
@@ -226,7 +247,7 @@ export function LoginPage() {
                     key={d.u}
                     type="button"
                     onClick={() => fillDemo(d.u)}
-                    className={`text-xs font-medium px-2 py-2 rounded-lg border transition-colors ${d.color}`}
+                    className={`text-xs font-medium px-2 py-2 rounded-full border transition-colors ${d.color}`}
                   >
                     {d.label}
                   </button>
