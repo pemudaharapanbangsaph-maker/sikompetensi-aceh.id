@@ -1,79 +1,51 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import path from 'path'
+import fs from 'fs'
 
 export const dynamic = 'force-dynamic'
 
-const SEED_FLAG_PATH = '/tmp/.seed-done'
+function getDbPath(): string {
+  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+  const match = dbUrl.match(/file:(.+)/)
+  let dbPath = match ? match[1] : './db/custom.db'
+  if (dbPath.startsWith('./')) {
+    dbPath = path.join(process.cwd(), dbPath.substring(2))
+  }
+  return dbPath
+}
 
 export async function GET() {
-  if (process.env.NODE_ENV === 'production') {
-    // Check if already seeded using the DB path
-    const fs = await import('fs')
-    const path = await import('path')
-    const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-    const match = dbUrl.match(/file:(.+)/)
-    let dbPath = match ? match[1] : './db/custom.db'
-    if (dbPath.startsWith('./')) {
-      dbPath = path.join(process.cwd(), dbPath.substring(2))
-    }
-    const flagPath = path.join(path.dirname(dbPath), '.seed-done')
-    if (fs.existsSync(flagPath)) {
-      return NextResponse.json({ status: 'already_seeded' })
-    }
+  const dbPath = getDbPath()
+  const flagPath = path.join(path.dirname(dbPath), '.seed-done')
+
+  if (fs.existsSync(flagPath)) {
+    return NextResponse.json({ status: 'already_seeded' })
   }
 
   try {
-    const { db } = await import('@/lib/db')
+    const Database = (await import('better-sqlite3')).default
+    const db = new Database(dbPath)
 
     const hashedPassword = await bcrypt.hash('admin123', 10)
 
-    // Create SUPER_ADMIN
-    await db.user.upsert({
-      where: { username: 'superadmin' },
-      update: {},
-      create: {
-        username: 'superadmin',
-        password: hashedPassword,
-        nama: 'Super Administrator',
-        email: 'superadmin@bpsdm.acehprov.go.id',
-        role: 'SUPER_ADMIN',
-        status: 'AKTIF',
-        noTelp: '0651-12345',
-      },
-    })
+    // Insert users
+    const insertUser = db.prepare(`INSERT OR IGNORE INTO User (id, username, password, nama, email, role, status, noTelp, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
 
-    // Create ADMIN_BIDANG
-    await db.user.upsert({
-      where: { username: 'admin' },
-      update: {},
-      create: {
-        username: 'admin',
-        password: hashedPassword,
-        nama: 'Admin Bidang Kompetensi',
-        email: 'admin@bpsdm.acehprov.go.id',
-        role: 'ADMIN_BIDANG',
-        status: 'AKTIF',
-        noTelp: '0651-12346',
-      },
-    })
+    const users = [
+      { username: 'superadmin', nama: 'Super Administrator', email: 'superadmin@bpsdm.acehprov.go.id', role: 'SUPER_ADMIN' },
+      { username: 'admin', nama: 'Admin Bidang Kompetensi', email: 'admin@bpsdm.acehprov.go.id', role: 'ADMIN_BIDANG' },
+      { username: 'operator', nama: 'Operator Diklat', email: 'operator@bpsdm.acehprov.go.id', role: 'OPERATOR' },
+    ]
+    for (const u of users) {
+      insertUser.run(u.username + '_' + Date.now(), u.username, hashedPassword, u.nama, u.email, u.role, 'AKTIF', '0651-12345')
+    }
 
-    // Create OPERATOR
-    await db.user.upsert({
-      where: { username: 'operator' },
-      update: {},
-      create: {
-        username: 'operator',
-        password: hashedPassword,
-        nama: 'Operator Diklat',
-        email: 'operator@bpsdm.acehprov.go.id',
-        role: 'OPERATOR',
-        status: 'AKTIF',
-        noTelp: '0651-12347',
-      },
-    })
-
-    // Default pengaturan
-    const pengaturanDefaults = [
+    // Insert pengaturan
+    const insertPengaturan = db.prepare(`INSERT OR IGNORE INTO Pengaturan (id, key, value, kategori, updatedAt)
+      VALUES (?, ?, ?, ?, datetime('now'))`)
+    const pengaturan = [
       { key: 'nama_instansi', value: 'Badan Pengembangan Sumber Daya Manusia Aceh', kategori: 'PROFIL' },
       { key: 'nama_bidang', value: 'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti', kategori: 'PROFIL' },
       { key: 'nama_sistem', value: 'Sistem Informasi Kompetensi Teknis', kategori: 'PROFIL' },
@@ -84,26 +56,12 @@ export async function GET() {
       { key: 'session_timeout', value: '30', kategori: 'KEAMANAN' },
       { key: 'max_login_attempts', value: '5', kategori: 'KEAMANAN' },
     ]
-    for (const p of pengaturanDefaults) {
-      await db.pengaturan.upsert({
-        where: { key: p.key },
-        update: {},
-        create: p,
-      })
+    for (const p of pengaturan) {
+      insertPengaturan.run(p.key + '_' + Date.now(), p.key, p.value, p.kategori)
     }
 
-    // Mark as seeded
-    if (process.env.NODE_ENV === 'production') {
-      const fs = await import('fs')
-      const path = await import('path')
-      const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-      const match = dbUrl.match(/file:(.+)/)
-      let dbPath = match ? match[1] : './db/custom.db'
-      if (dbPath.startsWith('./')) {
-        dbPath = path.join(process.cwd(), dbPath.substring(2))
-      }
-      fs.writeFileSync(path.join(path.dirname(dbPath), '.seed-done'), new Date().toISOString())
-    }
+    db.close()
+    fs.writeFileSync(flagPath, new Date().toISOString())
 
     return NextResponse.json({
       status: 'seeded',
