@@ -96,7 +96,7 @@ export function LoginPage() {
       </div>
 
       {/* ===== Right side - Login Form (Light) ===== */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-[#FAFAFA]">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-[#F0F1F3]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
