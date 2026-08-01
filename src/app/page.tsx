@@ -10,8 +10,10 @@ export default function Home() {
   const { user, initialized, initialize } = useAuthStore()
 
   useEffect(() => {
-    // Auto-setup database on Vercel
-    fetch('/api/setup-db').catch(() => {})
+    // Auto-setup database & seed
+    fetch('/api/setup-db')
+      .then(() => fetch('/api/seed'))
+      .catch(() => {})
     initialize()
   }, [initialize])
 
