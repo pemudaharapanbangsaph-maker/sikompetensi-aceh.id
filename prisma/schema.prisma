@@ -1,0 +1,281 @@
+// Prisma schema for Sistem Informasi Kompetensi Teknis BPSDM Aceh
+// Internal system for Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti BPSDM Aceh
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ====================== AUTH & USERS ======================
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  password     String
+  nama         String
+  email        String    @unique
+  role         String    @default("OPERATOR") // SUPER_ADMIN | ADMIN_BIDANG | OPERATOR
+  status       String    @default("AKTIF") // AKTIF | NONAKTIF
+  noTelp       String?
+  fotoUrl      String?
+  lastLogin    DateTime?
+  loginAttempts Int      @default(0)
+  lockedUntil  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  auditLogs    AuditLog[]
+  backups      BackupHistory[]
+  analisis     AnalisisKebutuhan[]
+  pelatihan    Pelatihan[]
+  evaluasi     Evaluasi[]
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  username    String
+  aksi        String // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, EXPORT, BACKUP, RESTORE
+  modul       String // DASHBOARD, PELATIHAN, UJI_KOMPETENSI, etc.
+  deskripsi   String
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+}
+
+// ====================== MASTER DATA ======================
+
+model Peserta {
+  id           String   @id @default(cuid())
+  nip          String   @unique
+  nama         String
+  jenisKelamin String   // L | P
+  tempatLahir  String?
+  tanggalLahir DateTime?
+  jabatan      String?
+  pangkatGolongan String?
+  unitKerja    String?
+  instansi     String?
+  pendidikan   String?
+  noTelp       String?
+  email        String?
+  alamat       String?
+  fotoUrl      String?
+  status       String   @default("AKTIF")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  angkatan     PesertaAngkatan[]
+  nilai        Nilai[]
+  kehadiran    Kehadiran[]
+  evaluasi     Evaluasi[]
+}
+
+model Pelatihan {
+  id           String   @id @default(cuid())
+  kode         String   @unique
+  nama         String
+  kategori     String   // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
+  deskripsi    String?
+  durasiHari   Int      @default(1)
+  jp           Int      @default(8) // Jam Pelatihan
+  createdBy    String?
+  user         User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  status       String   @default("AKTIF") // AKTIF | NONAKTIF
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  angkatan     Angkatan[]
+  analisis     AnalisisKebutuhan[]
+}
+
+model Angkatan {
+  id            String   @id @default(cuid())
+  pelatihanId   String
+  pelatihan     Pelatihan @relation(fields: [pelatihanId], references: [id], onDelete: Cascade)
+  namaAngkatan  String
+  tanggalMulai  DateTime
+  tanggalSelesai DateTime
+  lokasi        String?
+  metode        String   @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
+  kuota         Int      @default(30)
+  status        String   @default("PERENCANAAN") // PERENCANAAN | BERJALAN | SELESAI | DIBATALKAN
+  catatan       String?
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  peserta       PesertaAngkatan[]
+  kehadiran     Kehadiran[]
+  evaluasi      Evaluasi[]
+  ujiKompetensi UjiKompetensi[]
+  dokumentasi   Dokumentasi[]
+}
+
+model PesertaAngkatan {
+  id          String   @id @default(cuid())
+  angkatanId  String
+  angkatan    Angkatan @relation(fields: [angkatanId], references: [id], onDelete: Cascade)
+  pesertaId   String
+  peserta     Peserta  @relation(fields: [pesertaId], references: [id], onDelete: Cascade)
+  status      String   @default("TERDAFTAR") // TERDAFTAR | LULUS | TIDAK_LULUS | DROP_OUT
+  nilaiAkhir  Float?
+  createdAt   DateTime @default(now())
+
+  @@unique([angkatanId, pesertaId])
+}
+
+model Dokumentasi {
+  id          String   @id @default(cuid())
+  angkatanId  String
+  angkatan    Angkatan @relation(fields: [angkatanId], references: [id], onDelete: Cascade)
+  judul       String
+  deskripsi   String?
+  fileUrl     String
+  tipeFile    String // IMAGE | VIDEO | DOKUMEN
+  uploadedAt  DateTime @default(now())
+}
+
+// ====================== ANALISIS KEBUTUHAN ======================
+
+model AnalisisKebutuhan {
+  id              String   @id @default(cuid())
+  judul           String
+  tahun           Int
+  unitKerja       String
+  jenisKompetensi String // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
+  jumlahPegawai   Int      @default(0)
+  tingkatKebutuhan String  @default("SEDANG") // RENDAH | SEDANG | TINGGI | SANGAT_TINGGI
+  prioritas       String   @default("NORMAL") // RENDAH | NORMAL | TINGGI | URGENT
+  pelatihanId     String?
+  pelatihan       Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
+  catatan         String?
+  status          String   @default("DRAFT") // DRAFT | DISETUJUI | DITOLAK | SELESAI
+  dibuatOleh      String?
+  user            User?    @relation(fields: [dibuatOleh], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ====================== UJI KOMPETENSI ======================
+
+model Asesor {
+  id            String   @id @default(cuid())
+  nip           String   @unique
+  nama          String
+  bidangKeahlian String
+  noSertifikat  String?
+  tanggalSertifikat DateTime?
+  instansi      String?
+  email         String?
+  noTelp        String?
+  status        String   @default("AKTIF")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ujiKompetensi UjiKompetensiAsesor[]
+}
+
+model UjiKompetensi {
+  id              String   @id @default(cuid())
+  kode            String   @unique
+  angkatanId      String?
+  angkatan        Angkatan? @relation(fields: [angkatanId], references: [id], onDelete: SetNull)
+  tanggalUji      DateTime
+  tempat          String
+  skemaSertifikasi String
+  jumlahPeserta   Int      @default(0)
+  status          String   @default("DIJADWALKAN") // DIJADWALKAN | BERLANGSUNG | SELESAI | DIBATALKAN
+  catatan         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  asesor          UjiKompetensiAsesor[]
+  nilai           Nilai[]
+}
+
+model UjiKompetensiAsesor {
+  id              String   @id @default(cuid())
+  ujiKompetensiId String
+  ujiKompetensi   UjiKompetensi @relation(fields: [ujiKompetensiId], references: [id], onDelete: Cascade)
+  asesorId        String
+  asesor          Asesor   @relation(fields: [asesorId], references: [id], onDelete: Cascade)
+  peran           String   @default("ASESOR") // ASESOR | PENGUJI | PENGAWAS
+
+  @@unique([ujiKompetensiId, asesorId])
+}
+
+model Nilai {
+  id              String   @id @default(cuid())
+  ujiKompetensiId String
+  ujiKompetensi   UjiKompetensi @relation(fields: [ujiKompetensiId], references: [id], onDelete: Cascade)
+  pesertaId       String
+  peserta         Peserta  @relation(fields: [pesertaId], references: [id], onDelete: Cascade)
+  nilaiPreTest    Float?
+  nilaiPostTest   Float?
+  nilaiPraktik    Float?
+  nilaiTeori      Float?
+  nilaiAkhir      Float?
+  statusKelulusan String   @default("BELUM") // LULUS | TIDAK_LULUS | BELUM
+  catatan         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ====================== KEHADIRAN & EVALUASI ======================
+
+model Kehadiran {
+  id            String   @id @default(cuid())
+  angkatanId    String
+  angkatan      Angkatan @relation(fields: [angkatanId], references: [id], onDelete: Cascade)
+  pesertaId     String
+  peserta       Peserta  @relation(fields: [pesertaId], references: [id], onDelete: Cascade)
+  tanggal       DateTime
+  statusKehadiran String @default("HADIR") // HADIR | SAKIT | IZIN | ALPA
+  keterangan    String?
+  createdAt     DateTime @default(now())
+
+  @@unique([angkatanId, pesertaId, tanggal])
+}
+
+model Evaluasi {
+  id            String   @id @default(cuid())
+  angkatanId    String?
+  angkatan      Angkatan? @relation(fields: [angkatanId], references: [id], onDelete: SetNull)
+  pesertaId     String?
+  peserta       Peserta?  @relation(fields: [pesertaId], references: [id], onDelete: SetNull)
+  jenisEvaluasi String // PRE_TEST | POST_TEST | KUESIONER | KEPUASAN
+  aspek         String?
+  nilai         Float
+  catatan       String?
+  diinputOleh   String?
+  user          User?    @relation(fields: [diinputOleh], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+}
+
+// ====================== BACKUP & SYSTEM ======================
+
+model BackupHistory {
+  id          String   @id @default(cuid())
+  namaFile    String
+  ukuran      String
+  tipe        String   @default("MANUAL") // MANUAL | OTOMATIS
+  status      String   @default("BERHASIL") // BERHASIL | GAGAL
+  dibuatOleh  String?
+  user        User?    @relation(fields: [dibuatOleh], references: [id], onDelete: SetNull)
+  catatan     String?
+  createdAt   DateTime @default(now())
+}
+
+model Pengaturan {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  kategori    String   @default("UMUM")
+  updatedAt   DateTime @updatedAt
+}
