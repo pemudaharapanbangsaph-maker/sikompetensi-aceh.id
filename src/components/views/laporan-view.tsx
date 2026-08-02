@@ -166,11 +166,10 @@ function LaporanPelatihanView() {
     printWindow.document.close()
   }
 
-  const handleExportExcel = () => {
-    const params: Record<string, string | undefined> = {
-      status: filters.status || undefined,
-      tahun: filters.tahun || undefined,
-    }
+   const handleExportExcel = () => {
+    toast({ title: 'Export Excel', description: 'Mengunduh file laporan-pelatihan.xlsx...' })
+    api.laporan.exportPelatihanXls()
+  }
     api.laporan.exportPelatihan(params)
     toast({ title: 'Ekspor', description: 'File XLS sedang diunduh...' })
   }
