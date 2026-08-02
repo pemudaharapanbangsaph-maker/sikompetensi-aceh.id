@@ -1,5 +1,5 @@
 import type {
-  User, Peserta, Pelatihan, Angkatan, AnalisisKebutuhan,
+  User, Peserta, Pelatihan, Angkatan, AnalisisKebutuhan, AnalisisDiklatItem,
   UjiKompetensi, Asesor, Nilai, Kehadiran, Evaluasi,
   AuditLog, BackupHistory, DashboardStats, PaginatedResponse
 } from './types'
@@ -101,6 +101,24 @@ export const api = {
     update: (id: string, data: Partial<AnalisisKebutuhan>) => request<AnalisisKebutuhan>(`/analisis/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/analisis/${id}`, { method: 'DELETE' }),
     rekap: () => request<any[]>('/analisis/rekap'),
+  },
+
+  analisisDiklat: {
+    list: (params?: Record<string, string | number | undefined>) =>
+      request<PaginatedResponse<AnalisisDiklatItem>>('/analisis-diklat?' + (params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)).toString() : '')),
+    create: (data: Partial<AnalisisDiklatItem>) => request<AnalisisDiklatItem>('/analisis-diklat', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<AnalisisDiklatItem>) => request<AnalisisDiklatItem>(`/analisis-diklat/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id: string) => request<void>(`/analisis-diklat/${id}`, { method: 'DELETE' }),
+    exportXls: () => window.location.href = `${BASE}/analisis-diklat/export`,
+    importXls: (file: File) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      return request<{ success: boolean; imported: number }>('/analisis-diklat/import', {
+        method: 'POST',
+        body: fd,
+        headers: {},
+      })
+    },
   },
 
   ujiKompetensi: {
