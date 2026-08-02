@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react'
 
 // Lazy load views for better performance
 const AnalisisView = lazy(() => import('@/components/views/analisis-view').then(m => ({ default: m.AnalisisView })))
+const AnalisisDiklatInputView = lazy(() => import('@/components/views/analisis-diklat-input-view').then(m => ({ default: m.AnalisisDiklatInputView })))
 const PelatihanView = lazy(() => import('@/components/views/pelatihan-view').then(m => ({ default: m.PelatihanView })))
 const AngkatanView = lazy(() => import('@/components/views/angkatan-view').then(m => ({ default: m.AngkatanView })))
 const UjiKompetensiView = lazy(() => import('@/components/views/uji-kompetensi-view').then(m => ({ default: m.UjiKompetensiView })))
@@ -32,6 +33,8 @@ function ViewLoader() {
 function renderView(view: string): React.ReactNode {
   switch (view) {
     case 'dashboard': return <DashboardView />
+    case 'analisis-input':
+      return <AnalisisDiklatInputView />
     case 'analisis':
     case 'analisis-input':
     case 'analisis-prioritas':
