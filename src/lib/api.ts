@@ -110,6 +110,7 @@ export const api = {
     update: (id: string, data: Partial<AnalisisDiklatItem>) => request<AnalisisDiklatItem>(`/analisis-diklat/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/analisis-diklat/${id}`, { method: 'DELETE' }),
     exportXls: () => window.location.href = `${BASE}/analisis-diklat/export`,
+    downloadTemplate: () => window.location.href = `${BASE}/analisis-diklat/template`,
     importXls: (file: File) => {
       const fd = new FormData()
       fd.append('file', file)
