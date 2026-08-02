@@ -116,9 +116,7 @@ export function Topbar() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {[
-            { title: 'Pelatihan baru dijadwalkan', desc: 'Tidak Ada Notifikasi', time: '2 jam lalu' },
-            { title: 'Hasil uji kompetensi tersedia', desc: 'Tidak Ada Notifikasi', time: '5 jam lalu' },
-            { title: 'Backup database berhasil', desc: 'Tidak Ada Notifikasi', time: '1 hari lalu' },
+            { title: 'Belum Ada Pelatihan dibuat', desc: 'Tidak Ada Notifikasi' },
           ].map((n, i) => (
             <DropdownMenuItem key={i} className="flex flex-col items-start py-3 cursor-pointer">
               <div className="flex items-start gap-2 w-full">
