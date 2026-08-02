@@ -185,7 +185,20 @@ export interface DashboardStats {
   jadwalTerdekat: (Angkatan | UjiKompetensi)[]
   aktivitasTerbaru: AuditLog[]
 }
-
+export interface AnalisisDiklatItem {
+  id: string
+  outcome: string
+  programPrioritasRPJMA: string
+  sasaranRPJMA: string
+  skpaSasaran: string
+  namaPelatihan: string
+  metodePembelajaran: string
+  durasiJP: number
+  targetOutput: string
+  prioritas: string
+  tahunPelaksanaan: number
+  createdAt: string
+}
 export interface PaginatedResponse<T> {
   data: T[]
   total: number
