@@ -1,12 +1,94 @@
 import { NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
+import { writeFile, readFile, access, mkdirSync, existsSync } from 'fs/promises'
+import { join, dirname } from 'path'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
+import { existsSync as fsExistsSync } from 'fs'
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
-const TARGET_FILENAME = 'pemda-logo.png'
+const LOGO_FILENAME = 'pemda-logo.png'
 
+/**
+ * Get the data directory (same location as database).
+ * On Railway with volume: /data
+ * Locally: ./db
+ */
+function getDataDir(): string {
+  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
+  const match = dbUrl.match(/file:(.+)/)
+  let dbPath = match ? match[1] : './db/custom.db'
+  if (dbPath.startsWith('./')) {
+    dbPath = join(process.cwd(), dbPath.substring(2))
+  }
+  return dirname(dbPath)
+}
+
+/**
+ * Resolve the MIME type from extension
+ */
+function getMimeType(filename: string): string {
+  if (filename.endsWith('.svg')) return 'image/svg+xml'
+  if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg'
+  return 'image/png'
+}
+
+/**
+ * GET /api/settings/logo
+ * Serves the custom logo from the volume (persistent storage).
+ * Falls back to the default logo in public/ if no custom logo exists.
+ */
+export async function GET() {
+  try {
+    const dataDir = getDataDir()
+    const logoPath = join(dataDir, LOGO_FILENAME)
+
+    // Try to read from volume first
+    try {
+      const fileBuffer = await readFile(logoPath)
+      const mimeType = getMimeType(logoPath)
+      return new NextResponse(fileBuffer, {
+        headers: {
+          'Content-Type': mimeType,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      })
+    } catch {
+      // File not found in volume, fall through to default
+    }
+
+    // Fallback to default logo in public/
+    const defaultPath = join(process.cwd(), 'public', LOGO_FILENAME)
+    try {
+      const fileBuffer = await readFile(defaultPath)
+      return new NextResponse(fileBuffer, {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=86400',
+        },
+      })
+    } catch {
+      // No default logo either, return 1x1 transparent PNG
+      const transparentPng = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+        'base64'
+      )
+      return new NextResponse(transparentPng, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      })
+    }
+  } catch (e) {
+    console.error('Logo serve error:', e)
+    return NextResponse.json({ error: 'Gagal memuat logo' }, { status: 500 })
+  }
+}
+
+/**
+ * POST /api/settings/logo
+ * Uploads a custom logo and saves it to the volume (persistent storage).
+ */
 export async function POST(req: Request) {
   try {
     const session = await getSession()
@@ -32,23 +114,21 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Determine extension based on file type
-    let ext = 'png'
-    if (file.type === 'image/jpeg') ext = 'png'
-    if (file.type === 'image/svg+xml') ext = 'svg'
-
-    const filename = ext === 'svg' ? 'pemda-logo.svg' : TARGET_FILENAME
-    const filepath = join(process.cwd(), 'public', filename)
-
-    await writeFile(filepath, buffer)
+    // Save to volume (data directory)
+    const dataDir = getDataDir()
+    if (!existsSync(dataDir)) {
+      mkdirSync(dataDir, { recursive: true })
+    }
+    const logoPath = join(dataDir, LOGO_FILENAME)
+    await writeFile(logoPath, buffer)
 
     // Update pengaturan table
     const { db } = await import('@/lib/db')
     const version = String(Date.now())
     await db.pengaturan.upsert({
       where: { key: 'logo_url' },
-      update: { value: `/${filename}?v=${version}` },
-      create: { key: 'logo_url', value: `/${filename}?v=${version}` },
+      update: { value: `/api/settings/logo?v=${version}` },
+      create: { key: 'logo_url', value: `/api/settings/logo?v=${version}` },
     })
     await db.pengaturan.upsert({
       where: { key: 'logo_updated_at' },
@@ -58,7 +138,7 @@ export async function POST(req: Request) {
 
     await auditLog(session, 'UPDATE', 'PENGATURAN', 'Upload logo baru', req)
 
-    return NextResponse.json({ success: true, logoUrl: `/${filename}?v=${version}` })
+    return NextResponse.json({ success: true, logoUrl: `/api/settings/logo?v=${version}` })
   } catch (e) {
     console.error('logo upload error:', e)
     return NextResponse.json({ error: 'Gagal mengupload logo' }, { status: 500 })
