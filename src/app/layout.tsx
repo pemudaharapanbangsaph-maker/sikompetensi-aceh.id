@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   description: "Sistem Informasi Internal Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti BPSDM Provinsi Aceh. Mengelola Analisis Kebutuhan Diklat, Pelatihan, dan Uji Kompetensi ASN Aceh.",
   keywords: ["BPSDM", "Aceh", "Kompetensi Teknis", "Diklat", "Pelatihan", "Uji Kompetensi", "Sertifikasi"],
   authors: [{ name: "BPSDM Provinsi Aceh" }],
+  icons: {
+    icon: "/logo-pancacita.png",
+  },
 };
 
 export default function RootLayout({
