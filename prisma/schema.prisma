@@ -161,6 +161,24 @@ model AnalisisKebutuhan {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+// ====================== ANALISIS DIKLAT ITEMS ======================
+
+model AnalisisDiklatItem {
+  id                   String   @id @default(cuid())
+  outcome              String   @default("")
+  programPrioritasRPJMA String   @default("")
+  sasaranRPJMA         String   @default("")
+  skpaSasaran          String   @default("")
+  namaPelatihan        String   @default("")
+  metodePembelajaran   String   @default("TATAP_MUKA")
+  durasiJP             Int      @default(0)
+  targetOutput         String   @default("")
+  prioritas            String   @default("SEDANG")
+  tahunPelaksanaan     Int      @default(2025)
+  dibuatOleh           String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
 
 // ====================== UJI KOMPETENSI ======================
 
