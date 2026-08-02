@@ -106,7 +106,7 @@ export function Topbar() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5 text-slate-600" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+  
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
@@ -116,9 +116,9 @@ export function Topbar() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {[
-            { title: 'Pelatihan baru dijadwalkan', desc: 'Angkatan 15 - Pelatihan Cyber Security', time: '2 jam lalu' },
-            { title: 'Hasil uji kompetensi tersedia', desc: 'UK-001 telah selesai dinilai', time: '5 jam lalu' },
-            { title: 'Backup database berhasil', desc: 'Backup otomatis telah dibuat', time: '1 hari lalu' },
+            { title: 'Pelatihan baru dijadwalkan', desc: 'Tidak Ada Notifikasi', time: '2 jam lalu' },
+            { title: 'Hasil uji kompetensi tersedia', desc: 'Tidak Ada Notifikasi', time: '5 jam lalu' },
+            { title: 'Backup database berhasil', desc: 'Tidak Ada Notifikasi', time: '1 hari lalu' },
           ].map((n, i) => (
             <DropdownMenuItem key={i} className="flex flex-col items-start py-3 cursor-pointer">
               <div className="flex items-start gap-2 w-full">
