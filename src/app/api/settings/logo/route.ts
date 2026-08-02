@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { writeFile, readFile, access, mkdirSync, existsSync } from 'fs/promises'
+import { writeFile, readFile } from 'fs/promises'
+import { existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
-import { existsSync as fsExistsSync } from 'fs'
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
