@@ -153,12 +153,6 @@ export const api = {
     rekap: () => request<any[]>('/evaluasi/rekap'),
   },
 
-  // ===== Laporan / Export =====
-  laporan: {
-    exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
-    exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
-  },
-
   users: {
     list: (params?: Record<string, string | number | undefined>) =>
       request<PaginatedResponse<User>>('/users?' + (params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)).toString() : '')),
@@ -179,9 +173,23 @@ export const api = {
     remove: (id: string) => request<void>(`/backup/${id}`, { method: 'DELETE' }),
   },
 
+  laporan: {
+    exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
+    exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
+  },
+
   settings: {
     get: () => request<Record<string, string>>('/settings'),
     update: (data: Record<string, string>) => request<void>('/settings', { method: 'PUT', body: JSON.stringify(data) }),
+    uploadLogo: (file: File) => {
+      const fd = new FormData()
+      fd.append('logo', file)
+      return request<{ success: boolean; logoUrl: string }>('/settings/logo', {
+        method: 'POST',
+        body: fd,
+        headers: {},
+      })
+    },
   },
 }
 
