@@ -135,7 +135,7 @@ function LaporanPelatihanView() {
     setPage(1)
   }
 
-   const handleExportPDF = () => {
+  const handleExportPDF = () => {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
     const statusCounts: Record<string, number> = {}
@@ -166,13 +166,11 @@ function LaporanPelatihanView() {
     printWindow.document.close()
   }
 
-   const handleExportExcel = () => {
+  const handleExportExcel = () => {
     toast({ title: 'Export Excel', description: 'Mengunduh file laporan-pelatihan.xlsx...' })
     api.laporan.exportPelatihanXls()
   }
-    api.laporan.exportPelatihan(params)
-    toast({ title: 'Ekspor', description: 'File XLS sedang diunduh...' })
-  }
+
   const filterOptions: FilterOption[] = [
     { key: 'tahun', label: 'Tahun', options: tahunOptions },
     { key: 'kategori', label: 'Kategori', options: KATEGORI_PELATIHAN },
@@ -331,7 +329,7 @@ function LaporanUjiView() {
     setPage(1)
   }
 
-    const handleExportPDF = () => {
+  const handleExportPDF = () => {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
     const statusCounts: Record<string, number> = {}
@@ -364,12 +362,8 @@ function LaporanUjiView() {
   }
 
   const handleExportExcel = () => {
-    const params: Record<string, string | undefined> = {
-      status: filters.status || undefined,
-      tahun: filters.tahun || undefined,
-    }
-    api.laporan.exportUjiKompetensi(params)
-    toast({ title: 'Ekspor', description: 'File XLS sedang diunduh...' })
+    toast({ title: 'Export Excel', description: 'Mengunduh file laporan-uji-kompetensi.xlsx...' })
+    api.laporan.exportUjiKompetensiXls()
   }
 
   const filterOptions: FilterOption[] = [
