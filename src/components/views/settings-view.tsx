@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '@/lib/api'
 import type { AuditLog } from '@/lib/types'
-import { useNavStore } from '@/store/auth-store'
+import { useNavStore, useUIStore } from '@/store/auth-store'
 import { DataTable, PageHeader, type Column, type FilterOption } from '@/components/shared/data-table'
 import { formatDateTime } from '@/components/shared/ui-helpers'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Save, Building2, ImageIcon, Shield, ScrollText, GraduationCap, Upload, CheckCircle2, Lock, Clock, RefreshCw, KeyRound, FileCheck } from 'lucide-react'
+import { Save, Building2, ImageIcon, Shield, ScrollText, Upload, CheckCircle2, Lock, Clock, RefreshCw, KeyRound, FileCheck, Loader2 } from 'lucide-react'
 
 // ===========================================================================
 // ROOT
@@ -152,9 +152,14 @@ function SettingsProfilView() {
 
 function SettingsLogoView() {
   const { toast } = useToast()
+  const bumpLogoVersion = useUIStore((s) => s.bumpLogoVersion)
   const [settings, setSettings] = useState<Record<string, string>>({})
   const [preview, setPreview] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  const currentLogoUrl = settings.logo_url || '/pemda-logo.png'
 
   useEffect(() => {
     let cancelled = false
@@ -179,13 +184,33 @@ function SettingsLogoView() {
       toast({ title: 'Gagal', description: 'Ukuran file maksimal 2MB', variant: 'destructive' })
       return
     }
+    setSelectedFile(file)
     const reader = new FileReader()
     reader.onload = () => setPreview(reader.result as string)
     reader.readAsDataURL(file)
   }
 
-  const handleSimpan = () => {
-    toast({ title: 'Logo diperbarui', description: preview ? 'Logo baru disimpan (mock)' : 'Tidak ada perubahan logo' })
+  const handleSimpan = async () => {
+    if (!selectedFile) return
+    setSaving(true)
+    try {
+      const res = await api.settings.uploadLogo(selectedFile)
+      // Update settings with new logo URL for cache busting
+      setSettings((prev) => ({ ...prev, logo_url: res.logoUrl }))
+      bumpLogoVersion()
+      setPreview(null)
+      setSelectedFile(null)
+      toast({ title: 'Berhasil', description: 'Logo berhasil diperbarui' })
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleBatal = () => {
+    setPreview(null)
+    setSelectedFile(null)
   }
 
   return (
@@ -204,8 +229,12 @@ function SettingsLogoView() {
               <div className="h-40 bg-slate-100 rounded-xl animate-pulse" />
             ) : (
               <div className="flex flex-col items-center justify-center py-6">
-                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#0F4C81] to-[#0a3a63] flex items-center justify-center mb-4 shadow-lg">
-                  <GraduationCap className="w-16 h-16 text-white" />
+                <div className="w-32 h-32 rounded-2xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden mb-4 shadow-lg">
+                  <img
+                    src={currentLogoUrl}
+                    alt="Logo Instansi"
+                    className="w-full h-full object-contain p-2"
+                  />
                 </div>
                 <p className="font-semibold text-slate-900 text-center">
                   {settings.nama_instansi || 'BPSDM Aceh'}
@@ -213,7 +242,11 @@ function SettingsLogoView() {
                 <p className="text-xs text-slate-500 text-center mt-1">
                   {settings.nama_sistem || 'Sistem Informasi Kompetensi Teknis'}
                 </p>
-                <Badge variant="outline" className="mt-3 text-xs">Logo Default</Badge>
+                {settings.logo_updated_at ? (
+                  <Badge variant="outline" className="mt-3 text-xs">Logo Kustom</Badge>
+                ) : (
+                  <Badge variant="outline" className="mt-3 text-xs">Logo Default</Badge>
+                )}
               </div>
             )}
           </CardContent>
@@ -258,18 +291,14 @@ function SettingsLogoView() {
             </label>
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setPreview(null)} disabled={!preview}>
+              <Button variant="outline" onClick={handleBatal} disabled={!preview || saving}>
                 Batal
               </Button>
-              <Button onClick={handleSimpan} disabled={!preview} className="bg-[#0F4C81] hover:bg-[#0a3a63]">
-                <Save className="w-4 h-4" /> Simpan Logo
+              <Button onClick={handleSimpan} disabled={!preview || saving} className="bg-[#0F4C81] hover:bg-[#0a3a63]">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? 'Mengunggah...' : 'Simpan Logo'}
               </Button>
             </div>
-
-            <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3 leading-relaxed">
-              <strong className="text-slate-700">Catatan:</strong> Fitur upload logo adalah simulasi pada lingkungan ini.
-              Pada produksi, file akan disimpan ke storage server dan URL-nya disimpan di tabel pengaturan.
-            </p>
           </CardContent>
         </Card>
       </div>
