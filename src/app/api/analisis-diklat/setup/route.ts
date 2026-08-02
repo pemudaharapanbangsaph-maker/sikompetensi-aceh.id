@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { getSession } from '@/lib/auth'
 
 export async function POST(req: Request) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-    // Buat tabel kalau belum ada
     await db.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "AnalisisDiklatItem" (
         "id" TEXT NOT NULL PRIMARY KEY,
@@ -27,7 +22,7 @@ export async function POST(req: Request) {
       )
     `)
 
-    return NextResponse.json({ success: true, message: 'Tabel AnalisisDiklatItem berhasil dibuat/diperbarui' })
+    return NextResponse.json({ success: true, message: 'Tabel AnalisisDiklatItem berhasil dibuat' })
   } catch (e) {
     console.error('setup analisis-diklat error:', e)
     return NextResponse.json({ error: String((e as Error).message) }, { status: 500 })
