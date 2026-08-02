@@ -1,5 +1,7 @@
 'use client'
 
+import { useUIStore } from '@/store/auth-store'
+
 interface LogoPancaCitaProps {
   className?: string
   size?: number
@@ -7,12 +9,15 @@ interface LogoPancaCitaProps {
 
 /**
  * Logo PEMDA Pemerintah Aceh
- * Menggunakan image PEMDA.png yang di-upload user
+ * Membaca dari /pemda-logo.png dengan cache-busting via logoVersion dari UIStore
  */
 export function LogoPancaCita({ className, size = 56 }: LogoPancaCitaProps) {
+  const logoVersion = useUIStore((s) => s.logoVersion)
+  const src = `/pemda-logo.png${logoVersion ? `?v=${logoVersion}` : ''}`
+
   return (
     <img
-      src="/pemda-logo.png"
+      src={src}
       alt="Logo Pemerintah Aceh"
       width={size}
       height={Math.round(size / 0.672)}
