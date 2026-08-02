@@ -255,6 +255,15 @@ function AnalisisDiklatTable() {
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Ekspor XLS</span>
           </Button>
+                    <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { api.analisisDiklat.downloadTemplate() }}
+            className="h-9 border-slate-300 text-slate-700 hover:bg-slate-50"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Template</span>
+          </Button>
           <Button
             variant="outline"
             size="sm"
