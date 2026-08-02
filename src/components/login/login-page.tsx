@@ -80,7 +80,7 @@ export function LoginPage() {
 
           {/* Main Heading */}
           <h2 className="text-white text-2xl lg:text-3xl font-bold mt-4 leading-relaxed max-w-md mx-auto">
-            MEMBANGUN ASN Aceh yang profesional dan berintegritas
+            MEMBANGUN ASN Aceh yang Profesional dan Berintegritas
           </h2>
 
           {/* Description Paragraph */}
