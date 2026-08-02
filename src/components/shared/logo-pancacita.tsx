@@ -9,11 +9,12 @@ interface LogoPancaCitaProps {
 
 /**
  * Logo PEMDA Pemerintah Aceh
- * Membaca dari /pemda-logo.png dengan cache-busting via logoVersion dari UIStore
+ * Menggunakan API route /api/settings/logo yang membaca dari volume (persistent storage).
+ * Fallback ke logo default jika belum ada upload kustom.
  */
 export function LogoPancaCita({ className, size = 56 }: LogoPancaCitaProps) {
   const logoVersion = useUIStore((s) => s.logoVersion)
-  const src = `/pemda-logo.png${logoVersion ? `?v=${logoVersion}` : ''}`
+  const src = `/api/settings/logo${logoVersion ? `?v=${logoVersion}` : ''}`
 
   return (
     <img
