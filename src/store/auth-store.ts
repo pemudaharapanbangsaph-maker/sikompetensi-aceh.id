@@ -68,6 +68,8 @@ interface UIState {
   setSidebarCollapsed: (collapsed: boolean) => void
   mobileSidebarOpen: boolean
   setMobileSidebarOpen: (open: boolean) => void
+  logoVersion: number
+  bumpLogoVersion: () => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -76,6 +78,8 @@ export const useUIStore = create<UIState>((set) => ({
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
   mobileSidebarOpen: false,
   setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
+  logoVersion: 0,
+  bumpLogoVersion: () => set((s) => ({ logoVersion: s.logoVersion + 1 })),
 }))
 
 export type ViewKey =
