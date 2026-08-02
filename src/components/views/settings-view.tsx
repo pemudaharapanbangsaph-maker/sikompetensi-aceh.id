@@ -159,7 +159,7 @@ function SettingsLogoView() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const currentLogoUrl = settings.logo_url || '/pemda-logo.png'
+  const currentLogoUrl = settings.logo_url || '/api/settings/logo'
 
   useEffect(() => {
     let cancelled = false
