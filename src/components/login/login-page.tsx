@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3 } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
@@ -208,28 +208,26 @@ function LandingRight({ onEnter, onPrograms }: { onEnter: () => void; onPrograms
         <div className="flex flex-wrap gap-3 mt-10">
           <button
             onClick={onEnter}
-            className="flex items-center gap-2.5 px-7 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-full shadow-sm hover:shadow-lg transition-all duration-200"
+            className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
           >
-            <Shield className="w-4 h-4" />
+            <LogIn className="w-5 h-5" />
             Masuk Portal
-            <ArrowRight className="w-4 h-4" />
           </button>
           <button
             onClick={onPrograms}
-            className="flex items-center gap-2 px-7 py-3.5 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-full transition-all duration-200"
+            className="flex items-center gap-2.5 px-8 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
           >
+            <Search className="w-5 h-5" />
             Jelajahi Program
-            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
         <div className="lg:hidden mt-6">
           <button
             onClick={onEnter}
-            className="w-full flex items-center justify-center gap-2.5 px-7 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-full shadow-sm transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
           >
-            <Shield className="w-4 h-4" />
+            <LogIn className="w-5 h-5" />
             Masuk Portal
-            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -287,9 +285,9 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
           </div>
           <button
             onClick={onLogin}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#195737] hover:bg-[#0F4227] text-white text-sm font-semibold rounded-full shadow-sm transition-all duration-200"
+            className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white text-sm font-semibold rounded-xl transition-colors duration-200"
           >
-            <Shield className="w-4 h-4" />
+            <LogIn className="w-5 h-5" />
             Masuk Portal
           </button>
         </div>
