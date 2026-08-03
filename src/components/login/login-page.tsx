@@ -194,12 +194,6 @@ function LandingRight({ onEnter, onPrograms }: { onEnter: () => void; onPrograms
         </svg>
       </div>
       <div className="relative z-10 max-w-xl w-full">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-4 h-px bg-[#195737]/40" />
-          <p className="text-[10px] text-[#195737]/60 uppercase tracking-[0.15em] font-medium leading-tight">
-            KEPGUB ACEH NO. 800.1.4/212/2026 · BERBASIS PEDOMAN LAN RI
-          </p>
-        </div>
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
           Membangun ASN Aceh{' '}
           <span className="text-slate-900">yang kompeten &</span>
