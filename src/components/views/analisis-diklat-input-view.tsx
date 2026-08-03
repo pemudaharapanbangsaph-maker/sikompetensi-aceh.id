@@ -286,28 +286,32 @@ function AnalisisDiklatTable() {
         description="Kelola data analisis kebutuhan diklat dengan fitur ekspor/impor XLS"
       >
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport} className="h-9 border-[#4ADE80] text-[#195737] hover:bg-green-50">
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Ekspor XLS</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importing}
-            className="h-9 border-amber-300 text-amber-700 hover:bg-amber-50"
-          >
-            <Upload className={cn('w-4 h-4', importing && 'animate-bounce')} />
-            <span className="hidden sm:inline">{importing ? 'Mengimpor...' : 'Impor XLS'}</span>
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            className="hidden"
-            onChange={handleImport}
-          />
-        </div>
+  <Button variant="outline" size="sm" onClick={handleExport} className="h-9 border-[#4ADE80] text-[#195737] hover:bg-green-50">
+    <Download className="w-4 h-4" />
+    <span className="hidden sm:inline">Ekspor XLS</span>
+  </Button>
+  <Button variant="outline" size="sm" onClick={() => { api.analisisDiklat.downloadTemplate(); toast({ title: 'Template', description: 'Template XLS sedang diunduh...' }) }} className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
+    <FileSpreadsheet className="w-4 h-4" />
+    <span className="hidden sm:inline">Template</span>
+  </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => fileInputRef.current?.click()}
+    disabled={importing}
+    className="h-9 border-amber-300 text-amber-700 hover:bg-amber-50"
+  >
+    <Upload className={cn('w-4 h-4', importing && 'animate-bounce')} />
+    <span className="hidden sm:inline">{importing ? 'Mengimpor...' : 'Impor XLS'}</span>
+  </Button>
+  <input
+    ref={fileInputRef}
+    type="file"
+    accept=".xlsx,.xls"
+    className="hidden"
+    onChange={handleImport}
+  />
+</div>
       </PageHeader>
 
       <Card className="border-slate-200 shadow-sm">
