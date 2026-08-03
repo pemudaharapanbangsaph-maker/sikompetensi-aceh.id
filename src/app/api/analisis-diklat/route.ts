@@ -11,14 +11,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const params = parseListParams(new URL(req.url).searchParams)
-    const { page, pageSize, search, sortBy, sortOrder, tahun, prioritas, ...rest } = params
-    const filters: Record<string, string | number | undefined> = { prioritas }
+    const { page, pageSize, search, sortBy, sortOrder, tahun, prioritas, kategori, ...rest } = params
+    const filters: Record<string, string | number | undefined> = { prioritas, kategori }
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
-    const where = buildWhere(search as string, ['outcome', 'programPrioritasRPJMA', 'sasaranRPJMA', 'skpaSasaran', 'namaPelatihan', 'targetOutput'], filters)
+    const where = buildWhere<Record<string, unknown>>(
+      search as string,
+      ['outcome', 'programPrioritasRPJMA', 'sasaranRPJMA', 'skpaSasaran', 'namaPelatihan', 'targetOutput'],
+      filters
+    )
     if (tahun !== undefined && tahun !== '') {
-      (where as Record<string, unknown>).tahunPelaksanaan = Number(tahun)
+      where.tahunPelaksanaan = Number(tahun)
     }
     const [data, total] = await Promise.all([
       db.analisisDiklatItem.findMany({
@@ -30,7 +34,10 @@ export async function GET(req: Request) {
       db.analisisDiklatItem.count({ where }),
     ])
     return NextResponse.json({
-      data, total, page: page as number, pageSize: pageSize as number,
+      data,
+      total,
+      page: page as number,
+      pageSize: pageSize as number,
       totalPages: Math.ceil(total / (pageSize as number)),
     })
   } catch (e) {
@@ -49,15 +56,8 @@ export async function POST(req: Request) {
     const body = await req.json()
     const item = await db.analisisDiklatItem.create({
       data: {
-        outcome: body.outcome || '',
-        programPrioritasRPJMA: body.programPrioritasRPJMA || '',
-        sasaranRPJMA: body.sasaranRPJMA || '',
-        skpaSasaran: body.skpaSasaran || '',
-        namaPelatihan: body.namaPelatihan || '',
-        metodePembelajaran: body.metodePembelajaran || 'TATAP_MUKA',
+        ...body,
         durasiJP: body.durasiJP ? Number(body.durasiJP) : 0,
-        targetOutput: body.targetOutput || '',
-        prioritas: body.prioritas || 'SEDANG',
         tahunPelaksanaan: body.tahunPelaksanaan ? Number(body.tahunPelaksanaan) : new Date().getFullYear(),
         dibuatOleh: session.user.id,
       },
