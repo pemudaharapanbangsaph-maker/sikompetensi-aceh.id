@@ -15,16 +15,18 @@ const PRIORITAS_MAP: Record<string, string> = {
   'rendah': 'RENDAH',
 }
 
-const PRIORITAS_TO_ANALISIS: Record<string, string> = {
-  TINGGI: 'TINGGI',
-  SEDANG: 'NORMAL',
-  RENDAH: 'RENDAH',
+const KATEGORI_MAP: Record<string, string> = {
+  'teknis': 'TEKNIS',
+  'manajerial': 'MANAJERIAL',
+  'fungsional': 'FUNGSIONAL',
+  'sosial kultural': 'SOSIAL_KULTURAL',
 }
 
-const TINGKAT_TO_ANALISIS: Record<string, string> = {
-  TINGGI: 'TINGGI',
-  SEDANG: 'SEDANG',
-  RENDAH: 'RENDAH',
+const STATUS_MAP: Record<string, string> = {
+  'aktif': 'AKTIF',
+  'tampilkan di portal': 'AKTIF',
+  'nonaktif': 'NONAKTIF',
+  'sembunyikan': 'NONAKTIF',
 }
 
 const REQUIRED_COLUMNS = ['Outcome', 'Nama Pelatihan']
@@ -65,51 +67,31 @@ export async function POST(req: Request) {
       const metodeRaw = String(row[findCol(['Metode Pembelajaran'])] || 'Tatap Muka')
       const prioritasRaw = String(row[findCol(['Prioritas'])] || 'Sedang')
       const tahunRaw = row[findCol(['Tahun Pelaksanaan'])]
-
-      const prioritas = PRIORITAS_MAP[prioritasRaw.toLowerCase()] || 'SEDANG'
-      const tahun = tahunRaw ? Number(tahunRaw) : new Date().getFullYear()
+      const kategoriRaw = String(row[findCol(['Kategori'])] || 'Teknis')
+      const statusRaw = String(row[findCol(['Status Publikasi'])] || 'Aktif')
 
       return {
-        diklatItem: {
-          outcome: String(row[findCol(['Outcome'])] || ''),
-          programPrioritasRPJMA: String(row[findCol(['Program Prioritas RPJMA'])] || ''),
-          sasaranRPJMA: String(row[findCol(['Sasaran RPJMA'])] || ''),
-          skpaSasaran: String(row[findCol(['SKPA Sasaran'])] || ''),
-          namaPelatihan: String(row[findCol(['Nama Pelatihan'])] || ''),
-          metodePembelajaran: METODE_MAP[metodeRaw.toLowerCase()] || 'TATAP_MUKA',
-          durasiJP: Number(row[findCol(['Durasi (JP)'])] || 0),
-          targetOutput: String(row[findCol(['Target Output'])] || ''),
-          prioritas,
-          tahunPelaksanaan: tahun,
-          dibuatOleh: session.user.id,
-        },
-        analisisKebutuhan: {
-          judul: String(row[findCol(['Nama Pelatihan'])] || ''),
-          tahun: tahun,
-          unitKerja: String(row[findCol(['SKPA Sasaran'])] || ''),
-          jenisKompetensi: 'TEKNIS',
-          jumlahPegawai: 0,
-          tingkatKebutuhan: TINGKAT_TO_ANALISIS[prioritas] || 'SEDANG',
-          prioritas: PRIORITAS_TO_ANALISIS[prioritas] || 'NORMAL',
-          catatan: [
-            String(row[findCol(['Outcome'])] || ''),
-            String(row[findCol(['Program Prioritas RPJMA'])] || ''),
-          ].filter(Boolean).join(' | '),
-          status: 'DRAFT' as const,
-          dibuatOleh: session.user.id,
-        },
+        outcome: String(row[findCol(['Outcome'])] || ''),
+        programPrioritasRPJMA: String(row[findCol(['Program Prioritas RPJMA'])] || ''),
+        sasaranRPJMA: String(row[findCol(['Sasaran RPJMA'])] || ''),
+        skpaSasaran: String(row[findCol(['SKPA Sasaran'])] || ''),
+        namaPelatihan: String(row[findCol(['Nama Pelatihan'])] || ''),
+        kategori: KATEGORI_MAP[kategoriRaw.toLowerCase()] || 'TEKNIS',
+        metodePembelajaran: METODE_MAP[metodeRaw.toLowerCase()] || 'TATAP_MUKA',
+        durasiJP: Number(row[findCol(['Durasi (JP)'])] || 0),
+        targetOutput: String(row[findCol(['Target Output'])] || ''),
+        prioritas: PRIORITAS_MAP[prioritasRaw.toLowerCase()] || 'SEDANG',
+        tahunPelaksanaan: tahunRaw ? Number(tahunRaw) : new Date().getFullYear(),
+        status: STATUS_MAP[statusRaw.toLowerCase()] || 'AKTIF',
+        dibuatOleh: session.user.id,
       }
     })
 
-    // Simpan ke kedua tabel
-    const [diklatResult] = await Promise.all([
-      db.analisisDiklatItem.createMany({ data: items.map((i) => i.diklatItem) }),
-      db.analisisKebutuhan.createMany({ data: items.map((i) => i.analisisKebutuhan) }),
-    ])
+    const result = await db.analisisDiklatItem.createMany({ data: items })
 
-    await auditLog(session, 'IMPORT', 'ANALISIS_DIKLAT', `Import ${diklatResult.count} item analisis diklat dari XLS ke kedua tabel`, req)
+    await auditLog(session, 'IMPORT', 'ANALISIS_DIKLAT', `Import ${result.count} item analisis diklat dari XLS`, req)
 
-    return NextResponse.json({ success: true, imported: diklatResult.count })
+    return NextResponse.json({ success: true, imported: result.count })
   } catch (e) {
     console.error('analisis-diklat import error:', e)
     return NextResponse.json({ error: 'Gagal mengimpor data' }, { status: 500 })
