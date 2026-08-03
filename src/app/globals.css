@@ -45,6 +45,7 @@
 
 :root {
   --radius: 0.5rem;
+  /* BPSDM Aceh theme: #0F4C81 dark blue primary, #195737 green success */
   --background: #f1f5f9;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -143,9 +144,9 @@
 .badge-danger { background-color: #dc2626; color: white; }
 .badge-info { background-color: #0F4C81; color: white; }
 
-/* Login background pattern - Aceh Corpu style (dark forest green) */
+/* Login background pattern - Aceh Corpu style */
 .login-bg {
-  background: linear-gradient(160deg, #1B5E20 0%, #145218 40%, #0d3d12 100%);
+  background: linear-gradient(160deg, #1E6B42 0%, #195737 40%, #0F4227 100%);
   position: relative;
   overflow: hidden;
 }
@@ -156,7 +157,7 @@
   right: -20%;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(46, 125, 50, 0.4) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(30, 107, 66, 0.4) 0%, transparent 70%);
   border-radius: 50%;
   opacity: 0.3;
 }
@@ -179,7 +180,6 @@
   border-radius: 50%;
 }
 
-/* ASN illustration - left side */
 /* Login background pattern watermark (Aceh geometric motif) */
 .login-bg-pattern {
   background-image:
@@ -225,11 +225,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;  /* ← logo mulai dari atas */
+  justify-content: flex-start;
   flex: 1;
   position: relative;
   z-index: 10;
-  padding-top: 8vh;             /* ← jarak 8% dari atas layar */
+  padding-top: 8vh;
 }
 
 /* Animation for content fade-in */
