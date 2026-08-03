@@ -225,10 +225,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;  /* ← logo mulai dari atas */
   flex: 1;
   position: relative;
   z-index: 10;
+  padding-top: 8vh;             /* ← jarak 8% dari atas layar */
 }
 
 /* Animation for content fade-in */
