@@ -34,6 +34,13 @@ const METODE_OPTIONS = [
   { value: 'BLENDED', label: 'Blended' },
 ]
 
+const KATEGORI_OPTIONS = [
+  { value: 'TEKNIS', label: 'Teknis' },
+  { value: 'MANAJERIAL', label: 'Manajerial' },
+  { value: 'FUNGSIONAL', label: 'Fungsional' },
+  { value: 'SOSIAL_KULTURAL', label: 'Sosial Kultural' },
+]
+
 const PRIORITAS_OPTIONS = [
   { value: 'TINGGI', label: 'Tinggi' },
   { value: 'SEDANG', label: 'Sedang' },
@@ -52,6 +59,13 @@ const METODE_LABEL: Record<string, string> = {
   BLENDED: 'Blended',
 }
 
+const KATEGORI_LABEL: Record<string, string> = {
+  TEKNIS: 'Teknis',
+  MANAJERIAL: 'Manajerial',
+  FUNGSIONAL: 'Fungsional',
+  SOSIAL_KULTURAL: 'Sosial Kultural',
+}
+
 const PRIORITAS_LABEL: Record<string, string> = {
   TINGGI: 'Tinggi',
   SEDANG: 'Sedang',
@@ -60,14 +74,31 @@ const PRIORITAS_LABEL: Record<string, string> = {
 
 const METODE_COLORS: Record<string, string> = {
   TATAP_MUKA: 'bg-blue-100 text-blue-700',
-  DARING: 'bg-green-100 text-green-700',
+  DARING: 'bg-green-100 text-[#195737]',
   BLENDED: 'bg-purple-100 text-purple-700',
+}
+
+const KATEGORI_COLORS: Record<string, string> = {
+  TEKNIS: 'bg-[#195737]/10 text-[#195737]',
+  MANAJERIAL: 'bg-amber-50 text-amber-700',
+  FUNGSIONAL: 'bg-blue-50 text-blue-700',
+  SOSIAL_KULTURAL: 'bg-purple-50 text-purple-700',
 }
 
 const PRIORITAS_COLORS: Record<string, string> = {
   TINGGI: 'bg-orange-100 text-orange-700',
   SEDANG: 'bg-blue-100 text-blue-700',
   RENDAH: 'bg-slate-100 text-slate-600',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  AKTIF: 'Aktif',
+  NONAKTIF: 'Nonaktif',
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  AKTIF: 'bg-green-100 text-green-700',
+  NONAKTIF: 'bg-slate-100 text-slate-500',
 }
 
 function generateTahunOptions() {
@@ -87,11 +118,13 @@ const EMPTY_FORM: Partial<AnalisisDiklatItem> = {
   sasaranRPJMA: '',
   skpaSasaran: '',
   namaPelatihan: '',
+  kategori: 'TEKNIS',
   metodePembelajaran: 'TATAP_MUKA',
   durasiJP: 0,
   targetOutput: '',
   prioritas: 'SEDANG',
   tahunPelaksanaan: new Date().getFullYear(),
+  status: 'AKTIF',
 }
 
 // ===========================================================================
@@ -172,11 +205,13 @@ function AnalisisDiklatTable() {
       sasaranRPJMA: item.sasaranRPJMA,
       skpaSasaran: item.skpaSasaran,
       namaPelatihan: item.namaPelatihan,
+      kategori: item.kategori,
       metodePembelajaran: item.metodePembelajaran,
       durasiJP: item.durasiJP,
       targetOutput: item.targetOutput,
       prioritas: item.prioritas,
       tahunPelaksanaan: item.tahunPelaksanaan,
+      status: item.status,
     })
     setDialogOpen(true)
   }
@@ -251,18 +286,9 @@ function AnalisisDiklatTable() {
         description="Kelola data analisis kebutuhan diklat dengan fitur ekspor/impor XLS"
       >
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport} className="h-9 border-green-300 text-green-700 hover:bg-green-50">
+          <Button variant="outline" size="sm" onClick={handleExport} className="h-9 border-[#4ADE80] text-[#195737] hover:bg-green-50">
             <Download className="w-4 h-4" />
             <span className="hidden sm:inline">Ekspor XLS</span>
-          </Button>
-                    <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { api.analisisDiklat.downloadTemplate() }}
-            className="h-9 border-slate-300 text-slate-700 hover:bg-slate-50"
-          >
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Template</span>
           </Button>
           <Button
             variant="outline"
@@ -344,12 +370,14 @@ function AnalisisDiklatTable() {
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[160px]">Program Prioritas RPJMA</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[140px]">Sasaran RPJMA</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[120px]">SKPA Sasaran</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[140px]">Kategori</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[160px]">Nama Pelatihan</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[120px]">Metode</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-20 text-center">Durasi (JP)</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[140px]">Target Output</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-24 text-center">Prioritas</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-28 text-center">Tahun</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-20 text-center">Status</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide text-right w-[100px]">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -357,14 +385,14 @@ function AnalisisDiklatTable() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 12 }).map((_, j) => (
+                        {Array.from({ length: 13 }).map((_, j) => (
                           <TableCell key={j}><div className="h-4 bg-slate-100 rounded animate-pulse" /></TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={12} className="text-center py-12 text-slate-400">
+                      <TableCell colSpan={13} className="text-center py-12 text-slate-400">
                         <FileSpreadsheet className="w-10 h-10 mx-auto mb-2 text-slate-300" />
                         <p>Belum ada data analisis diklat</p>
                         <p className="text-xs mt-1">Klik &quot;Tambah Data&quot; atau impor dari file XLS</p>
@@ -386,6 +414,11 @@ function AnalisisDiklatTable() {
                         <TableCell className="text-sm text-slate-600 max-w-[140px]">
                           <p className="line-clamp-2" title={row.skpaSasaran}>{row.skpaSasaran || '-'}</p>
                         </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', KATEGORI_COLORS[row.kategori] || '')}>
+                            {KATEGORI_LABEL[row.kategori] || row.kategori}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-sm font-medium text-slate-800 max-w-[180px]">
                           <p className="line-clamp-2" title={row.namaPelatihan}>{row.namaPelatihan || '-'}</p>
                         </TableCell>
@@ -404,6 +437,11 @@ function AnalisisDiklatTable() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.tahunPelaksanaan}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', STATUS_COLORS[row.status] || '')}>
+                            {STATUS_LABEL[row.status] || row.status}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => openEdit(row)} title="Edit">
@@ -502,6 +540,15 @@ function AnalisisDiklatTable() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label>Kategori <span className="text-red-500">*</span></Label>
+              <Select value={form.kategori || 'TEKNIS'} onValueChange={(v) => setForm({ ...form, kategori: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {KATEGORI_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Label>Nama Pelatihan <span className="text-red-500">*</span></Label>
               <Input
                 value={form.namaPelatihan || ''}
@@ -556,6 +603,17 @@ function AnalisisDiklatTable() {
                 onChange={(e) => setForm({ ...form, tahunPelaksanaan: parseInt(e.target.value, 10) || new Date().getFullYear() })}
                 placeholder="Tahun"
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Status Publikasi</Label>
+              <Select value={form.status || 'AKTIF'} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AKTIF">Tampilkan di Portal</SelectItem>
+                  <SelectItem value="NONAKTIF">Sembunyikan</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-slate-400 mt-1">Pilih &quot;Tampilkan di Portal&quot; agar muncul di Jelajahi Program.</p>
             </div>
           </div>
           <DialogFooter>
