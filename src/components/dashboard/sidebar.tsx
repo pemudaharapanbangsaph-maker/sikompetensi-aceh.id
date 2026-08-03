@@ -154,7 +154,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
       {/* Footer */}
       {!sidebarCollapsed && (
         <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
-          <p className="text-[10px] text-blue-200 text-center">@edomulyana-Internal Website-PSKTI</p>
+          <p className="text-[10px] text-blue-200 text-center">@Team-Teknis Inti-Internal Website-PSKTI</p>
         </div>
       )}
     </aside>
