@@ -47,6 +47,7 @@ export async function GET(req: Request) {
       'Nama Pelatihan': item.namaPelatihan,
       'Metode Pembelajaran': METODE_LABEL[item.metodePembelajaran] || item.metodePembelajaran,
       'Durasi (JP)': item.durasiJP,
+      'Lama Hari': item.durasiHari,
       'Target Output': item.targetOutput,
       Prioritas: PRIORITAS_LABEL[item.prioritas] || item.prioritas,
       'Tahun Pelaksanaan': item.tahunPelaksanaan,
@@ -57,7 +58,7 @@ export async function GET(req: Request) {
     const ws = XLSX.utils.json_to_sheet(rows)
     ws['!cols'] = [
       { wch: 5 }, { wch: 30 }, { wch: 30 }, { wch: 30 }, { wch: 25 },
-      { wch: 16 }, { wch: 35 }, { wch: 18 }, { wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
+      { wch: 16 }, { wch: 35 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
     ]
     XLSX.utils.book_append_sheet(wb, ws, 'Analisis Diklat')
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
