@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession, auditLog, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth'
-import { cookies } from 'next/headers'
 
 const MAX_ATTEMPTS = 5
 const LOCK_DURATION = 15 * 60 * 1000
@@ -45,19 +44,11 @@ export async function POST(req: Request) {
 
     const token = await createSession(user.id)
 
-    const cookieStore = await cookies()
     const maxAge = remember ? SESSION_MAX_AGE * 24 * 7 : SESSION_MAX_AGE
-    cookieStore.set(SESSION_COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge,
-    })
 
     await auditLog({ user: { id: user.id, username: user.username, nama: user.nama, email: user.email, role: user.role as any, status: user.status } } as any, 'LOGIN', 'AUTH', `User ${user.username} berhasil login`, req)
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       user: {
         id: user.id,
         username: user.username,
@@ -69,6 +60,14 @@ export async function POST(req: Request) {
         createdAt: user.createdAt,
       },
     })
+    res.cookies.set(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge,
+    })
+    return res
   } catch (e) {
     console.error('Login error:', e)
     return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 })
