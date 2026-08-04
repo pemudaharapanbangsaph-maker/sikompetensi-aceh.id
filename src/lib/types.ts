@@ -38,6 +38,7 @@ export interface Pelatihan {
   durasiHari: number
   jp: number
   status: string
+  analisisDiklatId?: string | null
   createdAt: string
 }
 
