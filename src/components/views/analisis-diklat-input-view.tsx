@@ -121,6 +121,7 @@ const EMPTY_FORM: Partial<AnalisisDiklatItem> = {
   kategori: 'TEKNIS',
   metodePembelajaran: 'TATAP_MUKA',
   durasiJP: 0,
+  durasiHari: 0,
   targetOutput: '',
   prioritas: 'SEDANG',
   tahunPelaksanaan: new Date().getFullYear(),
@@ -208,6 +209,7 @@ function AnalisisDiklatTable() {
       kategori: item.kategori,
       metodePembelajaran: item.metodePembelajaran,
       durasiJP: item.durasiJP,
+      durasiHari: item.durasiHari,
       targetOutput: item.targetOutput,
       prioritas: item.prioritas,
       tahunPelaksanaan: item.tahunPelaksanaan,
@@ -286,32 +288,32 @@ function AnalisisDiklatTable() {
         description="Kelola data analisis kebutuhan diklat dengan fitur ekspor/impor XLS"
       >
         <div className="flex items-center gap-2">
-  <Button variant="outline" size="sm" onClick={handleExport} className="h-9 border-[#4ADE80] text-[#195737] hover:bg-green-50">
-    <Download className="w-4 h-4" />
-    <span className="hidden sm:inline">Ekspor XLS</span>
-  </Button>
-  <Button variant="outline" size="sm" onClick={() => { api.analisisDiklat.downloadTemplate(); toast({ title: 'Template', description: 'Template XLS sedang diunduh...' }) }} className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
-    <FileSpreadsheet className="w-4 h-4" />
-    <span className="hidden sm:inline">Template</span>
-  </Button>
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => fileInputRef.current?.click()}
-    disabled={importing}
-    className="h-9 border-amber-300 text-amber-700 hover:bg-amber-50"
-  >
-    <Upload className={cn('w-4 h-4', importing && 'animate-bounce')} />
-    <span className="hidden sm:inline">{importing ? 'Mengimpor...' : 'Impor XLS'}</span>
-  </Button>
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept=".xlsx,.xls"
-    className="hidden"
-    onChange={handleImport}
-  />
-</div>
+          <Button variant="outline" size="sm" onClick={handleExport} className="h-9 border-[#4ADE80] text-[#195737] hover:bg-green-50">
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Ekspor XLS</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { api.analisisDiklat.downloadTemplate(); toast({ title: 'Template', description: 'Template XLS sedang diunduh...' }) }} className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
+            <FileSpreadsheet className="w-4 h-4" />
+            <span className="hidden sm:inline">Template</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="h-9 border-amber-300 text-amber-700 hover:bg-amber-50"
+          >
+            <Upload className={cn('w-4 h-4', importing && 'animate-bounce')} />
+            <span className="hidden sm:inline">{importing ? 'Mengimpor...' : 'Impor XLS'}</span>
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={handleImport}
+          />
+        </div>
       </PageHeader>
 
       <Card className="border-slate-200 shadow-sm">
@@ -378,6 +380,7 @@ function AnalisisDiklatTable() {
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[160px]">Nama Pelatihan</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[120px]">Metode</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-20 text-center">Durasi (JP)</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-24 text-center">Lama Hari</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[140px]">Target Output</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-24 text-center">Prioritas</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-28 text-center">Tahun</TableHead>
@@ -389,14 +392,14 @@ function AnalisisDiklatTable() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 13 }).map((_, j) => (
+                        {Array.from({ length: 14 }).map((_, j) => (
                           <TableCell key={j}><div className="h-4 bg-slate-100 rounded animate-pulse" /></TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={13} className="text-center py-12 text-slate-400">
+                      <TableCell colSpan={14} className="text-center py-12 text-slate-400">
                         <FileSpreadsheet className="w-10 h-10 mx-auto mb-2 text-slate-300" />
                         <p>Belum ada data analisis diklat</p>
                         <p className="text-xs mt-1">Klik &quot;Tambah Data&quot; atau impor dari file XLS</p>
@@ -431,7 +434,8 @@ function AnalisisDiklatTable() {
                             {METODE_LABEL[row.metodePembelajaran] || row.metodePembelajaran}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiJP || '-'}</TableCell>
+                        <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiJP ? `${row.durasiJP} JP` : '-'}</TableCell>
+                        <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiHari ? `${row.durasiHari} hari` : '-'}</TableCell>
                         <TableCell className="text-sm text-slate-600 max-w-[160px]">
                           <p className="line-clamp-2" title={row.targetOutput}>{row.targetOutput || '-'}</p>
                         </TableCell>
@@ -577,6 +581,16 @@ function AnalisisDiklatTable() {
                 value={form.durasiJP ?? 0}
                 onChange={(e) => setForm({ ...form, durasiJP: parseInt(e.target.value, 10) || 0 })}
                 placeholder="Jam Pelajaran"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Lama Hari</Label>
+              <Input
+                type="number"
+                min={0}
+                value={form.durasiHari ?? 0}
+                onChange={(e) => setForm({ ...form, durasiHari: parseInt(e.target.value, 10) || 0 })}
+                placeholder="Hari"
               />
             </div>
             <div className="sm:col-span-2 space-y-1.5">
