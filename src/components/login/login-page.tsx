@@ -195,10 +195,10 @@ function LandingRight({ onEnter, onPrograms }: { onEnter: () => void; onPrograms
       </div>
       <div className="relative z-10 max-w-xl w-full">
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
-          Membangun Kompetensi ASN Aceh{' '}
-          <span className="text-slate-900">Menuju Pelayanan Publik yang Profesional &</span>
+          MEMBANGUN Kompetensi ASN Aceh{' '}
+          <span className="text-slate-900">Menuju Pelayanan Publik &</span>
           <br />
-          <span className="text-[#195737]">berintegritas.</span>
+          <span className="text-[#195737]">yang Profesional berintegritas.</span>
         </h1>
         <p className="text-slate-500 text-sm sm:text-base mt-6 leading-relaxed max-w-lg">
           Sistem terpadu pengelolaan analisis kebutuhan pengembangan kompetensi, pelatihan, dan sertifikasi
