@@ -11,6 +11,7 @@ const HEADERS = [
   'Nama Pelatihan',
   'Metode Pembelajaran',
   'Durasi (JP)',
+  'Lama Hari',
   'Target Output',
   'Prioritas',
   'Tahun Pelaksanaan',
@@ -26,6 +27,7 @@ const EXAMPLE_ROW = [
   'Diklat Pengadaan Barang/Jasa Pemerintah',
   'Tatap Muka',
   40,
+  5,
   'Mampu melaksanakan pengadaan barang/jasa sesuai peraturan',
   'Tinggi',
   2025,
@@ -44,7 +46,7 @@ export async function GET() {
     const ws = XLSX.utils.aoa_to_sheet([HEADERS, EXAMPLE_ROW])
     ws['!cols'] = [
       { wch: 40 }, { wch: 35 }, { wch: 35 }, { wch: 25 },
-      { wch: 18 }, { wch: 40 }, { wch: 22 }, { wch: 14 },
+      { wch: 18 }, { wch: 40 }, { wch: 22 }, { wch: 14 }, { wch: 14 },
       { wch: 40 }, { wch: 14 }, { wch: 20 }, { wch: 18 },
     ]
     XLSX.utils.book_append_sheet(wb, ws, 'Template')
