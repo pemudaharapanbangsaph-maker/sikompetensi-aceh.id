@@ -197,6 +197,7 @@ export interface AnalisisDiklatItem {
   kategori: string
   metodePembelajaran: string
   durasiJP: number
+  durasiHari: number
   targetOutput: string
   prioritas: string
   tahunPelaksanaan: number
