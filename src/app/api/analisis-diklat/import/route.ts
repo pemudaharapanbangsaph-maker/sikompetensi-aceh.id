@@ -52,6 +52,7 @@ async function syncToPelatihan(analisisId: string, data: {
   kategori: string
   metodePembelajaran: string
   durasiJP: number
+  durasiHari: number
   tahunPelaksanaan: number
   prioritas: string
   targetOutput: string
@@ -63,7 +64,7 @@ async function syncToPelatihan(analisisId: string, data: {
   })
 
   const pelatihanStatus = data.status === 'AKTIF' ? 'AKTIF' : 'NONAKTIF'
-  const durasiHari = Math.max(1, Math.ceil(data.durasiJP / 8))
+  const durasiHari = data.durasiHari > 0 ? data.durasiHari : Math.max(1, Math.ceil(data.durasiJP / 8))
   const deskripsi = [
     data.outcome ? `Outcome: ${data.outcome}` : '',
     `Metode: ${data.metodePembelajaran === 'TATAP_MUKA' ? 'Tatap Muka' : data.metodePembelajaran === 'DARING' ? 'Daring' : 'Blended'}`,
@@ -150,6 +151,7 @@ export async function POST(req: Request) {
         kategori: KATEGORI_MAP[kategoriRaw.toLowerCase()] || 'TEKNIS',
         metodePembelajaran: METODE_MAP[metodeRaw.toLowerCase()] || 'TATAP_MUKA',
         durasiJP: Number(row[findCol(['Durasi (JP)'])] || 0),
+        durasiHari: Number(row[findCol(['Lama Hari'])] || 0),
         targetOutput: String(row[findCol(['Target Output'])] || ''),
         prioritas: PRIORITAS_MAP[prioritasRaw.toLowerCase()] || 'SEDANG',
         tahunPelaksanaan: tahunRaw ? Number(tahunRaw) : new Date().getFullYear(),
@@ -173,6 +175,7 @@ export async function POST(req: Request) {
           kategori: item.kategori,
           metodePembelajaran: item.metodePembelajaran,
           durasiJP: item.durasiJP,
+          durasiHari: item.durasiHari,
           tahunPelaksanaan: item.tahunPelaksanaan,
           prioritas: item.prioritas,
           targetOutput: item.targetOutput,
