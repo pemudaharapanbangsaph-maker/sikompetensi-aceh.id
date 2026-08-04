@@ -8,6 +8,7 @@ async function syncToPelatihan(analisisId: string, data: {
   kategori: string
   metodePembelajaran: string
   durasiJP: number
+  durasiHari: number
   tahunPelaksanaan: number
   prioritas: string
   targetOutput: string
@@ -19,7 +20,7 @@ async function syncToPelatihan(analisisId: string, data: {
   })
 
   const pelatihanStatus = data.status === 'AKTIF' ? 'AKTIF' : 'NONAKTIF'
-  const durasiHari = Math.max(1, Math.ceil(data.durasiJP / 8))
+  const durasiHari = data.durasiHari > 0 ? data.durasiHari : Math.max(1, Math.ceil(data.durasiJP / 8))
   const deskripsi = [
     data.outcome ? `Outcome: ${data.outcome}` : '',
     `Metode: ${data.metodePembelajaran === 'TATAP_MUKA' ? 'Tatap Muka' : data.metodePembelajaran === 'DARING' ? 'Daring' : 'Blended'}`,
@@ -87,6 +88,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       data: {
         ...body,
         durasiJP: body.durasiJP !== undefined ? Number(body.durasiJP) : undefined,
+        durasiHari: body.durasiHari !== undefined ? Number(body.durasiHari) : undefined,
         tahunPelaksanaan: body.tahunPelaksanaan !== undefined ? Number(body.tahunPelaksanaan) : undefined,
       },
     })
@@ -96,6 +98,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       kategori: item.kategori,
       metodePembelajaran: item.metodePembelajaran,
       durasiJP: item.durasiJP,
+      durasiHari: item.durasiHari,
       tahunPelaksanaan: item.tahunPelaksanaan,
       prioritas: item.prioritas,
       targetOutput: item.targetOutput,
