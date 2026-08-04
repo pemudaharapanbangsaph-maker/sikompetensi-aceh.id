@@ -190,7 +190,6 @@ function PelatihanDataTable() {
         </div>
       ),
     },
-    },
     { key: 'kategori', header: 'Kategori', render: (r) => <span className="text-slate-600">{kategoriLabel(r.kategori)}</span> },
     { key: 'durasiHari', header: 'Durasi', render: (r) => <span className="text-slate-600">{r.durasiHari} hari</span> },
     { key: 'jp', header: 'JP', render: (r) => <span className="font-medium">{r.jp} JP</span> },
@@ -227,7 +226,7 @@ function PelatihanDataTable() {
         onRefresh={fetchData}
         rowKey={(r) => r.id}
         emptyMessage="Belum ada data pelatihan"
-                actions={(row) => (
+        actions={(row) => (
           <>
             {row.analisisDiklatId ? (
               <span className="text-[10px] text-slate-400 flex items-center gap-1" title="Data dari Input Analisis — edit di menu Analisis Kebutuhan Diklat">
