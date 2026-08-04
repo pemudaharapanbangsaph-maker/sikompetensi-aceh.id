@@ -77,18 +77,20 @@ model Peserta {
 }
 
 model Pelatihan {
-  id           String   @id @default(cuid())
-  kode         String   @unique
-  nama         String
-  kategori     String   // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
-  deskripsi    String?
-  durasiHari   Int      @default(1)
-  jp           Int      @default(8) // Jam Pelatihan
-  createdBy    String?
-  user         User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
-  status       String   @default("AKTIF") // AKTIF | NONAKTIF
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String             @id @default(cuid())
+  kode            String             @unique
+  nama            String
+  kategori        String             // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
+  deskripsi       String?
+  durasiHari      Int                @default(1)
+  jp              Int                @default(8) // Jam Pelatihan
+  createdBy       String?
+  user            User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  status          String             @default("AKTIF") // AKTIF | NONAKTIF
+  analisisDiklatId String?  @unique
+  analisisDiklat  AnalisisDiklatItem? @relation(fields: [analisisDiklatId], references: [id], onDelete: SetNull)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 
   angkatan     Angkatan[]
   analisis     AnalisisKebutuhan[]
@@ -163,22 +165,24 @@ model AnalisisKebutuhan {
 }
 
 model AnalisisDiklatItem {
-  id                    String   @id @default(cuid())
-  outcome               String   @default("")
-  programPrioritasRPJMA String   @default("")
-  sasaranRPJMA          String   @default("")
-  skpaSasaran           String   @default("")
-  namaPelatihan         String   @default("")
-  kategori              String   @default("TEKNIS") // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
-  metodePembelajaran    String   @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
-  durasiJP              Int      @default(0)
-  targetOutput          String   @default("")
-  prioritas             String   @default("SEDANG") // TINGGI | SEDANG | RENDAH
-  tahunPelaksanaan      Int      @default(2025)
-  status                String   @default("AKTIF") // AKTIF | NONAKTIF
+  id                    String      @id @default(cuid())
+  outcome               String      @default("")
+  programPrioritasRPJMA String      @default("")
+  sasaranRPJMA          String      @default("")
+  skpaSasaran           String      @default("")
+  namaPelatihan         String      @default("")
+  kategori              String      @default("TEKNIS") // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
+  metodePembelajaran    String      @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
+  durasiJP              Int         @default(0)
+  targetOutput          String      @default("")
+  prioritas             String      @default("SEDANG") // TINGGI | SEDANG | RENDAH
+  tahunPelaksanaan      Int         @default(2025)
+  status                String      @default("AKTIF") // AKTIF | NONAKTIF
   dibuatOleh            String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  pelatihan             Pelatihan?
 }
 
 // ====================== UJI KOMPETENSI ======================
