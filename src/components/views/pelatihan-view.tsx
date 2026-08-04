@@ -18,7 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, BookOpen, Calendar, Archive, Eye, Clock } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, BookOpen, Calendar, Archive, Eye, Clock, Link2, Ban } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -178,10 +178,18 @@ function PelatihanDataTable() {
     {
       key: 'nama', header: 'Nama Pelatihan', render: (r) => (
         <div className="min-w-[220px]">
-          <p className="font-medium text-slate-900 line-clamp-1">{r.nama}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-slate-900 line-clamp-1">{r.nama}</p>
+            {r.analisisDiklatId && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-medium border border-emerald-200 shrink-0">
+                <Link2 className="w-2.5 h-2.5" /> Dari Analisis
+              </span>
+            )}
+          </div>
           {r.deskripsi && <p className="text-xs text-slate-400 line-clamp-1">{r.deskripsi}</p>}
         </div>
       ),
+    },
     },
     { key: 'kategori', header: 'Kategori', render: (r) => <span className="text-slate-600">{kategoriLabel(r.kategori)}</span> },
     { key: 'durasiHari', header: 'Durasi', render: (r) => <span className="text-slate-600">{r.durasiHari} hari</span> },
@@ -219,14 +227,22 @@ function PelatihanDataTable() {
         onRefresh={fetchData}
         rowKey={(r) => r.id}
         emptyMessage="Belum ada data pelatihan"
-        actions={(row) => (
+                actions={(row) => (
           <>
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => openEdit(row)} title="Edit">
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus">
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            {row.analisisDiklatId ? (
+              <span className="text-[10px] text-slate-400 flex items-center gap-1" title="Data dari Input Analisis — edit di menu Analisis Kebutuhan Diklat">
+                <Ban className="w-3.5 h-3.5" /> Sinkron
+              </span>
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => openEdit(row)} title="Edit">
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </>
         )}
       />
