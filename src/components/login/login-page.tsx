@@ -195,15 +195,14 @@ function LandingRight({ onEnter, onPrograms }: { onEnter: () => void; onPrograms
       </div>
       <div className="relative z-10 max-w-xl w-full">
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
-          Membangun ASN Aceh{' '}
-          <span className="text-slate-900">yang kompeten &</span>
+          Membangun Kompetensi ASN Aceh{' '}
+          <span className="text-slate-900">Menuju Pelayanan Publik yang Profesional &</span>
           <br />
           <span className="text-[#195737]">berintegritas.</span>
         </h1>
         <p className="text-slate-500 text-sm sm:text-base mt-6 leading-relaxed max-w-lg">
-          Sikompetensi Aceh menyatukan pembelajaran formal, sosial, dan berbasis pengalaman
-          dalam satu ekosistem. Satu akun untuk seluruh aplikasi pengembangan kompetensi
-          ASN Pemerintah Aceh.
+          Sistem terpadu pengelolaan analisis kebutuhan pengembangan kompetensi, pelatihan, dan sertifikasi
+          kompetensi teknis Aparatur Sipil Negara Pemerintah Aceh.
         </p>
         <div className="flex flex-wrap gap-3 mt-10">
           <button
