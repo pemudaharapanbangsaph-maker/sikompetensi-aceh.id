@@ -31,6 +31,77 @@ const STATUS_MAP: Record<string, string> = {
 
 const REQUIRED_COLUMNS = ['Outcome', 'Nama Pelatihan']
 
+// --- Helper: generate kode pelatihan otomatis ---
+async function generateKodePelatihan(): Promise<string> {
+  const all = await db.pelatihan.findMany({
+    select: { kode: true },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+  })
+  let maxNum = 0
+  for (const p of all) {
+    const m = p.kode.match(/PL-(\d+)/)
+    if (m) maxNum = Math.max(maxNum, Number(m[1]))
+  }
+  return `PL-${String(maxNum + 1).padStart(3, '0')}`
+}
+
+// --- Helper: sinkronisasi AnalisisDiklat → Pelatihan ---
+async function syncToPelatihan(analisisId: string, data: {
+  namaPelatihan: string
+  kategori: string
+  metodePembelajaran: string
+  durasiJP: number
+  tahunPelaksanaan: number
+  prioritas: string
+  targetOutput: string
+  status: string
+  outcome: string
+}, userId?: string) {
+  const existing = await db.pelatihan.findUnique({
+    where: { analisisDiklatId: analisisId },
+  })
+
+  const pelatihanStatus = data.status === 'AKTIF' ? 'AKTIF' : 'NONAKTIF'
+  const durasiHari = Math.max(1, Math.ceil(data.durasiJP / 8))
+  const deskripsi = [
+    data.outcome ? `Outcome: ${data.outcome}` : '',
+    `Metode: ${data.metodePembelajaran === 'TATAP_MUKA' ? 'Tatap Muka' : data.metodePembelajaran === 'DARING' ? 'Daring' : 'Blended'}`,
+    `Prioritas: ${data.prioritas}`,
+    data.targetOutput ? `Target: ${data.targetOutput}` : '',
+    `Tahun: ${data.tahunPelaksanaan}`,
+  ].filter(Boolean).join(' | ')
+
+  if (existing) {
+    await db.pelatihan.update({
+      where: { id: existing.id },
+      data: {
+        nama: data.namaPelatihan,
+        kategori: data.kategori,
+        deskripsi,
+        jp: data.durasiJP || 8,
+        durasiHari,
+        status: pelatihanStatus,
+      },
+    })
+  } else if (data.status === 'AKTIF') {
+    const kode = await generateKodePelatihan()
+    await db.pelatihan.create({
+      data: {
+        kode,
+        nama: data.namaPelatihan,
+        kategori: data.kategori,
+        deskripsi,
+        jp: data.durasiJP || 8,
+        durasiHari,
+        status: pelatihanStatus,
+        analisisDiklatId: analisisId,
+        createdBy: userId,
+      },
+    })
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getSession()
@@ -88,6 +159,30 @@ export async function POST(req: Request) {
     })
 
     const result = await db.analisisDiklatItem.createMany({ data: items })
+
+    // Sinkronisasi ke Pelatihan untuk setiap item yang baru diimport
+    const createdItems = await db.analisisDiklatItem.findMany({
+      where: { dibuatOleh: session.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: result.count,
+    })
+    for (const item of createdItems) {
+      try {
+        await syncToPelatihan(item.id, {
+          namaPelatihan: item.namaPelatihan,
+          kategori: item.kategori,
+          metodePembelajaran: item.metodePembelajaran,
+          durasiJP: item.durasiJP,
+          tahunPelaksanaan: item.tahunPelaksanaan,
+          prioritas: item.prioritas,
+          targetOutput: item.targetOutput,
+          status: item.status,
+          outcome: item.outcome,
+        }, session.user.id)
+      } catch (syncErr) {
+        console.error(`Sync error for item ${item.id}:`, syncErr)
+      }
+    }
 
     await auditLog(session, 'IMPORT', 'ANALISIS_DIKLAT', `Import ${result.count} item analisis diklat dari XLS`, req)
 
