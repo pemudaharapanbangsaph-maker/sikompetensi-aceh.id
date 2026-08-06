@@ -36,7 +36,6 @@ function renderView(view: string): React.ReactNode {
     case 'analisis-input':
       return <AnalisisDiklatInputView />
     case 'analisis':
-    case 'analisis-input':
     case 'analisis-prioritas':
     case 'analisis-rekap':
       return <AnalisisView />
@@ -46,7 +45,7 @@ function renderView(view: string): React.ReactNode {
       return <PelatihanView />
     case 'pelatihan-angkatan':
     case 'pelatihan-kehadiran':
-    case 'pelatihan-dokumentasi':
+    case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
     case 'uji-jadwal':
     case 'uji-penilaian':
