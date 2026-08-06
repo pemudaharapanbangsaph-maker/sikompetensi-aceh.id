@@ -145,25 +145,27 @@ model Dokumentasi {
 // ====================== PORTAL PENDAFTARAN ======================
 
 model PendaftaranPortal {
-  id              String   @id @default(cuid())
-  nama            String
-  nip             String   @unique
-  pangkatGolongan String?
-  tempatLahir     String?
-  tanggalLahir    DateTime?
-  jabatan         String?
-  instansi        String?
-  nomorHP         String?
-  nomorRekening   String?
-  npwp            String?
-  pelatihanId     String?
-  pelatihan       Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
-  status          String   @default("MENUNGGU") // MENUNGGU | DITERIMA | DITOLAK
-  catatanAdmin    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                String   @id @default(cuid())
+  nama              String
+  nip               String   @unique
+  pangkatGolongan   String?
+  tempatLahir       String?
+  tanggalLahir      DateTime?
+  jabatan           String?
+  instansi          String?
+  nomorHP           String?
+  nomorRekening     String?
+  npwp              String?
+  pelatihanId       String?
+  pelatihan         Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
+  analisisDiklatItemId String?
+  analisisDiklatItem   AnalisisDiklatItem? @relation(fields: [analisisDiklatItemId], references: [id], onDelete: SetNull)
+  status            String   @default("MENUNGGU") // MENUNGGU | DITERIMA | DITOLAK
+  catatanAdmin      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  dokumen         DokumenPendaftaran[]
+  dokumen           DokumenPendaftaran[]
 }
 
 model DokumenPendaftaran {
@@ -217,6 +219,8 @@ model AnalisisDiklatItem {
   dibuatOleh            String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  pendaftaran           PendaftaranPortal[]
 }
 
 // ====================== UJI KOMPETENSI ======================
