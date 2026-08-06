@@ -47,6 +47,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Login gagal')
+      // Backup: set cookie from client side in case proxy strips Set-Cookie header
+      if (data.token) {
+        const maxAge = remember ? 7 * 24 * 60 * 60 : 30 * 60
+        document.cookie = `bpsdm_session=${encodeURIComponent(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`
+      }
       set({ user: data.user, loading: false })
     } catch (e) {
       set({ loading: false })
@@ -85,7 +90,7 @@ export const useUIStore = create<UIState>((set) => ({
 export type ViewKey =
   | 'dashboard'
   | 'analisis' | 'analisis-input' | 'analisis-prioritas' | 'analisis-rekap'
-  | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-angkatan' | 'pelatihan-kehadiran' | 'pelatihan-dokumentasi' | 'pelatihan-arsip'
+  | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-angkatan' | 'pelatihan-kehadiran' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip'
   | 'uji-jadwal' | 'uji-asesor' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
   | 'peserta' | 'peserta-riwayat'
   | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-kuesioner' | 'monitoring-rekap'
