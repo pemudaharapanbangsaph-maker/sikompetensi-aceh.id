@@ -77,23 +77,22 @@ model Peserta {
 }
 
 model Pelatihan {
-  id              String             @id @default(cuid())
-  kode            String             @unique
-  nama            String
-  kategori        String             // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
-  deskripsi       String?
-  durasiHari      Int                @default(1)
-  jp              Int                @default(8) // Jam Pelatihan
-  createdBy       String?
-  user            User?              @relation(fields: [createdBy], references: [id], onDelete: SetNull)
-  status          String             @default("AKTIF") // AKTIF | NONAKTIF
-  analisisDiklatId String?  @unique
-  analisisDiklat  AnalisisDiklatItem? @relation(fields: [analisisDiklatId], references: [id], onDelete: SetNull)
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id           String   @id @default(cuid())
+  kode         String   @unique
+  nama         String
+  kategori     String   // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
+  deskripsi    String?
+  durasiHari   Int      @default(1)
+  jp           Int      @default(8) // Jam Pelatihan
+  createdBy    String?
+  user         User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  status       String   @default("AKTIF") // AKTIF | NONAKTIF
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   angkatan     Angkatan[]
   analisis     AnalisisKebutuhan[]
+  pendaftaran  PendaftaranPortal[]
 }
 
 model Angkatan {
@@ -143,6 +142,43 @@ model Dokumentasi {
   uploadedAt  DateTime @default(now())
 }
 
+// ====================== PORTAL PENDAFTARAN ======================
+
+model PendaftaranPortal {
+  id              String   @id @default(cuid())
+  nama            String
+  nip             String   @unique
+  pangkatGolongan String?
+  tempatLahir     String?
+  tanggalLahir    DateTime?
+  jabatan         String?
+  instansi        String?
+  nomorHP         String?
+  nomorRekening   String?
+  npwp            String?
+  pelatihanId     String?
+  pelatihan       Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
+  status          String   @default("MENUNGGU") // MENUNGGU | DITERIMA | DITOLAK
+  catatanAdmin    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  dokumen         DokumenPendaftaran[]
+}
+
+model DokumenPendaftaran {
+  id              String   @id @default(cuid())
+  pendaftaranId   String
+  pendaftaran     PendaftaranPortal @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
+  tipe            String   // KTP | SURAT_TUGAS | NPWP | REK_BANK
+  namaFile        String
+  ukuranFile      String
+  filePath        String
+  createdAt       DateTime @default(now())
+
+  @@unique([pendaftaranId, tipe])
+}
+
 // ====================== ANALISIS KEBUTUHAN ======================
 
 model AnalisisKebutuhan {
@@ -165,25 +201,22 @@ model AnalisisKebutuhan {
 }
 
 model AnalisisDiklatItem {
-  id                    String      @id @default(cuid())
-  outcome               String      @default("")
-  programPrioritasRPJMA String      @default("")
-  sasaranRPJMA          String      @default("")
-  skpaSasaran           String      @default("")
-  namaPelatihan         String      @default("")
-  kategori              String      @default("TEKNIS") // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
-  metodePembelajaran    String      @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
-  durasiJP              Int         @default(0)
-  durasiHari            Int         @default(0)
-  targetOutput          String      @default("")
-  prioritas             String      @default("SEDANG") // TINGGI | SEDANG | RENDAH
-  tahunPelaksanaan      Int         @default(2025)
-  status                String      @default("AKTIF") // AKTIF | NONAKTIF
+  id                    String   @id @default(cuid())
+  outcome               String   @default("")
+  programPrioritasRPJMA String   @default("")
+  sasaranRPJMA          String   @default("")
+  skpaSasaran           String   @default("")
+  namaPelatihan         String   @default("")
+  kategori              String   @default("TEKNIS") // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
+  metodePembelajaran    String   @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
+  durasiJP              Int      @default(0)
+  targetOutput          String   @default("")
+  prioritas             String   @default("SEDANG") // TINGGI | SEDANG | RENDAH
+  tahunPelaksanaan      Int      @default(2025)
+  status                String   @default("AKTIF") // AKTIF | NONAKTIF
   dibuatOleh            String?
-  createdAt             DateTime    @default(now())
-  updatedAt             DateTime    @updatedAt
-
-  pelatihan             Pelatihan?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 // ====================== UJI KOMPETENSI ======================
