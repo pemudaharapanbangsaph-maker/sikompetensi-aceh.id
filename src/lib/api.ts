@@ -90,6 +90,17 @@ export const api = {
     kehadiran: (id: string) => request<Kehadiran[]>(`/angkatan/${id}/kehadiran`),
     setKehadiran: (id: string, data: { pesertaId: string; tanggal: string; statusKehadiran: string; keterangan?: string }) =>
       request<Kehadiran>(`/angkatan/${id}/kehadiran`, { method: 'POST', body: JSON.stringify(data) }),
+    importPeserta: (id: string, file: File) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      return request<{ success: boolean; created: number; updated: number; skipped: number; errors?: string[]; message: string }>(
+        `/angkatan/${id}/peserta/import`,
+        { method: 'POST', body: fd, headers: {} }
+      )
+    },
+    downloadPesertaTemplate: (id: string) => {
+      window.location.href = `${BASE}/angkatan/${id}/peserta/import/template`
+    },
   },
 
   analisis: {
