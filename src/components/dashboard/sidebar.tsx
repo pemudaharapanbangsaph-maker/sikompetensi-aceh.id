@@ -34,7 +34,7 @@ const menuItems: MenuItem[] = [
       { key: 'pelatihan-data', label: 'Data Pelatihan', view: 'pelatihan', permission: 'pelatihan' },
       { key: 'pelatihan-angkatan', label: 'Data Angkatan', view: 'pelatihan-angkatan', permission: 'pelatihan' },
       { key: 'pelatihan-kehadiran', label: 'Kehadiran Peserta', view: 'pelatihan-kehadiran', permission: 'pelatihan' },
-      { key: 'pelatihan-dokumentasi', label: 'Dokumentasi', view: 'pelatihan-dokumentasi', permission: 'pelatihan' },
+      { key: 'pelatihan-peserta-kegiatan', label: 'Peserta Per Kegiatan', view: 'pelatihan-peserta-kegiatan', permission: 'pelatihan' },
       { key: 'pelatihan-arsip', label: 'Arsip Pelatihan', view: 'pelatihan-arsip', permission: 'pelatihan' },
     ],
   },
@@ -127,7 +127,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
             <p className="text-sm font-bold leading-tight truncate">SIKOMPETENSI</p>
-            <p className="text-[10px] text-green-200 leading-tight truncate">BPSDM Aceh</p>
+            <p className="text-[10px] text-[#86EFAC] leading-tight truncate">BPSDM Aceh</p>
           </div>
         )}
       </div>
@@ -154,7 +154,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
       {/* Footer */}
       {!sidebarCollapsed && (
         <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
-          <p className="text-[10px] text-blue-200 text-center">@Team-Teknis Inti-Internal Website-PSKTI</p>
+          <p className="text-[10px] text-blue-200 text-center">v1.0.0 — Internal Use Only</p>
         </div>
       )}
     </aside>
@@ -186,7 +186,7 @@ function SidebarItem({
         )}
         title={collapsed ? item.label : undefined}
       >
-        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-green-400 shadow-sm shadow-green-400/50" />}
+        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
         {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
         {!collapsed && <span className="truncate">{item.label}</span>}
       </button>
@@ -211,7 +211,7 @@ function SidebarItem({
           )}
           title={collapsed ? item.label : undefined}
         >
-          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-green-400 shadow-sm shadow-green-400/50" />}
+          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
           {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
           {!collapsed && (
             <>
@@ -236,7 +236,7 @@ function SidebarItem({
                     childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10'
                   )}
                 >
-                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-green-400 scale-125' : 'bg-blue-300/50')} />
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-[#22C55E] scale-125' : 'bg-blue-300/50')} />
                   <span className="truncate">{child.label}</span>
                 </button>
               )
