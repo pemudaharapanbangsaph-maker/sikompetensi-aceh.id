@@ -25,7 +25,7 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'pelatihan-jadwal': { title: 'Jadwal Pelatihan', subtitle: 'Jadwal pelatihan terjadwal' },
   'pelatihan-angkatan': { title: 'Data Angkatan', subtitle: 'Kelola angkatan pelatihan' },
   'pelatihan-kehadiran': { title: 'Kehadiran Peserta', subtitle: 'Rekap kehadiran peserta pelatihan' },
-  'pelatihan-dokumentasi': { title: 'Dokumentasi', subtitle: 'Dokumentasi pelatihan' },
+  'pelatihan-peserta-kegiatan': { title: 'Peserta Per Kegiatan', subtitle: 'Data peserta per kegiatan pelatihan' },
   'pelatihan-arsip': { title: 'Arsip Pelatihan', subtitle: 'Arsip pelatihan yang telah selesai' },
   'uji-jadwal': { title: 'Jadwal Uji Kompetensi', subtitle: 'Jadwal uji kompetensi terjadwal' },
   'uji-asesor': { title: 'Data Asesor', subtitle: 'Kelola data asesor kompetensi' },
@@ -106,29 +106,15 @@ export function Topbar() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5 text-slate-600" />
-  
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
-          <DropdownMenuLabel className="flex items-center justify-between">
-            <span>Notifikasi</span>
-            <span className="text-xs font-normal text-slate-400">3 baru</span>
-          </DropdownMenuLabel>
+          <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {[
-            { title: 'Belum Ada Pelatihan dibuat', desc: 'Tidak Ada Notifikasi' },
-          ].map((n, i) => (
-            <DropdownMenuItem key={i} className="flex flex-col items-start py-3 cursor-pointer">
-              <div className="flex items-start gap-2 w-full">
-                <div className="w-2 h-2 rounded-full bg-[#0F4C81] mt-1.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900">{n.title}</p>
-                  <p className="text-xs text-slate-500">{n.desc}</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">{n.time}</p>
-                </div>
-              </div>
-            </DropdownMenuItem>
-          ))}
+          <div className="px-3 py-6 text-center">
+            <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">Tidak ada notifikasi</p>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 
