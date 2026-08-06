@@ -19,7 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Image as ImageIcon, Users, Eye, Upload, ArrowRight } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, User, UserCircle, GraduationCap } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -47,7 +47,7 @@ const STATUS_KEHADIRAN = [
 ]
 
 const KEHADIRAN_STYLE: Record<string, string> = {
-  HADIR: 'bg-green-50 text-green-700 border-green-200',
+  HADIR: 'bg-green-50 text-[#195737] border-[#86EFAC]',
   SAKIT: 'bg-amber-50 text-amber-700 border-amber-200',
   IZIN: 'bg-blue-50 text-blue-700 border-blue-200',
   ALPA: 'bg-red-50 text-red-700 border-red-200',
@@ -96,7 +96,7 @@ const EMPTY_FORM: Partial<Angkatan> = {
 export function AngkatanView() {
   const { activeView } = useNavStore()
   if (activeView === 'pelatihan-kehadiran') return <KehadiranView />
-  if (activeView === 'pelatihan-dokumentasi') return <DokumentasiView />
+  if (activeView === 'pelatihan-peserta-kegiatan') return <PesertaPerKegiatanView />
   return <AngkatanDataTable />
 }
 
@@ -260,8 +260,8 @@ function AngkatanDataTable() {
         <Button variant="outline" size="sm" onClick={() => setActiveView('pelatihan-kehadiran')} className="h-9">
           <CalendarCheck className="w-4 h-4" /> Kehadiran
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setActiveView('pelatihan-dokumentasi')} className="h-9">
-          <ImageIcon className="w-4 h-4" /> Dokumentasi
+        <Button variant="outline" size="sm" onClick={() => setActiveView('pelatihan-peserta-kegiatan')} className="h-9">
+          <Users className="w-4 h-4" /> Peserta Per Kegiatan
         </Button>
       </PageHeader>
 
@@ -373,7 +373,7 @@ function AngkatanDataTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
             <AlertDialogDescription>
-              Yakin ingin menghapus angkatan <span className="font-semibold">{deleteTarget?.namaAngkatan}</span>? Semua data peserta, kehadiran, dan dokumentasi terkait akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.
+              Yakin ingin menghapus angkatan <span className="font-semibold">{deleteTarget?.namaAngkatan}</span>? Semua data peserta dan kehadiran terkait akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -609,161 +609,207 @@ function KehadiranView() {
 }
 
 // ===========================================================================
-// SUBTAB 3: DOKUMENTASI (mock gallery)
+// SUBTAB 3: PESERTA PER KEGIATAN
 // ===========================================================================
 
-interface MockDoc {
-  id: string
-  angkatanId: string
-  judul: string
-  deskripsi: string
-  createdAt: string
+const STATUS_PESERTA_ANGKATAN: Record<string, { label: string; color: string }> = {
+  TERDAFTAR: { label: 'Terdaftar', color: 'bg-blue-100 text-blue-700 border-blue-200' },
+  LULUS: { label: 'Lulus', color: 'bg-green-100 text-green-700 border-green-200' },
+  TIDAK_LULUS: { label: 'Tidak Lulus', color: 'bg-red-100 text-red-700 border-red-200' },
+  DROP_OUT: { label: 'Drop Out', color: 'bg-slate-100 text-slate-700 border-slate-200' },
 }
 
-function DokumentasiView() {
+function PesertaPerKegiatanView() {
   const { toast } = useToast()
   const [angkatanList, setAngkatanList] = useState<Angkatan[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
-  const [docs, setDocs] = useState<Record<string, MockDoc[]>>({})
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [judul, setJudul] = useState('')
-  const [deskripsi, setDeskripsi] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [angkatanData, setAngkatanData] = useState<(Angkatan & { peserta?: PesertaAngkatanView[] }) | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
+
+  const angkatan = selectedId ? angkatanData : null
 
   useEffect(() => {
     api.angkatan.listAll()
-      .then(setAngkatanList)
+      .then((r) => setAngkatanList(r.filter((a) => a.status !== 'DIBATALKAN')))
       .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
   }, [toast])
 
-  const selectedAngkatan = angkatanList.find((a) => a.id === selectedId) || null
-  const selectedDocs = selectedId ? (docs[selectedId] || []) : []
+  useEffect(() => {
+    if (!selectedId) return
+    setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect
+    api.angkatan.get(selectedId)
+      .then((a) => setAngkatanData(a as Angkatan & { peserta?: PesertaAngkatanView[] }))
+      .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
+      .finally(() => setLoading(false))
+  }, [selectedId, toast])
 
-  const handleUpload = async () => {
-    if (!judul) {
-      toast({ title: 'Validasi', description: 'Judul dokumentasi wajib diisi', variant: 'destructive' })
-      return
-    }
-    setSaving(true)
-    // Mock: just record judul + deskripsi locally
-    await new Promise((r) => setTimeout(r, 400))
-    const newDoc: MockDoc = {
-      id: `mock-${Date.now()}`,
-      angkatanId: selectedId,
-      judul,
-      deskripsi,
-      createdAt: new Date().toISOString(),
-    }
-    setDocs((prev) => ({ ...prev, [selectedId]: [newDoc, ...(prev[selectedId] || [])] }))
-    setJudul('')
-    setDeskripsi('')
-    setSaving(false)
-    setDialogOpen(false)
-    toast({ title: 'Berhasil', description: 'Dokumentasi ditambahkan (mock)' })
+  const pesertaList = angkatan?.peserta || []
+  const filteredPeserta = search
+    ? pesertaList.filter((pa) => {
+        const nama = (pa as PesertaAngkatan).peserta?.nama || ''
+        const nip = (pa as PesertaAngkatan).peserta?.nip || ''
+        return nama.toLowerCase().includes(search.toLowerCase()) || nip.includes(search)
+      })
+    : pesertaList
+
+  const selectedAngkatan = angkatanList.find((a) => a.id === selectedId)
+
+  const handleExportXls = () => {
+    if (!selectedId) return
+    window.location.href = `/api/angkatan/${selectedId}/peserta/export/xls`
+    toast({ title: 'Export', description: 'Mengunduh file Excel...', duration: 2000 } as any)
+  }
+
+  const handleExportPdf = () => {
+    if (!selectedId) return
+    window.location.href = `/api/angkatan/${selectedId}/peserta/export/pdf`
+    toast({ title: 'Export', description: 'Mengunduh file PDF...', duration: 2000 } as any)
   }
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Dokumentasi Pelatihan" description="Galeri dokumentasi kegiatan per angkatan pelatihan" />
+      <PageHeader title="Peserta Per Kegiatan" description="Lihat dan export data peserta per kegiatan/angkatan pelatihan" />
 
       <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-4 grid sm:grid-cols-2 gap-3 items-end">
-          <div className="space-y-1.5">
-            <Label>Pilih Angkatan</Label>
-            <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger><SelectValue placeholder="Pilih angkatan..." /></SelectTrigger>
-              <SelectContent>
-                {angkatanList.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {selectedAngkatan && (
-            <div className="flex items-end justify-end">
-              <Button onClick={() => setDialogOpen(true)} className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
-                <Upload className="w-4 h-4" /> Upload Dokumentasi
-              </Button>
+        <CardContent className="p-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label>Pilih Kegiatan (Angkatan)</Label>
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
+                <SelectContent>
+                  {angkatanList.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            {selectedAngkatan && (
+              <>
+                <div className="text-xs text-slate-500">
+                  <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
+                  <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
+                </div>
+                <div className="text-xs text-slate-500">
+                  <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
+                  <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
+                    <FileSpreadsheet className="w-4 h-4" /> Excel
+                  </Button>
+                  <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
+                    <FileDown className="w-4 h-4" /> PDF
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {!selectedId ? (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
-            <ImageIcon className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            Silakan pilih angkatan untuk melihat dokumentasi
+            <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+            Silakan pilih kegiatan (angkatan) untuk melihat data peserta
           </CardContent>
         </Card>
-      ) : selectedDocs.length === 0 ? (
+      ) : loading ? (
+        <Card className="border-slate-200 shadow-sm animate-pulse">
+          <CardContent className="p-5 h-72 bg-slate-100 rounded-xl" />
+        </Card>
+      ) : pesertaList.length === 0 ? (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
-            <ImageIcon className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            Belum ada dokumentasi pada angkatan ini
+            <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+            Belum ada peserta terdaftar pada kegiatan ini
           </CardContent>
         </Card>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {selectedDocs.map((d, i) => (
-            <motion.div
-              key={d.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: i * 0.04 }}
-            >
-              <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                <div className="aspect-video bg-gradient-to-br from-[#0F4C81]/10 to-[#198754]/10 flex items-center justify-center">
-                  <ImageIcon className="w-10 h-10 text-[#0F4C81]/30" />
-                </div>
-                <CardContent className="p-4">
-                  <p className="font-semibold text-slate-900 text-sm line-clamp-1">{d.judul}</p>
-                  <p className="text-xs text-slate-500 line-clamp-2 mt-1 min-h-[2.5rem]">{d.deskripsi || 'Tanpa deskripsi'}</p>
-                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100">
-                    <span className="text-[10px] text-slate-400">{formatTanggal(d.createdAt)}</span>
-                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] text-slate-600">
-                      {metodeLabel(selectedAngkatan?.metode || '')}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      {/* Upload Dialog (mock) */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Upload Dokumentasi</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label>Judul <span className="text-red-500">*</span></Label>
-              <Input value={judul} onChange={(e) => setJudul(e.target.value)} placeholder="Contoh: Foto Kegiatan Hari 1" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Deskripsi</Label>
-              <Textarea rows={3} value={deskripsi} onChange={(e) => setDeskripsi(e.target.value)} placeholder="Deskripsi singkat dokumentasi..." />
-            </div>
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-xs text-slate-500">
-              <Upload className="w-6 h-6 mx-auto mb-1 text-slate-400" />
-              Mode mock — file tidak diunggah. Hanya judul & deskripsi yang disimpan.
-            </div>
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+            <StatCard title="Total Peserta" value={pesertaList.length} icon={Users} color="blue" />
+            <StatCard title="Laki-laki" value={pesertaList.filter((pa) => (pa as PesertaAngkatan).peserta?.jenisKelamin === 'L').length} icon={User} color="purple" />
+            <StatCard title="Perempuan" value={pesertaList.filter((pa) => (pa as PesertaAngkatan).peserta?.jenisKelamin === 'P').length} icon={UserCircle} color="red" />
+            <StatCard title="Lulus" value={pesertaList.filter((pa) => pa.status === 'LULUS').length} icon={GraduationCap} color="green" />
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" disabled={saving}><X className="w-4 h-4" /> Batal</Button>
-            </DialogClose>
-            <Button onClick={handleUpload} disabled={saving} className="bg-[#0F4C81] hover:bg-[#0a3a63]">
-              <Save className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <CardTitle className="text-base">Daftar Peserta — {angkatan?.namaAngkatan}</CardTitle>
+                <Input
+                  placeholder="Cari nama/NIP..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="max-w-[220px] h-8 text-sm"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr className="border-y border-slate-200">
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5 w-10">No</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">NIP</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Nama</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">L/P</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Jabatan</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pangkat/Golongan</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Unit Kerja</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Instansi</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pendidikan</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Nilai Akhir</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredPeserta.map((pa, idx) => {
+                      const peserta = (pa as PesertaAngkatan).peserta
+                      const st = STATUS_PESERTA_ANGKATAN[pa.status] || STATUS_PESERTA_ANGKATAN.TERDAFTAR
+                      return (
+                        <motion.tr
+                          key={pa.pesertaId}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.15, delay: idx * 0.03 }}
+                          className="hover:bg-slate-50/50"
+                        >
+                          <td className="px-3 py-2 text-slate-500 text-xs">{idx + 1}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-slate-600">{peserta?.nip || '-'}</td>
+                          <td className="px-3 py-2">
+                            <p className="font-medium text-slate-900 line-clamp-1">{peserta?.nama || 'N/A'}</p>
+                          </td>
+                          <td className="px-3 py-2 text-xs text-slate-600">{peserta?.jenisKelamin || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.jabatan || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600">{peserta?.pangkatGolongan || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.unitKerja || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.instansi || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600">{peserta?.pendidikan || '-'}</td>
+                          <td className="px-3 py-2 text-center text-xs font-semibold text-slate-700">{pa.nilaiAkhir != null ? pa.nilaiAkhir : '-'}</td>
+                          <td className="px-3 py-2 text-center">
+                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.color}`}>
+                              {st.label}
+                            </span>
+                          </td>
+                        </motion.tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-500">
+                Menampilkan {filteredPeserta.length} dari {pesertaList.length} peserta
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   )
 }
