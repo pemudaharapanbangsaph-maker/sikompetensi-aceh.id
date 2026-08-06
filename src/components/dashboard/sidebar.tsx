@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -53,6 +53,13 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'peserta-data', label: 'Data Peserta', view: 'peserta', permission: 'peserta' },
       { key: 'peserta-riwayat', label: 'Riwayat Pelatihan & Uji', view: 'peserta-riwayat', permission: 'peserta' },
+    ],
+  },
+  {
+    key: 'pendaftaran', label: 'Biodata Peserta Portal', icon: FileUser, permission: 'pendaftaran',
+    children: [
+      { key: 'pendaftaran-list', label: 'Data Pendaftar', view: 'pendaftaran-list', permission: 'pendaftaran' },
+      { key: 'pendaftaran-dokumen', label: 'Dokumen Peserta', view: 'pendaftaran-dokumen', permission: 'pendaftaran' },
     ],
   },
   {
