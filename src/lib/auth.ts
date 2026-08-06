@@ -5,6 +5,12 @@ import crypto from 'crypto'
 
 const SESSION_COOKIE = 'bpsdm_session'
 const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
+const ENCRYPTION_KEY = process.env.SESSION_SECRET || 'sikompetensi-aceh-secret-key-2024-v1'
+
+// Derive a 32-byte key from the secret
+function getKey(): Buffer {
+  return crypto.createHash('sha256').update(ENCRYPTION_KEY).digest()
+}
 
 export interface SessionUser {
   id: string
@@ -18,46 +24,6 @@ export interface SessionUser {
 export interface SessionData {
   user: SessionUser
   expires: number
-  csrfToken: string
-}
-
-// ===== Encrypted Cookie Session (survives hot-reload) =====
-const ALGO = 'aes-256-gcm'
-const IV_LEN = 12
-const AUTH_TAG_LEN = 16
-
-function getSecret(): Buffer {
-  const envSecret = process.env.SESSION_SECRET
-  const raw = (envSecret && envSecret.length >= 8) ? envSecret : 'bpsdm-aceh-dev-session-key'
-  return crypto.createHash('sha256').update(raw).digest()
-}
-
-function encrypt(data: string): string {
-  const secret = getSecret()
-  const iv = crypto.randomBytes(IV_LEN)
-  const cipher = crypto.createCipheriv(ALGO, secret, iv)
-  let encrypted = cipher.update(data, 'utf-8')
-  encrypted = Buffer.concat([encrypted, cipher.final()])
-  const authTag = cipher.getAuthTag()
-  // Format: base64(iv + authTag + ciphertext)
-  return Buffer.concat([iv, authTag, encrypted]).toString('base64url')
-}
-
-function decrypt(token: string): string | null {
-  try {
-    const secret = getSecret()
-    const buf = Buffer.from(token, 'base64url')
-    const iv = buf.subarray(0, IV_LEN)
-    const authTag = buf.subarray(IV_LEN, IV_LEN + AUTH_TAG_LEN)
-    const ciphertext = buf.subarray(IV_LEN + AUTH_TAG_LEN)
-    const decipher = crypto.createDecipheriv(ALGO, secret, iv)
-    decipher.setAuthTag(authTag)
-    let decrypted = decipher.update(ciphertext)
-    decrypted = Buffer.concat([decrypted, decipher.final()])
-    return decrypted.toString('utf-8')
-  } catch {
-    return null
-  }
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -72,15 +38,41 @@ export function generateToken(): string {
   return crypto.randomBytes(32).toString('hex')
 }
 
-export function generateCsrfToken(): string {
-  return crypto.randomBytes(16).toString('hex')
+// Encrypt session data to store in cookie
+function encryptSession(data: SessionData): string {
+  const key = getKey()
+  const iv = crypto.randomBytes(16)
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
+  const jsonStr = JSON.stringify(data)
+  const encrypted = Buffer.concat([cipher.update(jsonStr, 'utf8'), cipher.final()])
+  const authTag = cipher.getAuthTag()
+  // Format: iv:authTag:encrypted (all base64)
+  return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`
+}
+
+// Decrypt session data from cookie
+function decryptSession(token: string): SessionData | null {
+  try {
+    const key = getKey()
+    const parts = token.split(':')
+    if (parts.length !== 3) return null
+    const iv = Buffer.from(parts[0], 'base64')
+    const authTag = Buffer.from(parts[1], 'base64')
+    const encrypted = Buffer.from(parts[2], 'base64')
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv)
+    decipher.setAuthTag(authTag)
+    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+    const data = JSON.parse(decrypted.toString('utf8')) as SessionData
+    return data
+  } catch {
+    return null
+  }
 }
 
 export async function createSession(userId: string): Promise<string> {
   const user = await db.user.findUnique({ where: { id: userId } })
   if (!user) throw new Error('User not found')
 
-  const csrfToken = generateCsrfToken()
   const sessionData: SessionData = {
     user: {
       id: user.id,
@@ -91,7 +83,6 @@ export async function createSession(userId: string): Promise<string> {
       status: user.status,
     },
     expires: Date.now() + SESSION_DURATION,
-    csrfToken,
   }
 
   await db.user.update({
@@ -99,8 +90,7 @@ export async function createSession(userId: string): Promise<string> {
     data: { lastLogin: new Date(), loginAttempts: 0, lockedUntil: null },
   })
 
-  // Encrypt and return — session lives entirely in the cookie
-  return encrypt(JSON.stringify(sessionData))
+  return encryptSession(sessionData)
 }
 
 export async function getSession(): Promise<SessionData | null> {
@@ -108,21 +98,19 @@ export async function getSession(): Promise<SessionData | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value
   if (!token) return null
 
-  const json = decrypt(token)
-  if (!json) return null
+  const session = decryptSession(token)
+  if (!session) return null
 
-  try {
-    const session: SessionData = JSON.parse(json)
-    if (Date.now() > session.expires) return null
-    return session
-  } catch {
+  if (Date.now() > session.expires) {
     return null
   }
+
+  return session
 }
 
 export async function destroySession(): Promise<void> {
-  // No-op: the logout route already deletes the cookie.
-  // Nothing stored server-side.
+  // For encrypted cookies, the session is destroyed by deleting the cookie
+  // No server-side state to clean up
 }
 
 export const SESSION_COOKIE_NAME = SESSION_COOKIE
