@@ -19,7 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, User, UserCircle, GraduationCap } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, User, UserCircle, GraduationCap, Upload, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -627,6 +627,12 @@ function PesertaPerKegiatanView() {
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
 
+  // Import state
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors?: string[]; message: string } | null>(null)
+
   const angkatan = selectedId ? angkatanData : null
 
   useEffect(() => {
@@ -635,9 +641,18 @@ function PesertaPerKegiatanView() {
       .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
   }, [toast])
 
+  const reloadAngkatan = useCallback(() => {
+    if (!selectedId) return
+    setLoading(true)
+    api.angkatan.get(selectedId)
+      .then((a) => setAngkatanData(a as Angkatan & { peserta?: PesertaAngkatanView[] }))
+      .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
+      .finally(() => setLoading(false))
+  }, [selectedId, toast])
+
   useEffect(() => {
     if (!selectedId) return
-    setLoading(true) // eslint-disable-line react-hooks/set-state-in-effect
+    setLoading(true)
     api.angkatan.get(selectedId)
       .then((a) => setAngkatanData(a as Angkatan & { peserta?: PesertaAngkatanView[] }))
       .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
@@ -655,21 +670,86 @@ function PesertaPerKegiatanView() {
 
   const selectedAngkatan = angkatanList.find((a) => a.id === selectedId)
 
-  const handleExportXls = () => {
+  // ===== EXPORT =====
+  const handleExportXls = async () => {
     if (!selectedId) return
-    window.location.href = `/api/angkatan/${selectedId}/peserta/export/xls`
-    toast({ title: 'Export', description: 'Mengunduh file Excel...', duration: 2000 } as any)
+    try {
+      toast({ title: 'Export', description: 'Mengunduh file Excel...', duration: 2000 } as any)
+      const res = await fetch(`/api/angkatan/${selectedId}/peserta/export/xls`, { credentials: 'same-origin' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Gagal export (HTTP ${res.status})`)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `peserta_${selectedAngkatan?.namaAngkatan || 'kegiatan'}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      toast({ title: 'Gagal Export', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 3000 } as any)
+    }
   }
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (!selectedId) return
-    window.location.href = `/api/angkatan/${selectedId}/peserta/export/pdf`
-    toast({ title: 'Export', description: 'Mengunduh file PDF...', duration: 2000 } as any)
+    try {
+      toast({ title: 'Export', description: 'Mengunduh file PDF...', duration: 2000 } as any)
+      const res = await fetch(`/api/angkatan/${selectedId}/peserta/export/pdf`, { credentials: 'same-origin' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Gagal export (HTTP ${res.status})`)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `peserta_${selectedAngkatan?.namaAngkatan || 'kegiatan'}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      toast({ title: 'Gagal Export', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 3000 } as any)
+    }
+  }
+
+  // ===== IMPORT =====
+  const handleImport = async () => {
+    if (!selectedId || !importFile) return
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const result = await api.angkatan.importPeserta(selectedId, importFile)
+      setImportResult(result)
+      if (result.created > 0 || result.updated > 0) {
+        toast({ title: 'Import Berhasil', description: result.message, duration: 4000 } as any)
+        reloadAngkatan()
+      }
+    } catch (e) {
+      toast({ title: 'Gagal Import', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 4000 } as any)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleDownloadTemplate = () => {
+    if (!selectedId) return
+    api.angkatan.downloadPesertaTemplate(selectedId)
+  }
+
+  const openImportDialog = () => {
+    setImportFile(null)
+    setImportResult(null)
+    setImportOpen(true)
   }
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Peserta Per Kegiatan" description="Lihat dan export data peserta per kegiatan/angkatan pelatihan" />
+      <PageHeader title="Peserta Per Kegiatan" description="Lihat dan kelola data peserta per kegiatan/angkatan pelatihan" />
 
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-4">
@@ -697,7 +777,13 @@ function PesertaPerKegiatanView() {
                   <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
                   <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                    <Upload className="w-4 h-4" /> Import
+                  </Button>
+                  <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
+                    <Download className="w-4 h-4" /> Template
+                  </Button>
                   <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
                     <FileSpreadsheet className="w-4 h-4" /> Excel
                   </Button>
@@ -810,6 +896,111 @@ function PesertaPerKegiatanView() {
           </Card>
         </>
       )}
+
+      {/* ===== IMPORT DIALOG ===== */}
+      <Dialog open={importOpen} onOpenChange={(v) => { if (!v) { setImportOpen(false); setImportFile(null); setImportResult(null) } }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-[#195737]" />
+              Import Peserta
+            </DialogTitle>
+          </DialogHeader>
+
+          {!importResult ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
+                <p className="font-semibold text-slate-700">Petunjuk:</p>
+                <p>1. Klik <span className="font-medium text-[#195737]">"Template"</span> untuk mengunduh format Excel yang benar</p>
+                <p>2. Isi data peserta di file template sesuai kolom yang tersedia</p>
+                <p>3. Upload file yang sudah diisi untuk menambahkan peserta ke angkatan ini</p>
+                <p className="text-amber-600">Kolom wajib: <strong>NIP</strong>, <strong>Nama</strong>, <strong>L/P</strong></p>
+              </div>
+
+              <div>
+                <Label className="mb-1.5 block">Upload File Excel (.xlsx)</Label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null
+                      setImportFile(f)
+                      setImportResult(null)
+                    }}
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#195737]/10 file:text-[#195737] hover:file:bg-[#195737]/20 cursor-pointer"
+                  />
+                </div>
+                {importFile && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    File: <span className="font-medium text-slate-700">{importFile.name}</span> ({(importFile.size / 1024).toFixed(1)} KB)
+                  </p>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button type="button" variant="outline" onClick={() => { setImportOpen(false); setImportFile(null) }}>
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="bg-[#195737] hover:bg-[#0F4227]"
+                >
+                  {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {importing ? 'Mengimpor...' : 'Import Data'}
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className={`rounded-lg border p-4 ${importResult.created > 0 || importResult.updated > 0 ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
+                <div className="flex items-start gap-3">
+                  {(importResult.created > 0 || importResult.updated > 0) ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-2 text-sm">
+                    <p className="font-semibold text-slate-800">Hasil Import</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-700">{importResult.created}</p>
+                        <p className="text-xs text-slate-500">Ditambahkan</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-700">{importResult.updated}</p>
+                        <p className="text-xs text-slate-500">Diperbarui</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-slate-500">{importResult.skipped}</p>
+                        <p className="text-xs text-slate-500">Dilewati</p>
+                      </div>
+                    </div>
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="mt-2 p-2 bg-white/60 rounded border border-amber-200">
+                        <p className="text-xs font-semibold text-amber-700 mb-1">Peringatan:</p>
+                        <div className="max-h-24 overflow-y-auto space-y-0.5">
+                          {importResult.errors.map((err, idx) => (
+                            <p key={idx} className="text-[11px] text-amber-600">{err}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button onClick={() => { setImportOpen(false); setImportFile(null); setImportResult(null) }}>
+                  Tutup
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
