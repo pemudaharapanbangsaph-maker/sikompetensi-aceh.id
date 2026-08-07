@@ -13,7 +13,6 @@ const HEADERS = [
   'Pangkat/Golongan',
   'Unit Kerja',
   'Instansi',
-  'Pendidikan',
   'No. Telp',
   'Email',
 ]
@@ -29,7 +28,6 @@ const EXAMPLE_ROWS = [
     'III/c',
     'BPSDM Provinsi Aceh',
     'Pemerintah Aceh',
-    'S2',
     '081234567890',
     'ahmad.fauzi@aceh.go.id',
   ],
@@ -43,7 +41,6 @@ const EXAMPLE_ROWS = [
     'III/b',
     'Dinas Pendidikan',
     'Pemerintah Aceh',
-    'S1',
     '081298765432',
     'siti.nurhaliza@aceh.go.id',
   ],
@@ -84,7 +81,6 @@ export async function GET(
       { wch: 18 }, // Pangkat/Golongan
       { wch: 28 }, // Unit Kerja
       { wch: 25 }, // Instansi
-      { wch: 14 }, // Pendidikan
       { wch: 18 }, // No. Telp
       { wch: 28 }, // Email
     ]
