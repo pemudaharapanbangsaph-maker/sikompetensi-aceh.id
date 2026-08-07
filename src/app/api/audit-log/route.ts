@@ -7,6 +7,18 @@ export async function GET(req: Request) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // Auto-cleanup: hapus audit log yang lebih dari 7 hari
+    try {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      await db.auditLog.deleteMany({
+        createdAt: { lt: sevenDaysAgo },
+      })
+    } catch {
+      /* cleanup gagal tidak blocking */
+    }
+
     // Any authenticated user can view (audit log is admin function but keep simple per spec)
     const params = parseListParams(new URL(req.url).searchParams)
     const { page, pageSize, search, sortBy, sortOrder, aksi, modul, ...rest } = params
