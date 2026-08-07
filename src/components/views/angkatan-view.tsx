@@ -851,11 +851,10 @@ function PesertaPerKegiatanView() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
             <StatCard title="Total Peserta" value={pesertaList.length} icon={Users} color="blue" />
             <StatCard title="Laki-laki" value={pesertaList.filter((pa) => (pa as PesertaAngkatan).peserta?.jenisKelamin === 'L').length} icon={User} color="purple" />
             <StatCard title="Perempuan" value={pesertaList.filter((pa) => (pa as PesertaAngkatan).peserta?.jenisKelamin === 'P').length} icon={UserCircle} color="red" />
-            <StatCard title="Lulus" value={pesertaList.filter((pa) => pa.status === 'LULUS').length} icon={GraduationCap} color="green" />
           </div>
 
           <Card className="border-slate-200 shadow-sm">
@@ -883,9 +882,7 @@ function PesertaPerKegiatanView() {
                       <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pangkat/Golongan</th>
                       <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Unit Kerja</th>
                       <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Instansi</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pendidikan</th>
                       <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Nilai Akhir</th>
-                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -910,13 +907,7 @@ function PesertaPerKegiatanView() {
                           <td className="px-3 py-2 text-xs text-slate-600">{peserta?.pangkatGolongan || '-'}</td>
                           <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.unitKerja || '-'}</td>
                           <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.instansi || '-'}</td>
-                          <td className="px-3 py-2 text-xs text-slate-600">{peserta?.pendidikan || '-'}</td>
                           <td className="px-3 py-2 text-center text-xs font-semibold text-slate-700">{pa.nilaiAkhir != null ? pa.nilaiAkhir : '-'}</td>
-                          <td className="px-3 py-2 text-center">
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${st.color}`}>
-                              {st.label}
-                            </span>
-                          </td>
                         </motion.tr>
                       )
                     })}
