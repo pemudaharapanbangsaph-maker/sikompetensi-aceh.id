@@ -30,21 +30,10 @@ const JENIS_KELAMIN = [
   { value: 'P', label: 'Perempuan' },
 ]
 
-const PENDIDIKAN = [
-  { value: 'D1', label: 'Diploma I (D1)' },
-  { value: 'D2', label: 'Diploma II (D2)' },
-  { value: 'D3', label: 'Diploma III (D3)' },
-  { value: 'S1', label: 'Sarjana (S1)' },
-  { value: 'S2', label: 'Magister (S2)' },
-  { value: 'S3', label: 'Doktor (S3)' },
-]
-
 const STATUS_PESERTA = [
   { value: 'AKTIF', label: 'Aktif' },
   { value: 'NONAKTIF', label: 'Nonaktif' },
 ]
-
-const PENDIDIKAN_ORDER: Record<string, number> = { D1: 1, D2: 2, D3: 3, S1: 4, S2: 5, S3: 6 }
 
 const EMPTY_FORM: Partial<Peserta> = {
   nip: '',
@@ -56,7 +45,6 @@ const EMPTY_FORM: Partial<Peserta> = {
   pangkatGolongan: '',
   unitKerja: '',
   instansi: '',
-  pendidikan: 'S1',
   noTelp: '',
   email: '',
   alamat: '',
@@ -168,7 +156,6 @@ function PesertaDataTable() {
       pangkatGolongan: item.pangkatGolongan || '',
       unitKerja: item.unitKerja || '',
       instansi: item.instansi || '',
-      pendidikan: item.pendidikan || 'S1',
       noTelp: item.noTelp || '',
       email: item.email || '',
       alamat: '',
@@ -250,7 +237,6 @@ function PesertaDataTable() {
         </div>
       ),
     },
-    { key: 'pendidikan', header: 'Pendidikan', render: (r) => <span className="text-slate-600 text-sm">{r.pendidikan || '-'}</span> },
     {
       key: 'kontak', header: 'Kontak', render: (r) => (
         <div className="text-xs text-slate-600 min-w-[160px]">
@@ -266,19 +252,6 @@ function PesertaDataTable() {
   // Stats from allPeserta
   const totalL = useMemo(() => allPeserta.filter((p) => p.jenisKelamin === 'L').length, [allPeserta])
   const totalP = useMemo(() => allPeserta.filter((p) => p.jenisKelamin === 'P').length, [allPeserta])
-  const pendidikanTertinggi = useMemo(() => {
-    let max: string | null = null
-    let maxOrder = 0
-    allPeserta.forEach((p) => {
-      const ord = PENDIDIKAN_ORDER[p.pendidikan || ''] || 0
-      if (ord > maxOrder) {
-        maxOrder = ord
-        max = p.pendidikan ?? null
-      }
-    })
-    return max || '-'
-  }, [allPeserta])
-
   return (
     <div className="space-y-4">
       <PageHeader title="Data Peserta" description="Kelola data peserta pelatihan dan uji kompetensi">
@@ -287,11 +260,10 @@ function PesertaDataTable() {
         </Button>
       </PageHeader>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-3 gap-3 lg:gap-4">
         <StatCard title="Total Peserta" value={allPeserta.length} icon={Users} color="blue" />
         <StatCard title="Peserta L" value={totalL} icon={User} color="green" subtitle="Laki-laki" />
         <StatCard title="Peserta P" value={totalP} icon={UserCircle} color="amber" subtitle="Perempuan" />
-        <StatCard title="Pendidikan Tertinggi" value={pendidikanTertinggi} icon={GraduationCap} color="purple" subtitle="Dari semua peserta" />
       </div>
 
       <DataTable
@@ -346,15 +318,6 @@ function PesertaDataTable() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {JENIS_KELAMIN.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Pendidikan</Label>
-              <Select value={form.pendidikan || 'S1'} onValueChange={(v) => setForm({ ...form, pendidikan: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PENDIDIKAN.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
