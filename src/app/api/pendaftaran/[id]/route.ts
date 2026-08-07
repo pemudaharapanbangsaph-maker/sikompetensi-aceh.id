@@ -147,3 +147,29 @@ export async function PUT(
     return NextResponse.json({ error: 'Gagal mengupdate' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!hasPermission(session.user.role, 'peserta:delete')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { id } = await params
+    const existing = await db.pendaftaranPortal.findUnique({ where: { id } })
+    if (!existing) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
+
+    await db.pendaftaranPortal.delete({ where: { id } })
+
+    await auditLog(session, 'DELETE', 'PENDAFTARAN_PORTAL', `Hapus pendaftaran "${existing.nama}" (${existing.nip})`, req)
+
+    return NextResponse.json({ message: 'Berhasil dihapus' })
+  } catch (e) {
+    console.error('pendaftaran delete error:', e)
+    return NextResponse.json({ error: 'Gagal menghapus' }, { status: 500 })
+  }
+}
