@@ -871,18 +871,18 @@ function PesertaPerKegiatanView() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse">
+                <table className="w-full text-sm border-collapse" style={{ minWidth: '1100px' }}>
                   <thead className="bg-slate-50 sticky top-0">
                     <tr className="border-y border-slate-200">
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5 w-10">No</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">NIP</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Nama</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">L/P</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Jabatan</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pangkat/Golongan</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Unit Kerja</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Instansi</th>
-                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Nilai Akhir</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 40 }}>No</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 120 }}>NIP</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 170 }}>Nama</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 40 }}>L/P</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 150 }}>Jabatan</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 100 }}>Pangkat/Gol.</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 180 }}>Unit Kerja</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 160 }}>Instansi</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 80 }}>Nilai Akhir</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -898,15 +898,15 @@ function PesertaPerKegiatanView() {
                           className="hover:bg-slate-50/50"
                         >
                           <td className="px-3 py-2 text-slate-500 text-xs">{idx + 1}</td>
-                          <td className="px-3 py-2 font-mono text-xs text-slate-600">{peserta?.nip || '-'}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-slate-600 whitespace-nowrap">{peserta?.nip || '-'}</td>
                           <td className="px-3 py-2">
-                            <p className="font-medium text-slate-900 line-clamp-1">{peserta?.nama || 'N/A'}</p>
+                            <p className="font-medium text-slate-900 whitespace-nowrap truncate">{peserta?.nama || 'N/A'}</p>
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-600">{peserta?.jenisKelamin || '-'}</td>
-                          <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.jabatan || '-'}</td>
-                          <td className="px-3 py-2 text-xs text-slate-600">{peserta?.pangkatGolongan || '-'}</td>
-                          <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.unitKerja || '-'}</td>
-                          <td className="px-3 py-2 text-xs text-slate-600 line-clamp-1 max-w-[150px]">{peserta?.instansi || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 text-center">{peserta?.jenisKelamin || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate">{peserta?.jabatan || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{peserta?.pangkatGolongan || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate">{peserta?.unitKerja || '-'}</td>
+                          <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate">{peserta?.instansi || '-'}</td>
                           <td className="px-3 py-2 text-center text-xs font-semibold text-slate-700">{pa.nilaiAkhir != null ? pa.nilaiAkhir : '-'}</td>
                         </motion.tr>
                       )
