@@ -96,8 +96,8 @@ export async function GET(req: Request) {
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 32 },
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 45 },
         2: { cellWidth: 32 },
         3: { cellWidth: 30 },
         4: { cellWidth: 30 },
