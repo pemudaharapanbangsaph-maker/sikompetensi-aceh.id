@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 export interface Column<T> {
   key: string
   header: string
-  render?: (row: T) => ReactNode
+  render?: (row: T, index: number) => ReactNode
   className?: string
   width?: string
 }
@@ -143,11 +143,11 @@ export function DataTable<T>({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data.map((row) => (
+                  data.map((row, rowIndex) => (
                     <TableRow key={rowKey(row)} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
                       {columns.map((c) => (
                         <TableCell key={c.key} className={cn('text-sm text-slate-700', c.className)}>
-                          {c.render ? c.render(row) : (row as Record<string, unknown>)[c.key] as ReactNode}
+                          {c.render ? c.render(row, rowIndex) : (row as Record<string, unknown>)[c.key] as ReactNode}
                         </TableCell>
                       ))}
                       {actions && (
@@ -244,7 +244,7 @@ export function StatCard({
 }) {
   const colors: Record<string, { bg: string; text: string; ring: string; hover: string; shadow: string }> = {
     blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100', hover: 'hover:shadow-blue-200/40', shadow: 'shadow-blue-100/60' },
-    green: { bg: 'bg-green-50', text: 'text-green-600', ring: 'ring-green-100', hover: 'hover:shadow-green-200/40', shadow: 'shadow-green-100/60' },
+    green: { bg: 'bg-green-50', text: 'text-[#15803D]', ring: 'ring-green-100', hover: 'hover:shadow-[#86EFAC]/40', shadow: 'shadow-[#86EFAC]/60' },
     amber: { bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100', hover: 'hover:shadow-amber-200/40', shadow: 'shadow-amber-100/60' },
     purple: { bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-100', hover: 'hover:shadow-purple-200/40', shadow: 'shadow-purple-100/60' },
     red: { bg: 'bg-red-50', text: 'text-red-600', ring: 'ring-red-100', hover: 'hover:shadow-red-200/40', shadow: 'shadow-red-100/60' },
@@ -268,7 +268,7 @@ export function StatCard({
             <p className="text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{displayValue}</p>
             {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
             {trend && (
-              <p className={cn('text-xs font-medium mt-1 flex items-center gap-1', trend.up ? 'text-green-600' : 'text-red-600')}>
+              <p className={cn('text-xs font-medium mt-1 flex items-center gap-1', trend.up ? 'text-[#15803D]' : 'text-red-600')}>
                 {trend.up ? '↑' : '↓'} {trend.value}
               </p>
             )}
