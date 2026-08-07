@@ -49,6 +49,7 @@ export async function GET(req: Request) {
       tempatLahir: d.tempatLahir || '',
       tanggalLahir: d.tanggalLahir ? d.tanggalLahir.toISOString().slice(0, 10) : '',
       jabatan: d.jabatan || '',
+      unitKerja: d.unitKerja || '',
       instansi: d.instansi || '',
       nomorHP: d.nomorHP || '',
       nomorRekening: d.nomorRekening || '',
