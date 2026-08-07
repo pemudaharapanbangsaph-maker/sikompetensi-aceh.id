@@ -2,127 +2,177 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, hasPermission, auditLog } from '@/lib/auth'
 
-/**
- * POST /api/angkatan/[id]/sync-pendaftar
- * Ambil data pendaftar DITERIMA yang pelatihannya cocok, lalu jadikan peserta di angkatan ini.
- */
-export async function POST(
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
+    const data = await db.pendaftaranPortal.findUnique({
+      where: { id },
+      include: {
+        analisisDiklatItem: { select: { id: true, namaPelatihan: true, kategori: true, metodePembelajaran: true, durasiJP: true, tahunPelaksanaan: true } },
+        dokumen: { orderBy: { createdAt: 'asc' } },
+      },
+    })
+    if (!data) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
+
+    return NextResponse.json({
+      id: data.id,
+      nama: data.nama,
+      nip: data.nip,
+      pangkatGolongan: data.pangkatGolongan || '',
+      tempatLahir: data.tempatLahir || '',
+      tanggalLahir: data.tanggalLahir ? data.tanggalLahir.toISOString().slice(0, 10) : '',
+      jabatan: data.jabatan || '',
+      unitKerja: data.unitKerja || '',
+      instansi: data.instansi || '',
+      nomorHP: data.nomorHP || '',
+      nomorRekening: data.nomorRekening || '',
+      npwp: data.npwp || '',
+      analisisDiklatItemId: data.analisisDiklatItemId || '',
+      pelatihan: data.analisisDiklatItem?.namaPelatihan || '',
+      pelatihanKategori: data.analisisDiklatItem?.kategori || '',
+      status: data.status,
+      catatanAdmin: data.catatanAdmin || '',
+      createdAt: data.createdAt.toISOString(),
+      updatedAt: data.updatedAt.toISOString(),
+      dokumen: data.dokumen.map((doc) => ({
+        id: doc.id,
+        tipe: doc.tipe,
+        label: doc.tipe,
+        namaFile: doc.namaFile,
+        ukuran: doc.ukuranFile,
+        terakhirDiupload: doc.createdAt.toISOString(),
+      })),
+    })
+  } catch (e) {
+    console.error('pendaftaran get error:', e)
+    return NextResponse.json({ error: 'Gagal memuat data' }, { status: 500 })
+  }
+}
+
+export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!hasPermission(session.user.role, 'peserta:create')) {
+    if (!hasPermission(session.user.role, 'peserta:update')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { id: angkatanId } = await params
+    const { id } = await params
+    const body = await req.json()
+    const {
+      nama, nip, pangkatGolongan, tempatLahir, tanggalLahir,
+      jabatan, unitKerja, instansi, nomorHP, nomorRekening, npwp,
+      status, catatanAdmin,
+    } = body
 
-    // 1. Ambil data angkatan + nama pelatihan
-    const angkatan = await db.angkatan.findUnique({
-      where: { id: angkatanId },
-      include: { pelatihan: { select: { id: true, nama: true } } },
-    })
-    if (!angkatan) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
-
-    const namaPelatihan = angkatan.pelatihan?.nama || ''
-    if (!namaPelatihan) {
-      return NextResponse.json({ error: 'Angkatan belum terhubung ke pelatihan' }, { status: 400 })
+    // Validasi status jika dikirim
+    if (status && !['MENUNGGU', 'DITERIMA', 'DITOLAK'].includes(status)) {
+      return NextResponse.json({ error: 'Status tidak valid' }, { status: 400 })
     }
 
-    // 2. Cari pendaftar DITERIMA yang nama pelatihannya cocok
-    const pendaftarList = await db.pendaftaranPortal.findMany({
-      where: {
-        status: 'DITERIMA',
-        analisisDiklatItem: {
-          namaPelatihan: namaPelatihan,
-          status: 'AKTIF',
-        },
-      },
+    // Validasi NIP jika diubah
+    if (nip && !/^\d{18}$/.test(nip.trim())) {
+      return NextResponse.json({ error: 'Format NIP harus 18 digit' }, { status: 400 })
+    }
+
+    // Cek duplikat NIP jika diubah
+    if (nip) {
+      const dup = await db.pendaftaranPortal.findFirst({ where: { nip: nip.trim(), id: { not: id } } })
+      if (dup) return NextResponse.json({ error: 'NIP sudah digunakan pendaftar lain' }, { status: 409 })
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (nama !== undefined) updateData.nama = nama.trim()
+    if (nip !== undefined) updateData.nip = nip.trim()
+    if (pangkatGolongan !== undefined) updateData.pangkatGolongan = pangkatGolongan?.trim() || null
+    if (tempatLahir !== undefined) updateData.tempatLahir = tempatLahir?.trim() || null
+    if (tanggalLahir !== undefined) updateData.tanggalLahir = tanggalLahir ? new Date(tanggalLahir) : null
+    if (jabatan !== undefined) updateData.jabatan = jabatan?.trim() || null
+    if (unitKerja !== undefined) updateData.unitKerja = unitKerja?.trim() || null
+    if (instansi !== undefined) updateData.instansi = instansi?.trim() || null
+    if (nomorHP !== undefined) updateData.nomorHP = nomorHP?.trim() || null
+    if (nomorRekening !== undefined) updateData.nomorRekening = nomorRekening?.trim() || null
+    if (npwp !== undefined) updateData.npwp = npwp?.trim() || null
+    if (status !== undefined) updateData.status = status
+    if (catatanAdmin !== undefined) updateData.catatanAdmin = catatanAdmin?.trim() || null
+
+    const updated = await db.pendaftaranPortal.update({
+      where: { id },
+      data: updateData,
       include: {
-        analisisDiklatItem: { select: { namaPelatihan: true } },
+        analisisDiklatItem: { select: { id: true, namaPelatihan: true, kategori: true, metodePembelajaran: true, durasiJP: true, tahunPelaksanaan: true } },
+        dokumen: { orderBy: { createdAt: 'asc' } },
       },
     })
 
-    if (pendaftarList.length === 0) {
-      return NextResponse.json({
-        added: 0,
-        skipped: 0,
-        skippedNames: [],
-        message: `Tidak ada pendaftar DITERIMA untuk pelatihan "${namaPelatihan}"`,
-      })
-    }
+    await auditLog(session, 'UPDATE', 'PENDAFTARAN_PORTAL', `Update biodata pendaftaran "${updated.nama}" (${updated.nip})`, req)
 
-    // 3. Ambil peserta yang sudah ada di angkatan ini (by NIP)
-    const existingInAngkatan = await db.pesertaAngkatan.findMany({
-      where: { angkatanId },
-      include: { peserta: { select: { nip: true } } },
+    return NextResponse.json({
+      id: updated.id,
+      nama: updated.nama,
+      nip: updated.nip,
+      pangkatGolongan: updated.pangkatGolongan || '',
+      tempatLahir: updated.tempatLahir || '',
+      tanggalLahir: updated.tanggalLahir ? updated.tanggalLahir.toISOString().slice(0, 10) : '',
+      jabatan: updated.jabatan || '',
+      unitKerja: updated.unitKerja || '',
+      instansi: updated.instansi || '',
+      nomorHP: updated.nomorHP || '',
+      nomorRekening: updated.nomorRekening || '',
+      npwp: updated.npwp || '',
+      analisisDiklatItemId: updated.analisisDiklatItemId || '',
+      pelatihan: updated.analisisDiklatItem?.namaPelatihan || '',
+      pelatihanKategori: updated.analisisDiklatItem?.kategori || '',
+      status: updated.status,
+      catatanAdmin: updated.catatanAdmin || '',
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+      dokumen: updated.dokumen.map((doc) => ({
+        id: doc.id,
+        tipe: doc.tipe,
+        label: doc.tipe,
+        namaFile: doc.namaFile,
+        ukuran: doc.ukuranFile,
+        terakhirDiupload: doc.createdAt.toISOString(),
+      })),
     })
-    const existingNips = new Set(existingInAngkatan.map((pa) => pa.peserta.nip))
+  } catch (e) {
+    console.error('pendaftaran update error:', e)
+    return NextResponse.json({ error: 'Gagal mengupdate' }, { status: 500 })
+  }
+}
 
-    // 4. Ambil semua NIP peserta master yang sudah ada
-    const allPeserta = await db.peserta.findMany({ select: { id: true, nip: true } })
-    const nipToPesertaId = new Map(allPeserta.map((p) => [p.nip, p.id]))
-
-    let added = 0
-    const skippedNames: string[] = []
-
-    for (const pendaftar of pendaftarList) {
-      // Skip jika sudah ada di angkatan ini
-      if (existingNips.has(pendaftar.nip)) {
-        skippedNames.push(pendaftar.nama)
-        continue
-      }
-
-      // Cari atau buat peserta master
-      let pesertaId = nipToPesertaId.get(pendaftar.nip)
-      if (!pesertaId) {
-        const newPeserta = await db.peserta.create({
-          data: {
-            nip: pendaftar.nip,
-            nama: pendaftar.nama,
-            jenisKelamin: 'L', // default dari pendaftar (tidak ada field jenis kelamin di form pendaftaran)
-            pangkatGolongan: pendaftar.pangkatGolongan || undefined,
-            tempatLahir: pendaftar.tempatLahir || undefined,
-            tanggalLahir: pendaftar.tanggalLahir || undefined,
-            jabatan: pendaftar.jabatan || undefined,
-            unitKerja: pendaftar.unitKerja || undefined,
-            instansi: pendaftar.instansi || undefined,
-            noTelp: pendaftar.nomorHP || undefined,
-          },
-        })
-        pesertaId = newPeserta.id
-        nipToPesertaId.set(pendaftar.nip, pesertaId)
-      }
-
-      // Tambahkan ke angkatan
-      await db.pesertaAngkatan.create({
-        data: {
-          angkatanId,
-          pesertaId,
-          status: 'TERDAFTAR',
-        },
-      })
-      existingNips.add(pendaftar.nip)
-      added++
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!hasPermission(session.user.role, 'peserta:delete')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    await auditLog(
-      session,
-      'CREATE',
-      'PESERTA_ANGKATAN',
-      `Sync pendaftar ke angkatan "${angkatan.namaAngkatan}": ${added} ditambahkan, ${skippedNames.length} dilewati`,
-      req
-    )
+    const { id } = await params
+    const existing = await db.pendaftaranPortal.findUnique({ where: { id } })
+    if (!existing) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
 
-    const message = skippedNames.length > 0
-      ? `${added} peserta berhasil ditambahkan, ${skippedNames.length} sudah ada di angkatan`
-      : `${added} peserta berhasil ditambahkan ke angkatan`
+    await db.pendaftaranPortal.delete({ where: { id } })
 
-    return NextResponse.json({ added, skipped: skippedNames.length, skippedNames, message })
+    await auditLog(session, 'DELETE', 'PENDAFTARAN_PORTAL', `Hapus pendaftaran "${existing.nama}" (${existing.nip})`, req)
+
+    return NextResponse.json({ message: 'Berhasil dihapus' })
   } catch (e) {
-    console.error('sync-pendaftar error:', e)
-    return NextResponse.json({ error: 'Gagal sinkronisasi data pendaftar' }, { status: 500 })
+    console.error('pendaftaran delete error:', e)
+    return NextResponse.json({ error: 'Gagal menghapus' }, { status: 500 })
   }
 }
