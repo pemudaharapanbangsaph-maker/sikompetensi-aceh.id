@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
     const STATUS_LABEL: Record<string, string> = { MENUNGGU: 'Menunggu', DITERIMA: 'Diterima', DITOLAK: 'Ditolak' }
 
-    const { jsPDF } = await import('jspdf')
+    const { default: jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
