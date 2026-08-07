@@ -28,6 +28,7 @@ export async function GET(
       tempatLahir: data.tempatLahir || '',
       tanggalLahir: data.tanggalLahir ? data.tanggalLahir.toISOString().slice(0, 10) : '',
       jabatan: data.jabatan || '',
+      unitKerja: data.unitKerja || '',
       instansi: data.instansi || '',
       nomorHP: data.nomorHP || '',
       nomorRekening: data.nomorRekening || '',
@@ -69,7 +70,7 @@ export async function PUT(
     const body = await req.json()
     const {
       nama, nip, pangkatGolongan, tempatLahir, tanggalLahir,
-      jabatan, instansi, nomorHP, nomorRekening, npwp,
+      jabatan, unitKerja, instansi, nomorHP, nomorRekening, npwp,
       status, catatanAdmin,
     } = body
 
@@ -96,6 +97,7 @@ export async function PUT(
     if (tempatLahir !== undefined) updateData.tempatLahir = tempatLahir?.trim() || null
     if (tanggalLahir !== undefined) updateData.tanggalLahir = tanggalLahir ? new Date(tanggalLahir) : null
     if (jabatan !== undefined) updateData.jabatan = jabatan?.trim() || null
+    if (unitKerja !== undefined) updateData.unitKerja = unitKerja?.trim() || null
     if (instansi !== undefined) updateData.instansi = instansi?.trim() || null
     if (nomorHP !== undefined) updateData.nomorHP = nomorHP?.trim() || null
     if (nomorRekening !== undefined) updateData.nomorRekening = nomorRekening?.trim() || null
@@ -122,6 +124,7 @@ export async function PUT(
       tempatLahir: updated.tempatLahir || '',
       tanggalLahir: updated.tanggalLahir ? updated.tanggalLahir.toISOString().slice(0, 10) : '',
       jabatan: updated.jabatan || '',
+      unitKerja: updated.unitKerja || '',
       instansi: updated.instansi || '',
       nomorHP: updated.nomorHP || '',
       nomorRekening: updated.nomorRekening || '',
