@@ -87,6 +87,7 @@ export async function POST(
             tempatLahir: pendaftar.tempatLahir || undefined,
             tanggalLahir: pendaftar.tanggalLahir || undefined,
             jabatan: pendaftar.jabatan || undefined,
+            unitKerja: pendaftar.unitKerja || undefined,
             instansi: pendaftar.instansi || undefined,
             noTelp: pendaftar.nomorHP || undefined,
           },
