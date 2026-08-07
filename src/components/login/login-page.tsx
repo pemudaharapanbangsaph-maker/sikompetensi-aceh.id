@@ -9,7 +9,7 @@ import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Sh
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
-type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran' | 'upload-dokumen'
+type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran'
 
 interface Program {
   id: string
@@ -65,7 +65,7 @@ export function LoginPage() {
   const [remember, setRemember] = useState(!!rememberedUser)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
-  const [registrationId, setRegistrationId] = useState('')
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,12 +99,7 @@ export function LoginPage() {
       ) : view === 'pendaftaran' ? (
         /* ===== FULL-SCREEN: PENDAFTARAN ===== */
         <AnimatePresence mode="wait">
-          <PendaftaranRight onBack={goBack} onUploadDokumen={(id) => { setRegistrationId(id); setView('upload-dokumen') }} />
-        </AnimatePresence>
-      ) : view === 'upload-dokumen' ? (
-        /* ===== FULL-SCREEN: UPLOAD DOKUMEN ===== */
-        <AnimatePresence mode="wait">
-          <UploadDokumenRight onBack={goBack} registrationId={registrationId} />
+          <PendaftaranRight onBack={goBack} />
         </AnimatePresence>
       ) : (
         /* ===== SPLIT SCREEN: LANDING / LOGIN ===== */
@@ -524,17 +519,27 @@ function LoginRight({
 // FULL-SCREEN: FORM PENDAFTARAN PELATIHAN
 // ==========================================================================
 
+const DOKUMEN_TYPES = [
+  { tipe: 'KTP', label: 'KTP', desc: 'Kartu Tanda Penduduk' },
+  { tipe: 'SURAT_TUGAS', label: 'Surat Tugas', desc: 'Surat tugas dari instansi' },
+  { tipe: 'NPWP', label: 'NPWP', desc: 'Kartu Nomor Pokok Wajib Pajak' },
+  { tipe: 'REK_BANK', label: 'REK Bank Aceh', desc: 'Bukti rekening Bank Aceh' },
+]
+
 interface PelatihanOption { id: string; nama: string; kode: string; kategori?: string; jp?: number; metode?: string; prioritas?: string; tahun?: number }
 
-function PendaftaranRight({ onBack, onUploadDokumen }: { onBack: () => void; onUploadDokumen: (id: string) => void }) {
+function PendaftaranRight({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false)
   const [pelatihanList, setPelatihanList] = useState<PelatihanOption[]>([])
   const [form, setForm] = useState({
     nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
     jabatan: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
   })
+  const [files, setFiles] = useState<Record<string, File>>({})
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState<{ id: string; nama: string } | null>(null)
+  const [success, setSuccess] = useState<{ nama: string } | null>(null)
+  const [step, setStep] = useState<'form' | 'uploading' | 'done'>('form')
+  const [uploadProgress, setUploadProgress] = useState('')
 
   useEffect(() => {
     fetch('/api/portal/pelatihan-list').then((r) => r.json()).then(setPelatihanList).catch(() => {})
@@ -542,13 +547,45 @@ function PendaftaranRight({ onBack, onUploadDokumen }: { onBack: () => void; onU
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm((p) => ({ ...p, [k]: e.target.value }))
 
+  // Cek semua field form terisi
+  const formComplete = [
+    form.nama, form.nip, form.pangkatGolongan, form.tempatLahir, form.tanggalLahir,
+    form.jabatan, form.instansi, form.nomorHP, form.nomorRekening, form.npwp, form.pelatihanId,
+  ].every((v) => v.trim() !== '') && /^\d{18}$/.test(form.nip.trim())
+
+  // Cek semua 4 dokumen sudah dipilih
+  const docsComplete = DOKUMEN_TYPES.every((d) => files[d.tipe])
+
+  // Tombol Daftar aktif hanya jika form + dokumen lengkap
+  const canSubmit = formComplete && docsComplete
+
+  const handleFileSelect = (tipe: string, file: File | undefined) => {
+    if (file && file.type !== 'application/pdf') {
+      setError('Hanya file PDF yang diperbolehkan')
+      return
+    }
+    if (file && file.size > 5 * 1024 * 1024) {
+      setError('Ukuran file maksimal 5MB')
+      return
+    }
+    setFiles((p) => {
+      const n = { ...p }
+      if (file) n[tipe] = file; else delete n[tipe]
+      return n
+    })
+    setError('')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canSubmit) return
     setError('')
-    if (!form.nama.trim() || !form.nip.trim()) { setError('Nama dan NIP wajib diisi'); return }
-    if (!/^[\d]{18}$/.test(form.nip.trim())) { setError('Format NIP harus 18 digit angka'); return }
     setLoading(true)
+    setStep('uploading')
+
     try {
+      // 1. Submit form pendaftaran
+      setUploadProgress('Mengirim data pendaftaran...')
       const res = await fetch('/api/portal/pendaftaran', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -556,69 +593,117 @@ function PendaftaranRight({ onBack, onUploadDokumen }: { onBack: () => void; onU
       const data = await res.json()
       if (!res.ok) {
         if (data.alreadyRegistered) {
-          setError(`NIP sudah terdaftar atas nama "${data.nama}" (Status: ${data.status}). Silakan upload dokumen.`)
+          setError(`NIP sudah terdaftar atas nama "${data.nama}" (Status: ${data.status}).`)
         } else { setError(data.error || 'Gagal mendaftar') }
+        setStep('form')
+        setLoading(false)
         return
       }
-      setSuccess({ id: data.id, nama: data.nama })
-    } catch { setError('Terjadi kesalahan jaringan') } finally { setLoading(false) }
+
+      // 2. Upload semua dokumen
+      const regId = data.id
+      for (let i = 0; i < DOKUMEN_TYPES.length; i++) {
+        const d = DOKUMEN_TYPES[i]
+        const file = files[d.tipe]
+        if (!file) continue
+        setUploadProgress(`Mengupload ${d.label}... (${i + 1}/${DOKUMEN_TYPES.length})`)
+        const fd = new FormData()
+        fd.append('pendaftaranId', regId)
+        fd.append('tipe', d.tipe)
+        fd.append('file', file)
+        const ures = await fetch('/api/portal/pendaftaran/upload-dokumen', { method: 'POST', body: fd })
+        if (!ures.ok) {
+          const udata = await ures.json().catch(() => ({}))
+          setError(`Gagal upload ${d.label}: ${udata.error || 'unknown error'}`)
+          setStep('form')
+          setLoading(false)
+          return
+        }
+      }
+
+      // 3. Selesai
+      setStep('done')
+      setSuccess({ nama: data.nama })
+    } catch {
+      setError('Terjadi kesalahan jaringan')
+      setStep('form')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const inputCls = 'w-full h-11 bg-white border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20 rounded-lg text-sm'
+  const req = <span className="text-red-500 font-bold"> *</span>
+  const filledCount = DOKUMEN_TYPES.filter((d) => files[d.tipe]).length
 
   return (
     <motion.div key="pendaftaran-right" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }} className="min-h-screen flex flex-col bg-[#FFFEF9]">
+      {/* Header */}
       <div className="px-6 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4"><ArrowLeft className="w-4 h-4" /> Kembali</button>
+        <button type="button" onClick={onBack} disabled={loading} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4"><ArrowLeft className="w-4 h-4" /> Kembali</button>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#195737]/10 flex items-center justify-center"><ClipboardList className="w-5 h-5 text-[#195737]" /></div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Form Pendaftaran Pelatihan</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Isi data diri Anda untuk mendaftar pelatihan di BPSDM Aceh</p>
+            <p className="text-sm text-slate-500 mt-0.5">Lengkapi semua data dan upload dokumen wajib untuk mendaftar</p>
           </div>
         </div>
       </div>
 
       {success ? (
+        /* ===== SUCCESS SCREEN ===== */
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="max-w-md text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto"><CheckCircle2 className="w-8 h-8 text-green-600" /></div>
-            <h3 className="text-xl font-bold text-slate-900">Pendaftaran Berhasil!</h3>
-            <p className="text-sm text-slate-600">Terima kasih <strong>{success.nama}</strong>, data Anda telah tersimpan. Silakan upload dokumen pendukung berikutnya.</p>
-            <button onClick={() => onUploadDokumen(success.id)} className="inline-flex items-center gap-2 px-6 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors"><UploadIcon className="w-5 h-5" /> Upload Dokumen Pendukung</button>
+          <div className="max-w-md text-center space-y-5">
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }} className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto"><CheckCircle2 className="w-10 h-10 text-green-600" /></motion.div>
+            <h3 className="text-2xl font-bold text-slate-900">Pendaftaran Berhasil! 🎉</h3>
+            <p className="text-sm text-slate-600">Terima kasih <strong>{success.nama}</strong>, data dan dokumen Anda telah tersimpan. Admin akan memverifikasi pendaftaran Anda.</p>
+            <button onClick={onBack} className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-bold text-base rounded-xl transition-colors">
+              <ArrowLeft className="w-5 h-5" /> Kembali ke Beranda
+            </button>
           </div>
         </div>
       ) : (
+        /* ===== FORM + UPLOAD ===== */
         <div className="flex-1 overflow-y-auto p-6 sm:p-10">
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
-            {error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm"><AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{error}</span></motion.div>}
+            {error && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-2 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm"><AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span>{error}</span></motion.div>}
 
-            <div className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><User className="w-4 h-4 text-[#195737]" /> Data Pribadi</h3>
+            {/* Progress indicator */}
+            {step === 'uploading' && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-700">
+                <Loader2 className="w-5 h-5 animate-spin flex-shrink-0" /><span className="text-sm font-medium">{uploadProgress}</span>
+              </motion.div>
+            )}
+
+            {/* === SECTION 1: Data Pribadi === */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><User className="w-4 h-4 text-[#195737]" /> Data Pribadi <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Nama Lengkap <span className="text-red-500">*</span></Label><Input {...{ value: form.nama, onChange: set('nama'), placeholder: 'Masukkan nama lengkap', className: inputCls }} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">NIP <span className="text-red-500">*</span></Label><Input {...{ value: form.nip, onChange: set('nip'), placeholder: '18 digit NIP', maxLength: 18, className: inputCls }} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Pangkat/Golongan</Label><Input {...{ value: form.pangkatGolongan, onChange: set('pangkatGolongan'), placeholder: 'Contoh: III/c', className: inputCls }} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tempat Lahir</Label><Input {...{ value: form.tempatLahir, onChange: set('tempatLahir'), placeholder: 'Kota/Kabupaten', className: inputCls }} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tanggal Lahir</Label><Input type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} className={inputCls} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jabatan</Label><Input {...{ value: form.jabatan, onChange: set('jabatan'), placeholder: 'Jabatan saat ini', className: inputCls }} /></div>
-                <div className="space-y-1.5 sm:col-span-2"><Label className="text-xs font-semibold text-slate-600">Instansi</Label><Input {...{ value: form.instansi, onChange: set('instansi'), placeholder: 'Nama instansi/OPD', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Nama Lengkap{req}</Label><Input {...{ value: form.nama, onChange: set('nama'), placeholder: 'Masukkan nama lengkap', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">NIP{req}</Label><Input {...{ value: form.nip, onChange: set('nip'), placeholder: '18 digit NIP', maxLength: 18, className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Pangkat/Golongan{req}</Label><Input {...{ value: form.pangkatGolongan, onChange: set('pangkatGolongan'), placeholder: 'Contoh: III/c', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tempat Lahir{req}</Label><Input {...{ value: form.tempatLahir, onChange: set('tempatLahir'), placeholder: 'Kota/Kabupaten', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tanggal Lahir{req}</Label><Input type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} className={inputCls} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jabatan{req}</Label><Input {...{ value: form.jabatan, onChange: set('jabatan'), placeholder: 'Jabatan saat ini', className: inputCls }} /></div>
+                <div className="space-y-1.5 sm:col-span-2"><Label className="text-xs font-semibold text-slate-600">Instansi{req}</Label><Input {...{ value: form.instansi, onChange: set('instansi'), placeholder: 'Nama instansi/OPD', className: inputCls }} /></div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><FileText className="w-4 h-4 text-[#195737]" /> Kontak & Rekening</h3>
+            {/* === SECTION 2: Kontak & Rekening === */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><FileText className="w-4 h-4 text-[#195737]" /> Kontak & Rekening <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">No. HP</Label><Input {...{ value: form.nomorHP, onChange: set('nomorHP'), placeholder: '08xxxxxxxxxx', className: inputCls }} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">NPWP</Label><Input {...{ value: form.npwp, onChange: set('npwp'), placeholder: 'Nomor NPWP', className: inputCls }} /></div>
-                <div className="space-y-1.5 sm:col-span-2"><Label className="text-xs font-semibold text-slate-600">Nomor REK Bank Aceh</Label><Input {...{ value: form.nomorRekening, onChange: set('nomorRekening'), placeholder: 'Nomor rekening Bank Aceh', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">No. HP{req}</Label><Input {...{ value: form.nomorHP, onChange: set('nomorHP'), placeholder: '08xxxxxxxxxx', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">NPWP{req}</Label><Input {...{ value: form.npwp, onChange: set('npwp'), placeholder: 'Nomor NPWP', className: inputCls }} /></div>
+                <div className="space-y-1.5 sm:col-span-2"><Label className="text-xs font-semibold text-slate-600">Nomor REK Bank Aceh{req}</Label><Input {...{ value: form.nomorRekening, onChange: set('nomorRekening'), placeholder: 'Nomor rekening Bank Aceh', className: inputCls }} /></div>
               </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-4">
+            {/* === SECTION 3: Pilih Pelatihan === */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><GraduationCap className="w-4 h-4 text-[#195737]" /> Pilih Pelatihan</h3>
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600">Pelatihan yang Diikuti</Label>
+                <Label className="text-xs font-semibold text-slate-600">Pelatihan yang Diikuti{req}</Label>
                 {pelatihanList.length === 0 ? (
                   <p className="text-xs text-slate-400 italic p-3 bg-slate-50 rounded-lg">Belum ada pelatihan tersedia. Pelatihan akan muncul setelah admin menginput data melalui menu Analisis Diklat.</p>
                 ) : (
@@ -632,113 +717,60 @@ function PendaftaranRight({ onBack, onUploadDokumen }: { onBack: () => void; onU
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <button type="submit" disabled={loading} className="flex items-center gap-2 px-10 py-3 bg-[#195737] hover:bg-[#0F4227] disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition-colors">
-                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</> : <><ArrowRight className="w-4 h-4" /> Daftar Sekarang</>}
+            {/* === SECTION 4: Upload Dokumen Wajib === */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen Pendukung <span className="text-xs font-normal text-slate-400">(wajib upload semua)</span></h3>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
+                <strong>Petunjuk:</strong> Upload semua dokumen dalam format <strong>PDF</strong> (maks. 5MB per file).
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {DOKUMEN_TYPES.map((d) => {
+                  const hasFile = !!files[d.tipe]
+                  return (
+                    <div key={d.tipe} className={`rounded-xl border-2 p-4 space-y-2 transition-all ${hasFile ? 'border-green-300 bg-green-50/50' : 'border-slate-200 bg-slate-50/50'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-800">{d.label}{req}</h4>
+                          <p className="text-xs text-slate-500 mt-0.5">{d.desc}</p>
+                        </div>
+                        {hasFile && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                      </div>
+                      <label className={`flex items-center justify-center gap-2 w-full h-11 rounded-lg border-2 border-dashed text-sm font-medium cursor-pointer transition-colors ${hasFile ? 'border-green-400 text-green-700 bg-green-50 hover:bg-green-100' : 'border-[#195737]/30 text-[#195737] hover:bg-[#195737]/5 hover:border-[#195737]/60'}`}>
+                        <UploadIcon className="w-4 h-4" />
+                        {hasFile ? files[d.tipe].name : 'Pilih File PDF'}
+                        <input type="file" accept=".pdf" disabled={loading} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; handleFileSelect(d.tipe, f) }} />
+                      </label>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-slate-400 text-center">Dokumen terupload: {filledCount}/{DOKUMEN_TYPES.length}</p>
+            </div>
+
+            {/* === TOMBOL DAFTAR BESAR === */}
+            <div className="pt-2 pb-4">
+              <button
+                type="submit"
+                disabled={!canSubmit || loading}
+                className={`w-full flex items-center justify-center gap-3 py-4 text-lg font-bold rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl hover:scale-[1.01] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+              >
+                {loading ? (
+                  <><Loader2 className="w-6 h-6 animate-spin" /> {uploadProgress || 'Memproses...'}</>
+                ) : !formComplete ? (
+                  <><AlertCircle className="w-6 h-6" /> Lengkapi Semua Data Form Terlebih Dahulu</>
+                ) : !docsComplete ? (
+                  <><AlertCircle className="w-6 h-6" /> Upload Semua Dokumen Wajib ({filledCount}/{DOKUMEN_TYPES.length})</>
+                ) : (
+                  <><ArrowRight className="w-6 h-6" /> DAFTAR SEKARANG</>
+                )}
               </button>
+              {!canSubmit && (
+                <p className="text-center text-xs text-slate-400 mt-2">Pastikan semua data form terisi dan {DOKUMEN_TYPES.length} dokumen PDF sudah diupload</p>
+              )}
             </div>
           </form>
         </div>
       )}
-
-      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
-    </motion.div>
-  )
-}
-
-// ==========================================================================
-// FULL-SCREEN: UPLOAD DOKUMEN PENDUKUNG
-// ==========================================================================
-
-const DOKUMEN_TYPES = [
-  { tipe: 'KTP', label: 'KTP', desc: 'Kartu Tanda Penduduk' },
-  { tipe: 'SURAT_TUGAS', label: 'Surat Tugas', desc: 'Surat tugas dari instansi' },
-  { tipe: 'NPWP', label: 'NPWP', desc: 'Kartu Nomor Pokok Wajib Pajak' },
-  { tipe: 'REK_BANK', label: 'REK Bank Aceh', desc: 'Bukti rekening Bank Aceh' },
-]
-
-function UploadDokumenRight({ onBack, registrationId }: { onBack: () => void; registrationId: string }) {
-  const [info, setInfo] = useState<{ nama: string; nip: string; dokumen: { tipe: string; namaFile: string }[] } | null>(null)
-  const [uploading, setUploading] = useState('')
-  const [uploadStatus, setUploadStatus] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    if (!registrationId) return
-    fetch(`/api/portal/pendaftaran?nip=`).catch(() => {})
-    // Load info dari pendaftaran yang baru
-    fetch('/api/portal/pendaftaran?nip=').catch(() => {})
-  }, [registrationId])
-
-  // Find the registration data by id
-  useEffect(() => {
-    if (!registrationId) return
-    // We need to fetch by ID, but our API uses NIP. Let's use a workaround:
-    // The pendaftaran response from POST gave us the id, so we store it
-    // For now, we'll just show the upload form without pre-fetched data
-  }, [registrationId])
-
-  const handleUpload = async (tipe: string, file: File) => {
-    if (!registrationId) return
-    setUploading(tipe)
-    try {
-      const fd = new FormData()
-      fd.append('pendaftaranId', registrationId)
-      fd.append('tipe', tipe)
-      fd.append('file', file)
-      const res = await fetch('/api/portal/pendaftaran/upload-dokumen', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok) { setUploadStatus((p) => ({ ...p, [tipe]: `Gagal: ${data.error}` })); return }
-      setUploadStatus((p) => ({ ...p, [tipe]: `✓ ${data.dokumen.namaFile}` }))
-    } catch { setUploadStatus((p) => ({ ...p, [tipe]: 'Gagal: kesalahan jaringan' })) } finally { setUploading('') }
-  }
-
-  return (
-    <motion.div key="upload-dok-right" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }} className="min-h-screen flex flex-col bg-[#FFFEF9]">
-      <div className="px-6 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
-        <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4"><ArrowLeft className="w-4 h-4" /> Kembali</button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#195737]/10 flex items-center justify-center"><UploadIcon className="w-5 h-5 text-[#195737]" /></div>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Upload Dokumen Pendukung</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Upload 4 dokumen wajib dalam format PDF</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-6 sm:p-10">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-            <strong>Petunjuk:</strong> Upload semua dokumen dalam format <strong>PDF</strong> (maks. 5MB per file). Dokumen bisa diupload satu per satu atau sekaligus.
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
-            {DOKUMEN_TYPES.map((d) => {
-              const isUploading = uploading === d.tipe
-              const status = uploadStatus[d.tipe]
-              return (
-                <div key={d.tipe} className="bg-white rounded-xl border border-slate-200/80 p-5 space-y-3">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800">{d.label}</h4>
-                    <p className="text-xs text-slate-500 mt-0.5">{d.desc}</p>
-                  </div>
-                  <label className={`flex items-center justify-center gap-2 w-full h-11 rounded-lg border-2 border-dashed text-sm font-medium cursor-pointer transition-colors ${isUploading ? 'border-slate-300 text-slate-400 cursor-wait' : 'border-[#195737]/30 text-[#195737] hover:bg-[#195737]/5 hover:border-[#195737]/60'}`}>
-                    {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadIcon className="w-4 h-4" />}
-                    {isUploading ? 'Mengupload...' : 'Pilih File PDF'}
-                    <input type="file" accept=".pdf" disabled={isUploading} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(d.tipe, f) }} />
-                  </label>
-                  {status && <p className={`text-xs font-medium ${status.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>{status}</p>}
-                </div>
-              )
-            })}
-          </div>
-
-          <div className="text-center pt-4">
-            <button onClick={onBack} className="inline-flex items-center gap-2 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors">
-              <CheckCircle2 className="w-5 h-5" /> Selesai
-            </button>
-          </div>
-        </div>
-      </div>
 
       <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
     </motion.div>
