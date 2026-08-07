@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { nama, nip, pangkatGolongan, tempatLahir, tanggalLahir, jabatan, instansi, nomorHP, nomorRekening, npwp, pelatihanId } = body
+    const { nama, nip, pangkatGolongan, tempatLahir, tanggalLahir, jabatan, unitKerja, instansi, nomorHP, nomorRekening, npwp, pelatihanId } = body
 
     // Validasi wajib
     if (!nama?.trim()) return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         tempatLahir: tempatLahir?.trim() || null,
         tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : null,
         jabatan: jabatan?.trim() || null,
+        unitKerja: unitKerja?.trim() || null,
         instansi: instansi?.trim() || null,
         nomorHP: nomorHP?.trim() || null,
         nomorRekening: nomorRekening?.trim() || null,
