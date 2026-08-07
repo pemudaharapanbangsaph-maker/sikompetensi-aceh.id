@@ -18,7 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, Award, History, ArrowRight, Search } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, Award, History, ArrowRight, Search, FileText, Download, ClipboardList } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -449,6 +449,19 @@ type RiwayatData = {
   nilai: (Nilai & { ujiKompetensi?: UjiKompetensi | null })[]
 }
 
+type DokumenPendaftaran = {
+  id: string
+  tipe: string
+  namaFile: string
+  ukuran: string
+}
+
+type PendaftaranByNip = {
+  found: boolean
+  pendaftaran: { id: string; nama: string; nip: string; pelatihan: string; status: string; tanggalDaftar: string } | null
+  dokumen: DokumenPendaftaran[]
+}
+
 function PesertaRiwayatView() {
   const { setActiveView } = useNavStore()
   const { toast } = useToast()
@@ -458,6 +471,10 @@ function PesertaRiwayatView() {
   const [riwayat, setRiwayat] = useState<RiwayatData | null>(null)
   const [loading, setLoading] = useState(false)
   const [listLoading, setListLoading] = useState(true)
+
+  // Dokumen pendaftaran
+  const [pendaftaranData, setPendaftaranData] = useState<PendaftaranByNip | null>(null)
+  const [dokumenLoading, setDokumenLoading] = useState(false)
 
   useEffect(() => {
     api.peserta.listAll()
@@ -483,6 +500,50 @@ function PesertaRiwayatView() {
     load()
     return () => { cancelled = true }
   }, [selectedId, toast])
+
+  // Fetch dokumen pendaftaran berdasarkan NIP
+  useEffect(() => {
+    if (!selectedId) { setPendaftaranData(null); return }
+    const peserta = pesertaList.find((p) => p.id === selectedId)
+    if (!peserta?.nip) { setPendaftaranData(null); return }
+    let cancelled = false
+    const loadDokumen = async () => {
+      setDokumenLoading(true)
+      try {
+        const res = await fetch(`/api/pendaftaran/by-nip/${peserta.nip}/dokumen`, { credentials: 'same-origin' })
+        if (res.ok) {
+          const data = await res.json()
+          if (!cancelled) setPendaftaranData(data)
+        }
+      } catch { /* silent */ } finally {
+        if (!cancelled) setDokumenLoading(false)
+      }
+    }
+    loadDokumen()
+    return () => { cancelled = true }
+  }, [selectedId, pesertaList])
+
+  const handleDownloadDokumen = async (pendaftaranId: string, tipe: string, label: string) => {
+    try {
+      const res = await fetch(`/api/pendaftaran/${pendaftaranId}/dokumen/${tipe}`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${label.replace(/\s+/g, '_')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      toast({ title: 'Gagal mengunduh', description: (e as Error).message, variant: 'destructive' })
+    }
+  }
+
+  const TIPE_DOKUMEN_LABELS: Record<string, string> = {
+    KTP: 'KTP', SURAT_TUGAS: 'Surat Tugas', NPWP: 'NPWP', REK_BANK: 'REK Bank Aceh',
+  }
 
   const selectedPeserta = pesertaList.find((p) => p.id === selectedId) || null
 
@@ -587,6 +648,64 @@ function PesertaRiwayatView() {
             <StatCard title="Total Uji Kompetensi" value={totalUji} icon={Award} color="amber" />
             <StatCard title="Uji Lulus" value={totalLulus} icon={UserCheck} color="green" />
           </div>
+
+          {/* Dokumen Pendaftaran */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-2 border-b border-slate-100">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-[#195737]" /> Dokumen Pendaftaran
+                {pendaftaranData?.pendaftaran && (
+                  <span className="text-xs font-normal text-slate-400 ml-2">
+                    — {pendaftaranData.pendaftaran.pelatihan || 'Pelatihan tidak tersedia'}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4">
+              {dokumenLoading ? (
+                <div className="flex items-center justify-center py-6 text-sm text-slate-400">
+                  <div className="w-4 h-4 border-2 border-slate-300 border-t-[#195737] rounded-full animate-spin mr-2" /> Memuat dokumen...
+                </div>
+              ) : !pendaftaranData?.found ? (
+                <div className="py-6 text-center text-sm text-slate-400">
+                  <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p>Tidak ada data pendaftaran portal untuk peserta ini</p>
+                </div>
+              ) : pendaftaranData.dokumen.length === 0 ? (
+                <div className="py-6 text-center text-sm text-slate-400">
+                  <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <p>Belum ada dokumen yang diunggah</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {pendaftaranData.dokumen.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-lg bg-[#195737]/10 flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 text-[#195737]" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">
+                            {TIPE_DOKUMEN_LABELS[doc.tipe] || doc.tipe}
+                          </p>
+                          <p className="text-xs text-slate-400">{doc.namaFile} · {doc.ukuran}</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownloadDokumen(pendaftaranData!.pendaftaran!.id, doc.tipe, TIPE_DOKUMEN_LABELS[doc.tipe] || doc.tipe)}
+                        className="flex-shrink-0 h-8 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline ml-1">Unduh</span>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="grid lg:grid-cols-2 gap-4">
             {/* Riwayat Pelatihan */}
