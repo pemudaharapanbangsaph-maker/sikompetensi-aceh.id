@@ -68,11 +68,9 @@ export async function GET(
       'Pangkat/Golongan': pa.peserta.pangkatGolongan || '-',
       'Unit Kerja': pa.peserta.unitKerja || '-',
       Instansi: pa.peserta.instansi || '-',
-      Pendidikan: pa.peserta.pendidikan || '-',
       'No. Telp': pa.peserta.noTelp || '-',
       Email: pa.peserta.email || '-',
       'Nilai Akhir': pa.nilaiAkhir ?? '-',
-      Status: STATUS_LABEL[pa.status] || pa.status,
     }))
 
     // Tambah baris total
@@ -87,18 +85,14 @@ export async function GET(
       'Pangkat/Golongan': '',
       'Unit Kerja': '',
       Instansi: '',
-      Pendidikan: '',
       'No. Telp': '',
       Email: '',
-      'Nilai Akhir': '',
-      Status: String(angkatan.peserta.length),
+      'Nilai Akhir': String(angkatan.peserta.length),
     })
 
     // === Sheet 2: Informasi Kegiatan ===
     const l = angkatan.peserta.filter((pa) => pa.peserta.jenisKelamin === 'L').length
     const p = angkatan.peserta.filter((pa) => pa.peserta.jenisKelamin === 'P').length
-    const lulus = angkatan.peserta.filter((pa) => pa.status === 'LULUS').length
-
     const infoRows = [
       { Keterangan: 'Nama Pelatihan', Isi: angkatan.pelatihan?.nama || '-' },
       { Keterangan: 'Kode Pelatihan', Isi: angkatan.pelatihan?.kode || '-' },
@@ -112,7 +106,6 @@ export async function GET(
       { Keterangan: 'Total Peserta', Isi: String(angkatan.peserta.length) },
       { Keterangan: 'Peserta Laki-laki', Isi: String(l) },
       { Keterangan: 'Peserta Perempuan', Isi: String(p) },
-      { Keterangan: 'Peserta Lulus', Isi: String(lulus) },
     ]
 
     const wb = XLSX.utils.book_new()
@@ -121,7 +114,7 @@ export async function GET(
     wsPeserta['!cols'] = [
       { wch: 5 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 16 },
       { wch: 14 }, { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 25 },
-      { wch: 12 }, { wch: 16 }, { wch: 25 }, { wch: 12 }, { wch: 14 },
+      { wch: 16 }, { wch: 25 }, { wch: 12 },
     ]
     XLSX.utils.book_append_sheet(wb, wsPeserta, 'Daftar Peserta')
 
