@@ -234,9 +234,9 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran }: { onEnter: () => v
           </button>
           <button
             onClick={onPendaftaran}
-            className="flex items-center gap-2.5 px-8 py-3 border-2 border-[#195737]/30 hover:bg-[#195737] hover:text-white text-[#195737] font-medium text-sm rounded-xl transition-colors duration-200"
+            className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
           >
-            <ClipboardList className="w-5 h-5" />
+            <ClipboardList className="w-6 h-6" />
             Pendaftaran Pelatihan
           </button>
         </div>
@@ -748,24 +748,24 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* === TOMBOL DAFTAR BESAR === */}
-            <div className="pt-2 pb-4">
+            <div className="pt-4 pb-6">
               <button
                 type="submit"
                 disabled={!canSubmit || loading}
-                className={`w-full flex items-center justify-center gap-3 py-4 text-lg font-bold rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl hover:scale-[1.01] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+                className={`w-full flex items-center justify-center gap-3 py-6 text-xl font-bold rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl hover:scale-[1.02] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
               >
                 {loading ? (
-                  <><Loader2 className="w-6 h-6 animate-spin" /> {uploadProgress || 'Memproses...'}</>
+                  <><Loader2 className="w-7 h-7 animate-spin" /> {uploadProgress || 'Memproses...'}</>
                 ) : !formComplete ? (
-                  <><AlertCircle className="w-6 h-6" /> Lengkapi Semua Data Form Terlebih Dahulu</>
+                  <><AlertCircle className="w-7 h-7" /> Lengkapi Semua Data Form Terlebih Dahulu</>
                 ) : !docsComplete ? (
-                  <><AlertCircle className="w-6 h-6" /> Upload Semua Dokumen Wajib ({filledCount}/{DOKUMEN_TYPES.length})</>
+                  <><AlertCircle className="w-7 h-7" /> Upload Semua Dokumen Wajib ({filledCount}/{DOKUMEN_TYPES.length})</>
                 ) : (
-                  <><ArrowRight className="w-6 h-6" /> DAFTAR SEKARANG</>
+                  <><ArrowRight className="w-7 h-7" /> DAFTAR SEKARANG</>
                 )}
               </button>
               {!canSubmit && (
-                <p className="text-center text-xs text-slate-400 mt-2">Pastikan semua data form terisi dan {DOKUMEN_TYPES.length} dokumen PDF sudah diupload</p>
+                <p className="text-center text-xs text-slate-400 mt-3">Pastikan semua data form terisi dan {DOKUMEN_TYPES.length} dokumen PDF sudah diupload</p>
               )}
             </div>
           </form>
