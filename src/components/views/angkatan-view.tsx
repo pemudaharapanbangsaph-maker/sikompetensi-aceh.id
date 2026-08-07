@@ -19,7 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, User, UserCircle, GraduationCap, Upload, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, User, UserCircle, GraduationCap, Upload, Download, AlertCircle, CheckCircle2, Loader2, ClipboardList } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -620,6 +620,7 @@ const STATUS_PESERTA_ANGKATAN: Record<string, { label: string; color: string }> 
 }
 
 function PesertaPerKegiatanView() {
+  const { setActiveView } = useNavStore()
   const { toast } = useToast()
   const [angkatanList, setAngkatanList] = useState<Angkatan[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
@@ -778,6 +779,9 @@ function PesertaPerKegiatanView() {
                   <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => setActiveView('pendaftaran-list')} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                    <ClipboardList className="w-4 h-4" /> Ambil Data Pendaftar
+                  </Button>
                   <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
                     <Upload className="w-4 h-4" /> Import
                   </Button>
