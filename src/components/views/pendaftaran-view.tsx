@@ -326,6 +326,10 @@ function PendaftaranDokumenView() {
   const { setActiveView } = useNavStore()
   const { toast } = useToast()
 
+  // React state untuk tracking selected pendaftaran (sinkron dari module-level var)
+  const [selectedId, setSelectedId] = useState(_selectedPendaftaranId)
+  const isListMode = !selectedId
+
   const [data, setData] = useState<PendaftaranDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -342,11 +346,38 @@ function PendaftaranDokumenView() {
     jabatan: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
   })
 
-  const fetchData = useCallback(async () => {
-    if (!_selectedPendaftaranId) { setLoading(false); return }
+  // === LIST MODE STATE ===
+  const [listData, setListData] = useState<PendaftaranItem[]>([])
+  const [listLoading, setListLoading] = useState(true)
+  const [listSearch, setListSearch] = useState('')
+  const [listStatusFilter, setListStatusFilter] = useState('')
+
+  // Fetch list data (list mode)
+  const fetchListData = useCallback(async () => {
+    setListLoading(true)
+    try {
+      const params: Record<string, string> = {}
+      if (listSearch) params.search = listSearch
+      if (listStatusFilter) params.status = listStatusFilter
+      params.pageSize = '100'
+      const qs = '?' + new URLSearchParams(params).toString()
+      const res = await fetch(`/api/pendaftaran${qs}`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json: PendaftaranListResponse = await res.json()
+      setListData(json.data)
+    } catch (e) {
+      toast({ title: 'Gagal memuat data', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setListLoading(false)
+    }
+  }, [listSearch, listStatusFilter, toast])
+
+  // Fetch detail data (detail mode)
+  const fetchDetailData = useCallback(async () => {
+    if (!selectedId) { setLoading(false); return }
     setLoading(true)
     try {
-      const detailRes = await fetch(`/api/pendaftaran/${_selectedPendaftaranId}`, { credentials: 'same-origin' })
+      const detailRes = await fetch(`/api/pendaftaran/${selectedId}`, { credentials: 'same-origin' })
       if (!detailRes.ok) throw new Error(`HTTP ${detailRes.status}`)
       const detail = await detailRes.json()
       setData(detail)
@@ -355,9 +386,26 @@ function PendaftaranDokumenView() {
     } finally {
       setLoading(false)
     }
-  }, [toast])
+  }, [selectedId, toast])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    if (isListMode) fetchListData()
+    else fetchDetailData()
+  }, [isListMode, fetchListData, fetchDetailData])
+
+  // Handler: pilih pendaftar dari daftar
+  const handleSelectPendaftar = (item: PendaftaranItem) => {
+    _selectedPendaftaranId = item.id
+    setSelectedId(item.id)
+    setData(null)
+  }
+
+  // Handler: kembali ke daftar dari detail
+  const handleBackToList = () => {
+    _selectedPendaftaranId = ''
+    setSelectedId('')
+    setData(null)
+  }
 
   const handleUpdateStatus = async () => {
     if (!data || !newStatus) return
@@ -458,6 +506,117 @@ function PendaftaranDokumenView() {
   const editSet = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setEditForm((p) => ({ ...p, [k]: e.target.value }))
 
+  // ========================
+  // LIST MODE RENDER
+  // ========================
+  if (isListMode) {
+    return (
+      <div>
+        <PageHeader title="Dokumen Peserta" description="Pilih pendaftar untuk melihat dokumen yang diunggah">
+          <Button size="sm" variant="outline" onClick={() => setActiveView('pendaftaran-list')} className="h-9 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white hover:border-[#195737]">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1.5">Data Pendaftar</span>
+          </Button>
+        </PageHeader>
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <CardTitle className="text-sm font-bold text-slate-900">Daftar Pendaftar & Dokumen</CardTitle>
+              <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <Input
+                  placeholder="Cari nama, NIP..."
+                  value={listSearch}
+                  onChange={(e) => setListSearch(e.target.value)}
+                  className="h-8 text-sm w-48"
+                />
+                <Select value={listStatusFilter || undefined} onValueChange={(v) => setListStatusFilter(v === '__all__' ? '' : v)}>
+                  <SelectTrigger className="h-8 text-sm w-32">
+                    <SelectValue placeholder="Semua Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Semua Status</SelectItem>
+                    {STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {listLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-[#0F4C81]" />
+                <p className="text-sm text-slate-500">Memuat data pendaftar...</p>
+              </div>
+            ) : listData.length === 0 ? (
+              <div className="text-center py-12">
+                <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm text-slate-400">Belum ada data pendaftar</p>
+              </div>
+            ) : (
+              <div className="max-h-[60vh] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-slate-50 z-10">
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">No</th>
+                      <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Nama / NIP</th>
+                      <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden md:table-cell">Pelatihan</th>
+                      <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Dokumen</th>
+                      <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                      <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase w-16">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {listData.map((item, idx) => {
+                      const Icon = STATUS_ICON[item.status] || AlertCircle
+                      const docComplete = item.jumlahDokumen >= 4
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-2.5 px-3 text-slate-500 text-xs">{idx + 1}</td>
+                          <td className="py-2.5 px-3">
+                            <p className="font-medium text-slate-800 text-sm">{item.nama}</p>
+                            <p className="text-xs font-mono text-slate-400">{item.nip}</p>
+                          </td>
+                          <td className="py-2.5 px-3 hidden md:table-cell">
+                            <span className="text-xs text-slate-600 max-w-[200px] truncate block">{item.pelatihan || '-'}</span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={cn(
+                              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
+                              docComplete ? 'bg-green-50 text-[#195737]' : 'bg-amber-50 text-amber-600'
+                            )}>
+                              {docComplete ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                              {item.jumlahDokumen}/4
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium', STATUS_STYLE[item.status])}>
+                              <Icon className="w-3 h-3" />
+                              {STATUS_OPTIONS.find((o) => o.value === item.status)?.label || item.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-500 hover:text-[#195737]" onClick={() => handleSelectPendaftar(item)} title="Lihat Dokumen">
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // ========================
+  // DETAIL MODE - Loading & Empty States
+  // ========================
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -472,7 +631,7 @@ function PendaftaranDokumenView() {
       <div className="text-center py-20">
         <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
         <p className="text-slate-500">Data pendaftaran tidak ditemukan</p>
-        <Button variant="outline" className="mt-4" onClick={() => setActiveView('pendaftaran-list')}>
+        <Button variant="outline" className="mt-4" onClick={handleBackToList}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Kembali ke Daftar
         </Button>
@@ -523,7 +682,7 @@ function PendaftaranDokumenView() {
       {/* Back button & header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setActiveView('pendaftaran-list')}>
+          <Button variant="outline" size="sm" onClick={handleBackToList}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div>
