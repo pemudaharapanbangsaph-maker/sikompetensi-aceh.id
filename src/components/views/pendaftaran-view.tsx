@@ -31,6 +31,7 @@ interface PendaftaranItem {
   tempatLahir: string
   tanggalLahir: string
   jabatan: string
+  unitKerja: string
   instansi: string
   nomorHP: string
   nomorRekening: string
@@ -343,7 +344,7 @@ function PendaftaranDokumenView() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editForm, setEditForm] = useState({
     nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
-    jabatan: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
+    jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
   })
 
   // === LIST MODE STATE ===
@@ -443,6 +444,7 @@ function PendaftaranDokumenView() {
       tempatLahir: data.tempatLahir,
       tanggalLahir: data.tanggalLahir,
       jabatan: data.jabatan,
+      unitKerja: data.unitKerja,
       instansi: data.instansi,
       nomorHP: data.nomorHP,
       nomorRekening: data.nomorRekening,
@@ -656,6 +658,7 @@ function PendaftaranDokumenView() {
       title: 'Jabatan & Instansi',
       fields: [
         { label: 'Jabatan', value: data.jabatan },
+        { label: 'Unit Kerja', value: data.unitKerja },
         { label: 'Instansi', value: data.instansi },
       ],
     },
@@ -822,6 +825,10 @@ function PendaftaranDokumenView() {
               <div className="space-y-1.5">
                 <Label>Jabatan</Label>
                 <Input value={editForm.jabatan} onChange={editSet('jabatan')} className="h-10" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unit Kerja</Label>
+                <Input value={editForm.unitKerja} onChange={editSet('unitKerja')} className="h-10" />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Instansi</Label>
