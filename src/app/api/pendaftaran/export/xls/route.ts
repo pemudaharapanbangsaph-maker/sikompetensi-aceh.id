@@ -33,6 +33,7 @@ export async function GET(req: Request) {
       'Tempat Lahir': d.tempatLahir || '',
       'Tanggal Lahir': d.tanggalLahir ? d.tanggalLahir.toISOString().slice(0, 10) : '',
       'Jabatan': d.jabatan || '',
+      'Unit Kerja': d.unitKerja || '',
       'Instansi': d.instansi || '',
       'No. HP': d.nomorHP || '',
       'No. REK Bank Aceh': d.nomorRekening || '',
@@ -53,8 +54,8 @@ export async function GET(req: Request) {
     // Column widths
     ws['!cols'] = [
       { wch: 5 }, { wch: 25 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
-      { wch: 24 }, { wch: 28 }, { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 35 },
-      { wch: 14 }, { wch: 16 }, { wch: 6 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
+      { wch: 24 }, { wch: 28 }, { wch: 28 }, { wch: 16 }, { wch: 22 }, { wch: 22 },
+      { wch: 35 }, { wch: 14 }, { wch: 16 }, { wch: 6 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
     ]
 
     XLSX.utils.book_append_sheet(wb, ws, 'Data Pendaftar')
