@@ -82,6 +82,7 @@ export async function POST(
           data: {
             nip: pendaftar.nip,
             nama: pendaftar.nama,
+            jenisKelamin: 'L', // default dari pendaftar (tidak ada field jenis kelamin di form pendaftaran)
             pangkatGolongan: pendaftar.pangkatGolongan || undefined,
             tempatLahir: pendaftar.tempatLahir || undefined,
             tanggalLahir: pendaftar.tanggalLahir || undefined,
