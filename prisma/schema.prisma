@@ -152,6 +152,7 @@ model PendaftaranPortal {
   tempatLahir       String?
   tanggalLahir      DateTime?
   jabatan           String?
+  unitKerja         String?
   instansi          String?
   nomorHP           String?
   nomorRekening     String?
