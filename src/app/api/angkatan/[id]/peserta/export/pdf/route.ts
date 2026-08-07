@@ -59,7 +59,7 @@ export async function GET(
     const { default: jsPDF } = await import('jspdf')
     const { default: autoTable } = await import('jspdf-autotable')
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' })
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageWidth = doc.internal.pageSize.getWidth()
     const margin = 14
     const usableWidth = pageWidth - margin * 2
@@ -107,17 +107,16 @@ export async function GET(
     // === STATISTIK ===
     const totalL = angkatan.peserta.filter((pa) => pa.peserta.jenisKelamin === 'L').length
     const totalP = angkatan.peserta.filter((pa) => pa.peserta.jenisKelamin === 'P').length
-    const totalLulus = angkatan.peserta.filter((pa) => pa.status === 'LULUS').length
 
     doc.setFontSize(8)
     doc.setFont('helvetica', 'bold')
-    doc.text(`Total Peserta: ${angkatan.peserta.length}  |  L: ${totalL}  |  P: ${totalP}  |  Lulus: ${totalLulus}`, margin + 2, y)
+    doc.text(`Total Peserta: ${angkatan.peserta.length}  |  L: ${totalL}  |  P: ${totalP}`, margin + 2, y)
     y += 8
 
     // === TABLE PESERTA ===
     const tableHeaders = [
       'No', 'NIP', 'Nama Peserta', 'L/P', 'Jabatan',
-      'Pangkat/Gol.', 'Unit Kerja', 'Instansi', 'Pendidikan', 'Nilai', 'Status',
+      'Pangkat/Gol.', 'Unit Kerja', 'Instansi', 'Nilai',
     ]
 
     const tableRows = angkatan.peserta.map((pa, idx) => [
@@ -129,9 +128,7 @@ export async function GET(
       pa.peserta.pangkatGolongan || '-',
       pa.peserta.unitKerja || '-',
       pa.peserta.instansi || '-',
-      pa.peserta.pendidikan || '-',
       pa.nilaiAkhir != null ? String(pa.nilaiAkhir) : '-',
-      STATUS_LABEL[pa.status] || pa.status,
     ])
 
     autoTable(doc, {
@@ -158,17 +155,15 @@ export async function GET(
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 10 },   // No
+        0: { halign: 'center', cellWidth: 8 },   // No
         1: { cellWidth: 30 },                      // NIP
         2: { cellWidth: 45 },                      // Nama
         3: { halign: 'center', cellWidth: 10 },    // L/P
         4: { cellWidth: 40 },                      // Jabatan
-        5: { cellWidth: 30 },                      // Pangkat
+        5: { cellWidth: 25 },                      // Pangkat
         6: { cellWidth: 40 },                      // Unit Kerja
         7: { cellWidth: 40 },                      // Instansi
-        8: { halign: 'center', cellWidth: 18 },    // Pendidikan
-        9: { halign: 'center', cellWidth: 12 },    // Nilai
-        10: { halign: 'center', cellWidth: 20 },   // Status
+        8: { halign: 'center', cellWidth: 12 },    // Nilai
       },
       didDrawPage: (data) => {
         // Footer di setiap halaman
