@@ -158,7 +158,7 @@ export async function GET(
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 8 },   // No
+        0: { halign: 'center', cellWidth: 10 },   // No
         1: { cellWidth: 30 },                      // NIP
         2: { cellWidth: 45 },                      // Nama
         3: { halign: 'center', cellWidth: 10 },    // L/P
