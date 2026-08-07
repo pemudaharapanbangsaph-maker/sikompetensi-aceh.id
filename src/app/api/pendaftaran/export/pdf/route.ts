@@ -24,10 +24,10 @@ export async function GET(req: Request) {
 
     const STATUS_LABEL: Record<string, string> = { MENUNGGU: 'Menunggu', DITERIMA: 'Diterima', DITOLAK: 'Ditolak' }
 
-    const { default: jsPDF } = await import('jspdf')
+    const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'legal' })
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageW = doc.internal.pageSize.getWidth()
 
     // Header
@@ -65,6 +65,7 @@ export async function GET(req: Request) {
       d.nip,
       d.pangkatGolongan || '-',
       d.jabatan || '-',
+      d.unitKerja || '-',
       d.instansi || '-',
       d.nomorHP || '-',
       d.analisisDiklatItem?.namaPelatihan || '-',
@@ -77,7 +78,7 @@ export async function GET(req: Request) {
       startY: 46,
       head: [[
         'No', 'Nama', 'NIP', 'Pangkat/Gol', 'Jabatan',
-        'Instansi', 'No. HP', 'Pelatihan', 'Dok', 'Status', 'Tgl Daftar',
+        'Unit Kerja', 'Instansi', 'No. HP', 'Pelatihan', 'Dok', 'Status', 'Tgl Daftar',
       ]],
       body: rows,
       headStyles: {
@@ -96,17 +97,18 @@ export async function GET(req: Request) {
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 32 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 35 },
-        6: { cellWidth: 28 },
-        7: { cellWidth: 45 },
-        8: { cellWidth: 15, halign: 'center' },
-        9: { cellWidth: 16, halign: 'center' },
-        10: { cellWidth: 22 },
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 16 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 32 },
+        6: { cellWidth: 32 },
+        7: { cellWidth: 18 },
+        8: { cellWidth: 45 },
+        9: { cellWidth: 10, halign: 'center' },
+        10: { cellWidth: 16, halign: 'center' },
+        11: { cellWidth: 22 },
       },
       margin: { left: 14, right: 14 },
     })
