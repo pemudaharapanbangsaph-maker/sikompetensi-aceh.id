@@ -163,7 +163,7 @@ export async function GET(
         2: { cellWidth: 45 },                      // Nama
         3: { halign: 'center', cellWidth: 10 },    // L/P
         4: { cellWidth: 40 },                      // Jabatan
-        5: { cellWidth: 25 },                      // Pangkat
+        5: { cellWidth: 30 },                      // Pangkat
         6: { cellWidth: 40 },                      // Unit Kerja
         7: { cellWidth: 40 },                      // Instansi
         8: { halign: 'center', cellWidth: 18 },    // Pendidikan
