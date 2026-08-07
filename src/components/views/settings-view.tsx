@@ -311,12 +311,12 @@ function SettingsLogoView() {
 // ===========================================================================
 
 const SECURITY_FEATURES = [
-  { label: 'Password Hashing (bcrypt)', icon: Lock, color: 'text-green-700 bg-green-50 border-green-200' },
+  { label: 'Password Hashing (bcrypt)', icon: Lock, color: 'text-[#195737] bg-green-50 border-[#86EFAC]' },
   { label: 'Session Timeout', icon: Clock, color: 'text-blue-700 bg-blue-50 border-blue-200' },
   { label: 'CSRF Protection', icon: Shield, color: 'text-purple-700 bg-purple-50 border-purple-200' },
   { label: 'Audit Trail', icon: FileCheck, color: 'text-amber-700 bg-amber-50 border-amber-200' },
   { label: 'Login Attempt Limit', icon: KeyRound, color: 'text-red-700 bg-red-50 border-red-200' },
-  { label: 'HttpOnly Cookies', icon: CheckCircle2, color: 'text-green-700 bg-green-50 border-green-200' },
+  { label: 'HttpOnly Cookies', icon: CheckCircle2, color: 'text-[#195737] bg-green-50 border-[#86EFAC]' },
 ]
 
 function SettingsLoginView() {
@@ -437,7 +437,7 @@ function SettingsLoginView() {
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="pb-3 border-b border-slate-100">
           <CardTitle className="text-base flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-green-600" /> Fitur Keamanan Aktif
+            <CheckCircle2 className="w-4 h-4 text-[#15803D]" /> Fitur Keamanan Aktif
           </CardTitle>
           <CardDescription className="text-xs">
             Fitur keamanan yang telah diterapkan pada sistem ini
@@ -537,7 +537,7 @@ function SettingsAuditView() {
 
   const aksiBadgeClass = (aksi: string): string => {
     const map: Record<string, string> = {
-      CREATE: 'bg-green-100 text-green-700 border-green-200',
+      CREATE: 'bg-green-100 text-[#195737] border-[#86EFAC]',
       UPDATE: 'bg-blue-100 text-blue-700 border-blue-200',
       DELETE: 'bg-red-100 text-red-700 border-red-200',
       LOGIN: 'bg-purple-100 text-purple-700 border-purple-200',
@@ -581,6 +581,7 @@ function SettingsAuditView() {
             Setiap operasi <code className="bg-slate-200 px-1 py-0.5 rounded text-xs">CREATE / UPDATE / DELETE</code> serta
             aktivitas <code className="bg-slate-200 px-1 py-0.5 rounded text-xs">LOGIN / LOGOUT / BACKUP</code> tercatat
             otomatis beserta timestamp, username, alamat IP, dan deskripsi. Data diurutkan dari terbaru.
+            Log yang lebih dari <strong>7 hari</strong> akan otomatis dihapus.
           </div>
         </CardContent>
       </Card>
