@@ -634,6 +634,11 @@ function PesertaPerKegiatanView() {
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors?: string[]; message: string } | null>(null)
 
+  // Sync dari pendaftar state
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ added: number; skipped: number; skippedNames: string[]; message: string } | null>(null)
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false)
+
   const angkatan = selectedId ? angkatanData : null
 
   useEffect(() => {
@@ -748,6 +753,31 @@ function PesertaPerKegiatanView() {
     setImportOpen(true)
   }
 
+  // ===== SYNC DARI PENDAFTAR =====
+  const handleSyncPendaftar = async () => {
+    if (!selectedId) return
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const res = await fetch(`/api/angkatan/${selectedId}/sync-pendaftar`, {
+        method: 'POST',
+        credentials: 'same-origin',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Gagal sinkronisasi')
+      setSyncResult(data)
+      if (data.added > 0) {
+        toast({ title: 'Sinkronisasi Berhasil', description: data.message, duration: 4000 } as any)
+        reloadAngkatan()
+      }
+    } catch (e) {
+      toast({ title: 'Gagal Sinkronisasi', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 4000 } as any)
+    } finally {
+      setSyncing(false)
+      setSyncDialogOpen(true)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader title="Peserta Per Kegiatan" description="Lihat dan kelola data peserta per kegiatan/angkatan pelatihan" />
@@ -779,8 +809,8 @@ function PesertaPerKegiatanView() {
                   <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => setActiveView('pendaftaran-list')} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-                    <ClipboardList className="w-4 h-4" /> Ambil Data Pendaftar
+                  <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                    {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
                   </Button>
                   <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
                     <Upload className="w-4 h-4" /> Import
@@ -1003,6 +1033,63 @@ function PesertaPerKegiatanView() {
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== SYNC DARI PENDAFTAR DIALOG ===== */}
+      <Dialog open={syncDialogOpen} onOpenChange={(v) => { if (!v) setSyncDialogOpen(false) }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-[#195737]" />
+              Hasil Sinkronisasi Data Pendaftar
+            </DialogTitle>
+          </DialogHeader>
+          {syncResult ? (
+            <div className="space-y-4">
+              <div className={`rounded-lg border p-4 ${syncResult.added > 0 ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
+                <div className="flex items-start gap-3">
+                  {syncResult.added > 0 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-3 text-sm flex-1">
+                    <p className="font-semibold text-slate-800">Ringkasan</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-700">{syncResult.added}</p>
+                        <p className="text-xs text-slate-500">Ditambahkan</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-slate-500">{syncResult.skipped}</p>
+                        <p className="text-xs text-slate-500">Sudah Ada</p>
+                      </div>
+                    </div>
+                    {syncResult.skippedNames.length > 0 && (
+                      <div className="p-2 bg-white/60 rounded border border-slate-200">
+                        <p className="text-xs font-semibold text-slate-600 mb-1">Yang sudah ada di angkatan:</p>
+                        <div className="max-h-24 overflow-y-auto space-y-0.5">
+                          {syncResult.skippedNames.map((name, idx) => (
+                            <p key={idx} className="text-[11px] text-slate-500">• {name}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs text-slate-400 text-center">Data diambil dari pendaftar berstatus <strong>DITERIMA</strong> yang pelatihannya cocok dengan angkatan ini</p>
+              <DialogFooter>
+                <Button onClick={() => setSyncDialogOpen(false)}>Tutup</Button>
+              </DialogFooter>
+            </div>
+          ) : syncing ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-[#195737]" />
+              <p className="text-sm text-slate-600">Mengambil data pendaftar...</p>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
