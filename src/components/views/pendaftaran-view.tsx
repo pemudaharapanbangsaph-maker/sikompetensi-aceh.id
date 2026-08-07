@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
 import {
   ArrowLeft, Download, Loader2, FileText, CheckCircle2, XCircle, Clock, AlertCircle,
-  Pencil, FileSpreadsheet, FileDown, Eye,
+  Pencil, FileSpreadsheet, FileDown, Eye, Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -125,6 +126,10 @@ function PendaftaranListView() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
 
+  // delete state
+  const [deleteTarget, setDeleteTarget] = useState<PendaftaranItem | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
@@ -163,6 +168,25 @@ function PendaftaranListView() {
   const handleRowClick = (item: PendaftaranItem) => {
     _selectedPendaftaranId = item.id
     setActiveView('pendaftaran-dokumen')
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/pendaftaran/${deleteTarget.id}`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `HTTP ${res.status}`)
+      }
+      toast({ title: 'Berhasil', description: `Pendaftaran ${deleteTarget.nama} dihapus` })
+      setDeleteTarget(null)
+      fetchData()
+    } catch (e) {
+      toast({ title: 'Gagal menghapus', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const filters: FilterOption[] = [
@@ -262,9 +286,34 @@ function PendaftaranListView() {
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-500 hover:text-[#195737]" onClick={(e) => { e.stopPropagation(); _selectedPendaftaranId = row.id; setActiveView('pendaftaran-dokumen') }} title="Lihat Detail">
               <Eye className="w-3.5 h-3.5" />
             </Button>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-slate-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }} title="Hapus">
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
           </div>
         )}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Yakin ingin menghapus pendaftaran <span className="font-semibold">{deleteTarget?.nama}</span> (NIP: {deleteTarget?.nip})? Seluruh dokumen yang diunggah juga akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
