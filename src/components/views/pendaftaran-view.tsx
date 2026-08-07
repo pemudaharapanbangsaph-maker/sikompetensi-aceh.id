@@ -219,6 +219,7 @@ function PendaftaranListView() {
     },
     { key: 'nip', header: 'NIP', render: (row) => <span className="text-xs font-mono">{row.nip}</span> },
     { key: 'jabatan', header: 'Jabatan', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.jabatan || '-'}</span> },
+    { key: 'unitKerja', header: 'Unit Kerja', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.unitKerja || '-'}</span> },
     { key: 'instansi', header: 'Instansi', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.instansi || '-'}</span> },
     { key: 'pelatihan', header: 'Pelatihan', render: (row) => <span className="text-slate-600 max-w-[180px] truncate block">{row.pelatihan || '-'}</span> },
     { key: 'nomorHP', header: 'No. HP' },
