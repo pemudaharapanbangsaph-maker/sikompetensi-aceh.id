@@ -202,6 +202,9 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran }: { onEnter: () => v
       <div className="relative z-10 max-w-xl w-full">
         <div className="flex items-center gap-2 mb-8">
           <div className="w-4 h-px bg-[#195737]/40" />
+          <p className="text-[10px] text-[#195737]/60 uppercase tracking-[0.15em] font-medium leading-tight">
+            KEPGUB ACEH NO. 800.1.4/212/2026 · BERBASIS PEDOMAN LAN RI
+          </p>
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
           Membangun ASN Aceh{' '}
@@ -530,7 +533,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   const [pelatihanList, setPelatihanList] = useState<PelatihanOption[]>([])
   const [form, setForm] = useState({
     nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
-    jabatan: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
+    jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
   })
   const [files, setFiles] = useState<Record<string, File>>({})
   const [error, setError] = useState('')
@@ -547,7 +550,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   // Cek semua field form terisi
   const formComplete = [
     form.nama, form.nip, form.pangkatGolongan, form.tempatLahir, form.tanggalLahir,
-    form.jabatan, form.instansi, form.nomorHP, form.nomorRekening, form.npwp, form.pelatihanId,
+    form.jabatan, form.unitKerja, form.instansi, form.nomorHP, form.nomorRekening, form.npwp, form.pelatihanId,
   ].every((v) => v.trim() !== '') && /^\d{18}$/.test(form.nip.trim())
 
   // Cek semua 4 dokumen sudah dipilih
@@ -682,7 +685,8 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tempat Lahir{req}</Label><Input {...{ value: form.tempatLahir, onChange: set('tempatLahir'), placeholder: 'Kota/Kabupaten', className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tanggal Lahir{req}</Label><Input type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} className={inputCls} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jabatan{req}</Label><Input {...{ value: form.jabatan, onChange: set('jabatan'), placeholder: 'Jabatan saat ini', className: inputCls }} /></div>
-                <div className="space-y-1.5 sm:col-span-2"><Label className="text-xs font-semibold text-slate-600">Instansi{req}</Label><Input {...{ value: form.instansi, onChange: set('instansi'), placeholder: 'Nama instansi/OPD', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Unit Kerja{req}</Label><Input {...{ value: form.unitKerja, onChange: set('unitKerja'), placeholder: 'Nama unit kerja/OPD', className: inputCls }} /></div>
+                <div className="space-y-1.5 sm:col-span-2"><Label className="text-xs font-semibold text-slate-600">Instansi{req}</Label><Input {...{ value: form.instansi, onChange: set('instansi'), placeholder: 'Nama instansi/pemerintah', className: inputCls }} /></div>
               </div>
             </div>
 
