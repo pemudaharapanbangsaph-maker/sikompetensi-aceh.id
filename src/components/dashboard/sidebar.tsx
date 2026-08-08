@@ -60,6 +60,7 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'pendaftaran-list', label: 'Data Pendaftar', view: 'pendaftaran-list', permission: 'pendaftaran' },
       { key: 'pendaftaran-dokumen', label: 'Dokumen Peserta', view: 'pendaftaran-dokumen', permission: 'pendaftaran' },
+      { key: 'pendaftaran-daftar-hadir', label: 'Daftar Hadir', view: 'pendaftaran-daftar-hadir', permission: 'pendaftaran' },
     ],
   },
   {
