@@ -93,7 +93,7 @@ export type ViewKey =
   | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-angkatan' | 'pelatihan-kehadiran' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip'
   | 'uji-jadwal' | 'uji-asesor' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
   | 'peserta' | 'peserta-riwayat'
-  | 'pendaftaran-list' | 'pendaftaran-dokumen'
+  | 'pendaftaran-list' | 'pendaftaran-dokumen' | 'pendaftaran-daftar-hadir'
   | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-kuesioner' | 'monitoring-rekap'
   | 'laporan-pelatihan' | 'laporan-uji' | 'laporan-peserta'
   | 'user-data' | 'user-hak-akses' | 'user-log'
