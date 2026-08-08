@@ -18,7 +18,7 @@ async function generateKodePelatihan(): Promise<string> {
   return `PL-${String(maxNum + 1).padStart(3, '0')}`
 }
 
-// --- Helper: sinkronisasi AnalisisDiklat → Pelatihan ---
+// --- Helper: sinkronisasi AnalisisDiklat → Pelatihan + Angkatan default ---
 async function syncToPelatihan(analisisId: string, data: {
   namaPelatihan: string
   kategori: string
@@ -47,10 +47,12 @@ async function syncToPelatihan(analisisId: string, data: {
     `Tahun: ${data.tahunPelaksanaan}`,
   ].filter(Boolean).join(' | ')
 
-  if (analisisItem?.pelatihanId) {
+  let pelatihanId = analisisItem?.pelatihanId || null
+
+  if (pelatihanId) {
     // Update Pelatihan yang sudah terlink
     await db.pelatihan.update({
-      where: { id: analisisItem.pelatihanId },
+      where: { id: pelatihanId },
       data: {
         nama: data.namaPelatihan,
         kategori: data.kategori,
@@ -60,7 +62,6 @@ async function syncToPelatihan(analisisId: string, data: {
         status: pelatihanStatus,
       },
     })
-    return analisisItem.pelatihanId
   } else if (data.status === 'AKTIF') {
     // Buat Pelatihan baru hanya jika status AKTIF
     const kode = await generateKodePelatihan()
@@ -81,10 +82,25 @@ async function syncToPelatihan(analisisId: string, data: {
       where: { id: analisisId },
       data: { pelatihanId: newPelatihan.id },
     })
-    return newPelatihan.id
+    pelatihanId = newPelatihan.id
+
+    // Otomatis buat Angkatan default agar muncul di dropdown Peserta Per Kegiatan
+    const tahun = data.tahunPelaksanaan || new Date().getFullYear()
+    await db.angkatan.create({
+      data: {
+        pelatihanId: newPelatihan.id,
+        namaAngkatan: `Angkatan 1 - ${data.namaPelatihan}`,
+        tanggalMulai: new Date(tahun, 0, 1),
+        tanggalSelesai: new Date(tahun, 11, 31),
+        metode: data.metodePembelajaran || 'TATAP_MUKA',
+        kuota: 30,
+        status: 'PERENCANAAN',
+        createdBy: userId,
+      },
+    })
   }
 
-  return null
+  return pelatihanId
 }
 
 export async function GET(req: Request) {
@@ -150,7 +166,7 @@ export async function POST(req: Request) {
         dibuatOleh: session.user.id,
       },
     })
-    // Sinkronisasi ke Pelatihan
+    // Sinkronisasi ke Pelatihan + Angkatan
     await syncToPelatihan(item.id, {
       namaPelatihan: item.namaPelatihan,
       kategori: item.kategori,
