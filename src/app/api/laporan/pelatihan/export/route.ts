@@ -28,6 +28,11 @@ function fmtTanggal(date: Date | string): string {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+function fmtTanggalShort(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -35,6 +40,9 @@ export async function GET(req: Request) {
     if (!hasPermission(session.user.role, 'pelatihan:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+
+    const { searchParams } = new URL(req.url)
+    const format = searchParams.get('format') || 'xlsx'
 
     const angkatan = await db.angkatan.findMany({
       include: {
@@ -50,6 +58,131 @@ export async function GET(req: Request) {
     const dibatalkan = angkatan.filter((a) => a.status === 'DIBATALKAN')
     const totalPeserta = angkatan.reduce((s, a) => s + (a._count?.peserta || 0), 0)
 
+    // === FORMAT PDF ===
+    if (format === 'pdf') {
+      const { jsPDF } = await import('jspdf')
+      const autoTable = (await import('jspdf-autotable')).default
+
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+      const pageW = 297
+      const marginL = 15
+      const marginR = 15
+
+      // HEADER
+      let y = 12
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text('LAPORAN PELATIHAN', pageW / 2, y, { align: 'center' })
+      y += 6
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      y += 10
+
+      // SUMMARY BOX
+      const summaryItems = [
+        ['Total Pelatihan', String(new Set(angkatan.map(a => a.pelatihanId)).size)],
+        ['Total Angkatan', String(angkatan.length)],
+        ['Selesai', String(selesai.length)],
+        ['Berjalan', String(berjalan.length)],
+        ['Perencanaan', String(perencanaan.length)],
+        ['Total Peserta', String(totalPeserta)],
+      ]
+      doc.setFillColor(241, 245, 249)
+      const boxW = pageW - marginL - marginR
+      doc.roundedRect(marginL, y, boxW, 18, 2, 2, 'F')
+      let sx = marginL + 10
+      const sy = y + 7
+      doc.setFontSize(9)
+      summaryItems.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(100, 116, 139)
+        doc.text(`${label}:`, sx, sy)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(15, 23, 42)
+        doc.text(value, sx + doc.getTextWidth(`${label}: `), sy)
+        sx += 43
+      })
+      doc.setTextColor(0, 0, 0)
+      y += 26
+
+      // TABLE
+      const headerRow = [[
+        'No.', 'NAMA PELATIHAN', 'KODE', 'KATEGORI', 'NAMA ANKATAN',
+        'PERIODE', 'LOKASI', 'METODE', 'PESERTA', 'STATUS'
+      ]]
+      const bodyRows = angkatan.map((a, i) => [
+        String(i + 1),
+        a.pelatihan?.nama || '-',
+        a.pelatihan?.kode || '-',
+        KATEGORI_LABEL[a.pelatihan?.kategori || ''] || a.pelatihan?.kategori || '-',
+        a.namaAngkatan,
+        `${fmtTanggalShort(a.tanggalMulai)} - ${fmtTanggalShort(a.tanggalSelesai)}`,
+        a.lokasi || '-',
+        METODE_LABEL[a.metode] || a.metode,
+        String(a._count?.peserta || 0),
+        STATUS_LABEL[a.status] || a.status,
+      ])
+
+      autoTable(doc, {
+        startY: y,
+        head: headerRow,
+        body: bodyRows,
+        headStyles: {
+          fillColor: [15, 76, 129],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+          fontStyle: 'bold',
+          cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
+          halign: 'center',
+          valign: 'middle',
+        },
+        bodyStyles: {
+          fontSize: 7.5,
+          cellPadding: { top: 2, bottom: 2, left: 2, right: 2 },
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center', valign: 'middle' },
+          1: { cellWidth: 60 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 24, halign: 'center' },
+          4: { cellWidth: 40 },
+          5: { cellWidth: 42 },
+          6: { cellWidth: 28 },
+          7: { cellWidth: 22, halign: 'center' },
+          8: { cellWidth: 16, halign: 'center' },
+          9: { cellWidth: 22, halign: 'center' },
+        },
+        margin: { left: marginL, right: marginR },
+        rowPageBreak: 'avoid',
+        theme: 'grid',
+      })
+
+      // Page numbers
+      const pageCount = doc.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(7)
+        doc.setTextColor(148, 163, 184)
+        doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, 198, { align: 'center' })
+        doc.setTextColor(0, 0, 0)
+      }
+
+      await auditLog(session, 'EXPORT', 'LAPORAN_PELATIHAN', `Export laporan pelatihan (${angkatan.length} angkatan) ke PDF`, req)
+
+      const pdfBuf = Buffer.from(doc.output('arraybuffer'))
+      return new NextResponse(pdfBuf, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="laporan-pelatihan.pdf"',
+        },
+      })
+    }
+
+    // === FORMAT XLSX (default) ===
     const pelatihanMap = new Map<string, { nama: string; kode: string; kategori: string; angkatanList: typeof angkatan }>()
     angkatan.forEach((a) => {
       const pid = a.pelatihanId
