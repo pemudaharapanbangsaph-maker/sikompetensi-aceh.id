@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       const tahunRaw = row[findCol(['Tahun Pelaksanaan'])]
       const kategoriRaw = String(row[findCol(['Kategori'])] || 'Teknis')
       const statusRaw = String(row[findCol(['Status Publikasi'])] || 'Aktif')
-      const durasiHariRaw = row[findCol(['Lama Hari'])]
+      const durasiHariRaw = row[findCol(['Jumlah Hari', 'Lama Hari', 'Durasi Hari'])]
 
       return {
         outcome: String(row[findCol(['Outcome'])] || ''),
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
         namaPelatihan: String(row[findCol(['Nama Pelatihan'])] || ''),
         kategori: KATEGORI_MAP[kategoriRaw.toLowerCase()] || 'TEKNIS',
         metodePembelajaran: METODE_MAP[metodeRaw.toLowerCase()] || 'TATAP_MUKA',
-        durasiJP: Number(row[findCol(['Durasi (JP)'])] || 0),
+        durasiJP: Number(row[findCol(['Durasi (JP)', 'Durasi JP'])] || 0),
         durasiHari: durasiHariRaw ? Number(durasiHariRaw) : 0,
         targetOutput: String(row[findCol(['Target Output'])] || ''),
         prioritas: PRIORITAS_MAP[prioritasRaw.toLowerCase()] || 'SEDANG',
