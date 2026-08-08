@@ -4,9 +4,9 @@ import { getSession, hasPermission } from '@/lib/auth'
 
 /**
  * GET /api/pendaftaran/pelatihan-options
- * Mengembalikan daftar pelatihan yang memiliki pendaftar,
- * beserta jumlah pendaftarnya. Digunakan untuk dropdown filter
- * di halaman Dokumen Peserta.
+ * Mengembalikan daftar nama pelatihan yang memiliki pendaftar.
+ * Menggunakan namaPelatihan langsung (bukan pelatihanId) agar
+ * tetap bekerja meskipun AnalisisDiklatItem belum terhubung ke Pelatihan.
  */
 export async function GET() {
   try {
@@ -16,39 +16,36 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Ambil AnalisisDiklatItem yang punya pendaftar dan terhubung ke pelatihan
+    // Ambil semua AnalisisDiklatItem yang punya pendaftar
     const items = await db.analisisDiklatItem.findMany({
       where: {
-        pelatihanId: { not: null },
         pendaftaran: { some: {} },
       },
       select: {
-        pelatihanId: true,
-        pelatihan: { select: { id: true, kode: true, nama: true } },
+        namaPelatihan: true,
         _count: { select: { pendaftaran: true } },
       },
-      orderBy: { pelatihan: { nama: 'asc' } },
+      orderBy: { namaPelatihan: 'asc' },
     })
 
-    // Dedup by pelatihanId & hitung total pendaftar per pelatihan
-    const seen = new Map<string, { id: string; kode: string; nama: string; jumlahPendaftar: number }>()
+    // Dedup by namaPelatihan dan hitung total pendaftar
+    const seen = new Map<string, number>()
     for (const item of items) {
-      if (item.pelatihan && item.pelatihanId) {
-        const existing = seen.get(item.pelatihanId)
-        if (existing) {
-          existing.jumlahPendaftar += item._count.pendaftaran
-        } else {
-          seen.set(item.pelatihanId, {
-            id: item.pelatihan.id,
-            kode: item.pelatihan.kode,
-            nama: item.pelatihan.nama,
-            jumlahPendaftar: item._count.pendaftaran,
-          })
-        }
+      if (!item.namaPelatihan) continue
+      const existing = seen.get(item.namaPelatihan)
+      if (existing !== undefined) {
+        seen.set(item.namaPelatihan, existing + item._count.pendaftaran)
+      } else {
+        seen.set(item.namaPelatihan, item._count.pendaftaran)
       }
     }
 
-    return NextResponse.json(Array.from(seen.values()))
+    const result = Array.from(seen.entries()).map(([nama, jumlah]) => ({
+      nama,
+      jumlahPendaftar: jumlah,
+    }))
+
+    return NextResponse.json(result)
   } catch (e) {
     console.error('pendaftaran pelatihan-options error:', e)
     return NextResponse.json({ error: 'Gagal memuat opsi pelatihan' }, { status: 500 })
