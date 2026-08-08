@@ -353,6 +353,8 @@ function PendaftaranDokumenView() {
   const [listLoading, setListLoading] = useState(true)
   const [listSearch, setListSearch] = useState('')
   const [listStatusFilter, setListStatusFilter] = useState('')
+  const [pelatihanOptions, setPelatihanOptions] = useState<{ id: string; kode: string; nama: string; jumlahPendaftar: number }[]>([])
+  const [pelatihanFilter, setPelatihanFilter] = useState('')
 
   // Fetch list data (list mode)
   const fetchListData = useCallback(async () => {
@@ -361,6 +363,7 @@ function PendaftaranDokumenView() {
       const params: Record<string, string> = {}
       if (listSearch) params.search = listSearch
       if (listStatusFilter) params.status = listStatusFilter
+      if (pelatihanFilter) params.pelatihanId = pelatihanFilter
       params.pageSize = '100'
       const qs = '?' + new URLSearchParams(params).toString()
       const res = await fetch(`/api/pendaftaran${qs}`, { credentials: 'same-origin' })
