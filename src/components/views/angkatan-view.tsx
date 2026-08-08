@@ -391,7 +391,6 @@ function AngkatanDataTable() {
     </div>
   )
 }
-
 // ===========================================================================
 // SUBTAB 2: KEHADIRAN MATRIX
 // ===========================================================================
@@ -577,12 +576,12 @@ function KehadiranView() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {STATUS_KEHADIRAN.map((o) => (
-                                      <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
+                                    {STATUS_KEHADIRAN.map((s) => (
+                                      <SelectItem key={s.value} value={s.value} className="text-xs">{s.label}</SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
-                                {saving === key && <span className="text-[9px] text-amber-600">...</span>}
+                                {saving === key && <Loader2 className="w-3 h-3 animate-spin text-[#0F4C81] mx-auto mt-0.5" />}
                               </td>
                             )
                           })}
@@ -591,14 +590,6 @@ function KehadiranView() {
                     })}
                   </tbody>
                 </table>
-              </div>
-              <div className="px-4 py-2 border-t border-slate-100 flex flex-wrap items-center gap-3 text-xs">
-                <span className="text-slate-500">Keterangan:</span>
-                {STATUS_KEHADIRAN.map((s) => (
-                  <span key={s.value} className={`inline-flex items-center rounded border px-2 py-0.5 ${KEHADIRAN_STYLE[s.value]}`}>
-                    {s.label}
-                  </span>
-                ))}
               </div>
             </CardContent>
           </Card>
@@ -612,111 +603,94 @@ function KehadiranView() {
 // SUBTAB 3: PESERTA PER KEGIATAN
 // ===========================================================================
 
-const STATUS_PESERTA_ANGKATAN: Record<string, { label: string; color: string }> = {
-  TERDAFTAR: { label: 'Terdaftar', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-  LULUS: { label: 'Lulus', color: 'bg-green-100 text-green-700 border-green-200' },
-  TIDAK_LULUS: { label: 'Tidak Lulus', color: 'bg-red-100 text-red-700 border-red-200' },
-  DROP_OUT: { label: 'Drop Out', color: 'bg-slate-100 text-slate-700 border-slate-200' },
-}
-
 function PesertaPerKegiatanView() {
   const { setActiveView } = useNavStore()
   const { toast } = useToast()
+
   const [angkatanList, setAngkatanList] = useState<Angkatan[]>([])
   const [selectedId, setSelectedId] = useState<string>('')
-  const [angkatanData, setAngkatanData] = useState<(Angkatan & { peserta?: PesertaAngkatanView[] }) | null>(null)
+  const [selectedAngkatan, setSelectedAngkatan] = useState<Angkatan | null>(null)
+  const [pesertaList, setPesertaList] = useState<PesertaAngkatanView[]>([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
 
-  // Import state
   const [importOpen, setImportOpen] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
+  const [importResult, setImportResult] = useState<any>(null)
   const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: number; errors?: string[]; message: string } | null>(null)
 
-  // Sync dari pendaftar state
-  const [syncing, setSyncing] = useState(false)
-  const [syncResult, setSyncResult] = useState<{ added: number; skipped: number; skippedNames: string[]; message: string } | null>(null)
   const [syncDialogOpen, setSyncDialogOpen] = useState(false)
-
-  const angkatan = selectedId ? angkatanData : null
+  const [syncResult, setSyncResult] = useState<any>(null)
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
     api.angkatan.listAll()
-      .then((r) => setAngkatanList(r.filter((a) => a.status !== 'DIBATALKAN')))
-      .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
-  }, [toast])
+      .then(setAngkatanList)
+      .catch(() => {})
+  }, [])
 
   const reloadAngkatan = useCallback(() => {
     if (!selectedId) return
-    setLoading(true)
-    api.angkatan.get(selectedId)
-      .then((a) => setAngkatanData(a as Angkatan & { peserta?: PesertaAngkatanView[] }))
-      .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
-      .finally(() => setLoading(false))
-  }, [selectedId, toast])
+    api.angkatan.get(selectedId).then((a) => {
+      setSelectedAngkatan(a as any)
+      setPesertaList((a as any).peserta || [])
+    }).catch(() => {})
+  }, [selectedId])
 
   useEffect(() => {
-    if (!selectedId) return
+    if (!selectedId) { setSelectedAngkatan(null); setPesertaList([]); return }
     setLoading(true)
     api.angkatan.get(selectedId)
-      .then((a) => setAngkatanData(a as Angkatan & { peserta?: PesertaAngkatanView[] }))
+      .then((a) => {
+        setSelectedAngkatan(a as any)
+        setPesertaList((a as any).peserta || [])
+      })
       .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
       .finally(() => setLoading(false))
   }, [selectedId, toast])
 
-  const pesertaList = angkatan?.peserta || []
-  const filteredPeserta = search
-    ? pesertaList.filter((pa) => {
-        const nama = (pa as PesertaAngkatan).peserta?.nama || ''
-        const nip = (pa as PesertaAngkatan).peserta?.nip || ''
-        return nama.toLowerCase().includes(search.toLowerCase()) || nip.includes(search)
-      })
-    : pesertaList
-
-  const selectedAngkatan = angkatanList.find((a) => a.id === selectedId)
+  const filteredPeserta = useMemo(() => {
+    if (!search) return pesertaList
+    const s = search.toLowerCase()
+    return pesertaList.filter((pa) => {
+      const p = (pa as PesertaAngkatan).peserta
+      return p?.nama?.toLowerCase().includes(s) || p?.nip?.includes(s)
+    })
+  }, [pesertaList, search])
 
   // ===== EXPORT =====
-  const handleExportXls = async () => {
+  const handleExportPdf = async () => {
     if (!selectedId) return
     try {
-      toast({ title: 'Export', description: 'Mengunduh file Excel...', duration: 2000 } as any)
-      const res = await fetch(`/api/angkatan/${selectedId}/peserta/export/xls`, { credentials: 'same-origin' })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Gagal export (HTTP ${res.status})`)
-      }
+      const res = await fetch(`/api/angkatan/${selectedId}/peserta/export/pdf`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Export gagal')
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `peserta_${selectedAngkatan?.namaAngkatan || 'kegiatan'}.xlsx`
+      a.download = `peserta-${selectedAngkatan?.namaAngkatan || 'kegiatan'}.pdf`
       document.body.appendChild(a)
       a.click()
-      a.remove()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (e) {
       toast({ title: 'Gagal Export', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 3000 } as any)
     }
   }
 
-  const handleExportPdf = async () => {
+  const handleExportXls = async () => {
     if (!selectedId) return
     try {
-      toast({ title: 'Export', description: 'Mengunduh file PDF...', duration: 2000 } as any)
-      const res = await fetch(`/api/angkatan/${selectedId}/peserta/export/pdf`, { credentials: 'same-origin' })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Gagal export (HTTP ${res.status})`)
-      }
+      const res = await fetch(`/api/angkatan/${selectedId}/peserta/export/xls`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Export gagal')
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `peserta_${selectedAngkatan?.namaAngkatan || 'kegiatan'}.pdf`
+      a.download = `peserta-${selectedAngkatan?.namaAngkatan || 'kegiatan'}.xlsx`
       document.body.appendChild(a)
       a.click()
-      a.remove()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (e) {
       toast({ title: 'Gagal Export', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 3000 } as any)
@@ -782,7 +756,7 @@ function PesertaPerKegiatanView() {
     <div className="space-y-4">
       <PageHeader title="Peserta Per Kegiatan" description="Lihat dan kelola data peserta per kegiatan/angkatan pelatihan" />
 
-        <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-4 space-y-3">
           {/* Dropdown - full width, standalone row */}
           <div>
@@ -831,8 +805,7 @@ function PesertaPerKegiatanView() {
           )}
         </CardContent>
       </Card>
-
-      {!selectedId ? (
+            {!selectedId ? (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
             <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
@@ -1008,7 +981,7 @@ function PesertaPerKegiatanView() {
                       <div className="mt-2 p-2 bg-white/60 rounded border border-amber-200">
                         <p className="text-xs font-semibold text-amber-700 mb-1">Peringatan:</p>
                         <div className="max-h-24 overflow-y-auto space-y-0.5">
-                          {importResult.errors.map((err, idx) => (
+                          {importResult.errors.map((err: string, idx: number) => (
                             <p key={idx} className="text-[11px] text-amber-600">{err}</p>
                           ))}
                         </div>
@@ -1062,7 +1035,7 @@ function PesertaPerKegiatanView() {
                       <div className="p-2 bg-white/60 rounded border border-slate-200">
                         <p className="text-xs font-semibold text-slate-600 mb-1">Yang sudah ada di angkatan:</p>
                         <div className="max-h-24 overflow-y-auto space-y-0.5">
-                          {syncResult.skippedNames.map((name, idx) => (
+                          {syncResult.skippedNames.map((name: string, idx: number) => (
                             <p key={idx} className="text-[11px] text-slate-500">• {name}</p>
                           ))}
                         </div>
