@@ -792,7 +792,7 @@ function PesertaPerKegiatanView() {
               <SelectContent>
                 {angkatanList.map((a) => (
                   <SelectItem key={a.id} value={a.id}>
-                    <span className="line-clamp-1">{a.namaAngkatan} {a.pelatihan ? `— ${a.pelatihan.nama}` : ''}</span>
+                    {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
