@@ -3,110 +3,157 @@ import { db } from '@/lib/db'
 import { getSession, hasPermission, auditLog } from '@/lib/auth'
 import * as XLSX from 'xlsx'
 
-const JENIS_KELAMIN_LABEL: Record<string, string> = {
-  L: 'Laki-laki',
-  P: 'Perempuan',
+const KATEGORI_LABEL: Record<string, string> = {
+  TEKNIS: 'Teknis',
+  MANAJERIAL: 'Manajerial',
+  FUNGSIONAL: 'Fungsional',
+  SOSIAL_KULTURAL: 'Sosial Kultural',
+}
+
+const METODE_LABEL: Record<string, string> = {
+  TATAP_MUKA: 'Tatap Muka',
+  DARING: 'Daring',
+  BLENDED: 'Blended',
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  AKTIF: 'Aktif',
-  NONAKTIF: 'Nonaktif',
+  PERENCANAAN: 'Perencanaan',
+  BERJALAN: 'Berjalan',
+  SELESAI: 'Selesai',
+  DIBATALKAN: 'Dibatalkan',
+}
+
+function fmtTanggal(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 export async function GET(req: Request) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!hasPermission(session.user.role, 'peserta:view')) {
+    if (!hasPermission(session.user.role, 'pelatihan:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Ambil semua peserta
-    const peserta = await db.peserta.findMany({
-      orderBy: { nama: 'asc' },
+    const angkatan = await db.angkatan.findMany({
+      include: {
+        pelatihan: true,
+        _count: { select: { peserta: true } },
+      },
+      orderBy: { createdAt: 'desc' },
     })
 
-    // === Sheet 1: Data Peserta ===
-    const dataRows = peserta.map((p, idx) => ({
+    const selesai = angkatan.filter((a) => a.status === 'SELESAI')
+    const berjalan = angkatan.filter((a) => a.status === 'BERJALAN')
+    const perencanaan = angkatan.filter((a) => a.status === 'PERENCANAAN')
+    const dibatalkan = angkatan.filter((a) => a.status === 'DIBATALKAN')
+    const totalPeserta = angkatan.reduce((s, a) => s + (a._count?.peserta || 0), 0)
+
+    const pelatihanMap = new Map<string, { nama: string; kode: string; kategori: string; angkatanList: typeof angkatan }>()
+    angkatan.forEach((a) => {
+      const pid = a.pelatihanId
+      if (!pelatihanMap.has(pid)) {
+        pelatihanMap.set(pid, {
+          nama: a.pelatihan?.nama || '-',
+          kode: a.pelatihan?.kode || '-',
+          kategori: a.pelatihan?.kategori || '-',
+          angkatanList: [],
+        })
+      }
+      pelatihanMap.get(pid)!.angkatanList.push(a)
+    })
+
+    const rekapRows = Array.from(pelatihanMap.values()).map((p) => {
+      const angkatanList = p.angkatanList
+      const jmlSelesai = angkatanList.filter((a) => a.status === 'SELESAI').length
+      const jmlBerjalan = angkatanList.filter((a) => a.status === 'BERJALAN').length
+      const jmlPerencanaan = angkatanList.filter((a) => a.status === 'PERENCANAAN').length
+      const jmlDibatalkan = angkatanList.filter((a) => a.status === 'DIBATALKAN').length
+      const jmlPeserta = angkatanList.reduce((s, a) => s + (a._count?.peserta || 0), 0)
+      return {
+        'Nama Pelatihan': p.nama,
+        'Kode': p.kode,
+        'Kategori': KATEGORI_LABEL[p.kategori] || p.kategori,
+        'Jumlah Angkatan': angkatanList.length,
+        'Selesai': jmlSelesai,
+        'Berjalan': jmlBerjalan,
+        'Perencanaan': jmlPerencanaan,
+        'Dibatalkan': jmlDibatalkan,
+        'Total Peserta': jmlPeserta,
+      }
+    })
+
+    rekapRows.push({
+      'Nama Pelatihan': 'TOTAL',
+      'Kode': '',
+      'Kategori': '',
+      'Jumlah Angkatan': angkatan.length,
+      'Selesai': selesai.length,
+      'Berjalan': berjalan.length,
+      'Perencanaan': perencanaan.length,
+      'Dibatalkan': dibatalkan.length,
+      'Total Peserta': totalPeserta,
+    })
+
+    const detailRows = angkatan.map((a, idx) => ({
       No: idx + 1,
-      'Nama': p.nama,
-      'NIP': p.nip,
-      'Jenis Kelamin': JENIS_KELAMIN_LABEL[p.jenisKelamin] || p.jenisKelamin || '-',
-      'Tempat Lahir': p.tempatLahir || '-',
-      'Tanggal Lahir': p.tanggalLahir
-        ? new Date(p.tanggalLahir).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        : '-',
-      'Jabatan': p.jabatan || '-',
-      'Pangkat/Golongan': p.pangkatGolongan || '-',
-      'Unit Kerja': p.unitKerja || '-',
-      'Instansi': p.instansi || '-',
-      'Pendidikan': p.pendidikan || '-',
-      'No. Telp': p.noTelp || '-',
-      'Email': p.email || '-',
-      'Status': STATUS_LABEL[p.status] || p.status,
+      'Nama Pelatihan': a.pelatihan?.nama || '-',
+      'Kode Pelatihan': a.pelatihan?.kode || '-',
+      'Kategori': KATEGORI_LABEL[a.pelatihan?.kategori || ''] || a.pelatihan?.kategori || '-',
+      'Nama Angkatan': a.namaAngkatan,
+      'Tanggal Mulai': fmtTanggal(a.tanggalMulai),
+      'Tanggal Selesai': fmtTanggal(a.tanggalSelesai),
+      'Lokasi': a.lokasi || '-',
+      'Metode': METODE_LABEL[a.metode] || a.metode,
+      'Kuota': a.kuota,
+      'Jumlah Peserta': a._count?.peserta || 0,
+      'Status': STATUS_LABEL[a.status] || a.status,
     }))
 
-    // === Sheet 2: Rekap per Instansi ===
-    const instansiMap = new Map<string, number>()
-    peserta.forEach((p) => {
-      const instansi = p.instansi || 'Lainnya'
-      instansiMap.set(instansi, (instansiMap.get(instansi) || 0) + 1)
-    })
-    const rekapInstansi = Array.from(instansiMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([instansi, jumlah], idx) => ({
-        No: idx + 1,
-        Instansi: instansi,
-        'Jumlah Peserta': jumlah,
-      }))
-    rekapInstansi.push({ No: '', Instansi: 'TOTAL', 'Jumlah Peserta': peserta.length })
+    const ringkasanRows = [
+      { Keterangan: 'Total Pelatihan', Jumlah: pelatihanMap.size },
+      { Keterangan: 'Total Angkatan', Jumlah: angkatan.length },
+      { Keterangan: 'Angkatan Selesai', Jumlah: selesai.length },
+      { Keterangan: 'Angkatan Berjalan', Jumlah: berjalan.length },
+      { Keterangan: 'Angkatan Perencanaan', Jumlah: perencanaan.length },
+      { Keterangan: 'Angkatan Dibatalkan', Jumlah: dibatalkan.length },
+      { Keterangan: 'Total Peserta Terdaftar', Jumlah: totalPeserta },
+    ]
 
-    // === Sheet 3: Rekap per Unit Kerja ===
-    const unitKerjaMap = new Map<string, number>()
-    peserta.forEach((p) => {
-      const uk = p.unitKerja || 'Lainnya'
-      unitKerjaMap.set(uk, (unitKerjaMap.get(uk) || 0) + 1)
-    })
-    const rekapUnitKerja = Array.from(unitKerjaMap.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([unitKerja, jumlah], idx) => ({
-        No: idx + 1,
-        'Unit Kerja': unitKerja,
-        'Jumlah Peserta': jumlah,
-      }))
-    rekapUnitKerja.push({ No: '', 'Unit Kerja': 'TOTAL', 'Jumlah Peserta': peserta.length })
-
-    // Buat workbook
     const wb = XLSX.utils.book_new()
 
-    const wsData = XLSX.utils.json_to_sheet(dataRows)
-    wsData['!cols'] = [
-      { wch: 5 }, { wch: 30 }, { wch: 22 }, { wch: 14 }, { wch: 18 }, { wch: 14 },
-      { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 25 }, { wch: 14 }, { wch: 16 },
-      { wch: 25 }, { wch: 10 },
+    const wsRekap = XLSX.utils.json_to_sheet(rekapRows)
+    wsRekap['!cols'] = [
+      { wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 16 },
+      { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 15 },
     ]
-    XLSX.utils.book_append_sheet(wb, wsData, 'Data Peserta')
+    XLSX.utils.book_append_sheet(wb, wsRekap, 'Rekapitulasi')
 
-    const wsInstansi = XLSX.utils.json_to_sheet(rekapInstansi)
-    wsInstansi['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 16 }]
-    XLSX.utils.book_append_sheet(wb, wsInstansi, 'Rekap Instansi')
+    const wsDetail = XLSX.utils.json_to_sheet(detailRows)
+    wsDetail['!cols'] = [
+      { wch: 5 }, { wch: 35 }, { wch: 15 }, { wch: 15 }, { wch: 25 },
+      { wch: 14 }, { wch: 14 }, { wch: 20 }, { wch: 14 }, { wch: 8 },
+      { wch: 15 }, { wch: 14 },
+    ]
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail Angkatan')
 
-    const wsUnitKerja = XLSX.utils.json_to_sheet(rekapUnitKerja)
-    wsUnitKerja['!cols'] = [{ wch: 5 }, { wch: 35 }, { wch: 16 }]
-    XLSX.utils.book_append_sheet(wb, wsUnitKerja, 'Rekap Unit Kerja')
+    const wsRingkasan = XLSX.utils.json_to_sheet(ringkasanRows)
+    wsRingkasan['!cols'] = [{ wch: 30 }, { wch: 12 }]
+    XLSX.utils.book_append_sheet(wb, wsRingkasan, 'Ringkasan')
 
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
 
-    await auditLog(session, 'EXPORT', 'LAPORAN_PESERTA', `Export laporan peserta (${peserta.length} peserta) ke XLS`, req)
+    await auditLog(session, 'EXPORT', 'LAPORAN_PELATIHAN', `Export laporan pelatihan (${angkatan.length} angkatan) ke XLS`, req)
 
     return new NextResponse(buf, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="laporan-peserta.xlsx"',
+        'Content-Disposition': 'attachment; filename="laporan-pelatihan.xlsx"',
       },
     })
   } catch (e) {
-    console.error('laporan peserta export xlsx error:', e)
-    return NextResponse.json({ error: 'Gagal mengekspor laporan peserta' }, { status: 500 })
+    console.error('laporan pelatihan export error:', e)
+    return NextResponse.json({ error: 'Gagal mengekspor laporan pelatihan' }, { status: 500 })
   }
 }
