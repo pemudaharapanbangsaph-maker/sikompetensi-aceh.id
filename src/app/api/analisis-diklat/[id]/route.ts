@@ -2,22 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 
-// --- Helper: generate kode pelatihan otomatis dari counter ---
-async function generateKodePelatihan(): Promise<string> {
-  const all = await db.pelatihan.findMany({
-    select: { kode: true },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  })
-  let maxNum = 0
-  for (const p of all) {
-    const m = p.kode.match(/PL-(\d+)/)
-    if (m) maxNum = Math.max(maxNum, Number(m[1]))
-  }
-  return `PL-${String(maxNum + 1).padStart(3, '0')}`
-}
-
-// --- Helper: sinkronisasi AnalisisDiklat → Pelatihan ---
+// --- Helper: sinkronisasi AnalisisDiklat → Pelatihan (update saja, angkatan sudah ada) ---
 async function syncToPelatihan(analisisId: string, data: {
   namaPelatihan: string
   kategori: string
@@ -29,11 +14,13 @@ async function syncToPelatihan(analisisId: string, data: {
   targetOutput: string
   status: string
   outcome: string
-}, userId?: string): Promise<string | null> {
+}) {
   const analisisItem = await db.analisisDiklatItem.findUnique({
     where: { id: analisisId },
     select: { pelatihanId: true },
   })
+
+  if (!analisisItem?.pelatihanId) return
 
   const pelatihanStatus = data.status === 'AKTIF' ? 'AKTIF' : 'NONAKTIF'
   const durasiHari = data.durasiHari > 0 ? data.durasiHari : Math.max(1, Math.ceil(data.durasiJP / 8))
@@ -45,41 +32,17 @@ async function syncToPelatihan(analisisId: string, data: {
     `Tahun: ${data.tahunPelaksanaan}`,
   ].filter(Boolean).join(' | ')
 
-  if (analisisItem?.pelatihanId) {
-    await db.pelatihan.update({
-      where: { id: analisisItem.pelatihanId },
-      data: {
-        nama: data.namaPelatihan,
-        kategori: data.kategori,
-        deskripsi,
-        jp: data.durasiJP || 8,
-        durasiHari,
-        status: pelatihanStatus,
-      },
-    })
-    return analisisItem.pelatihanId
-  } else if (data.status === 'AKTIF') {
-    const kode = await generateKodePelatihan()
-    const newPelatihan = await db.pelatihan.create({
-      data: {
-        kode,
-        nama: data.namaPelatihan,
-        kategori: data.kategori,
-        deskripsi,
-        jp: data.durasiJP || 8,
-        durasiHari,
-        status: pelatihanStatus,
-        createdBy: userId,
-      },
-    })
-    await db.analisisDiklatItem.update({
-      where: { id: analisisId },
-      data: { pelatihanId: newPelatihan.id },
-    })
-    return newPelatihan.id
-  }
-
-  return null
+  await db.pelatihan.update({
+    where: { id: analisisItem.pelatihanId },
+    data: {
+      nama: data.namaPelatihan,
+      kategori: data.kategori,
+      deskripsi,
+      jp: data.durasiJP || 8,
+      durasiHari,
+      status: pelatihanStatus,
+    },
+  })
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -112,7 +75,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       targetOutput: item.targetOutput,
       status: item.status,
       outcome: item.outcome,
-    }, session.user.id)
+    })
     await auditLog(session, 'UPDATE', 'ANALISIS_DIKLAT', 'Update item analisis diklat', req)
     return NextResponse.json(item)
   } catch (e) {
