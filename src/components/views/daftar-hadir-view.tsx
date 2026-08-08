@@ -125,42 +125,43 @@ export function DaftarHadirView() {
             Pilih Angkatan Pelatihan
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-            <div className="flex-1 w-full sm:max-w-md">
-              <label className="text-sm font-medium text-slate-700 mb-1.5 block">Angkatan</label>
-              <Select value={selectedAngkatan} onValueChange={setSelectedAngkatan}>
-                <SelectTrigger>
-                  <SelectValue placeholder="-- Pilih Angkatan --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {angkatanOptions.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => handleExport('pdf')}
-                disabled={!selectedAngkatan || loadingExport !== null}
-                className="bg-[#195737] hover:bg-[#0F4227] text-white gap-2"
-              >
-                {loadingExport === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                Export PDF
-              </Button>
-              <Button
-                onClick={() => handleExport('xls')}
-                disabled={!selectedAngkatan || loadingExport !== null}
-                variant="outline"
-                className="gap-2 border-[#195737] text-[#195737] hover:bg-[#195737]/10"
-              >
-                {loadingExport === 'xls' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-                Export Excel
-              </Button>
-            </div>
+        <CardContent className="space-y-4">
+          {/* Dropdown - full width, standalone row */}
+          <div>
+            <label className="text-sm font-medium text-slate-700 mb-1.5 block">Angkatan</label>
+            <Select value={selectedAngkatan} onValueChange={setSelectedAngkatan}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="-- Pilih Angkatan --" />
+              </SelectTrigger>
+              <SelectContent>
+                {angkatanOptions.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    <span className="line-clamp-1">{a.label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Export buttons - separate row, left aligned */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => handleExport('pdf')}
+              disabled={!selectedAngkatan || loadingExport !== null}
+              className="bg-[#195737] hover:bg-[#0F4227] text-white gap-2"
+            >
+              {loadingExport === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              Export PDF
+            </Button>
+            <Button
+              onClick={() => handleExport('xls')}
+              disabled={!selectedAngkatan || loadingExport !== null}
+              variant="outline"
+              className="gap-2 border-[#195737] text-[#195737] hover:bg-[#195737]/10"
+            >
+              {loadingExport === 'xls' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+              Export Excel
+            </Button>
           </div>
         </CardContent>
       </Card>
