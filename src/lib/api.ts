@@ -3,13 +3,14 @@ import type {
   UjiKompetensi, Asesor, Nilai, Kehadiran, Evaluasi,
   AuditLog, BackupHistory, DashboardStats, PaginatedResponse
 } from './types'
+
 const BASE = '/api'
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const { headers: customHeaders, ...restOptions } = options || {}
   const res = await fetch(`${BASE}${url}`, {
     credentials: 'same-origin',
-    ...restOptions,
-    headers: customHeaders !== undefined ? customHeaders : { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+    ...options,
   })
   if (!res.ok) {
     let msg = `HTTP ${res.status}`
@@ -186,6 +187,8 @@ export const api = {
   laporan: {
     exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
     exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
+    exportPesertaXls: () => window.location.href = `${BASE}/laporan/peserta/export`,
+    exportPesertaPdf: () => window.location.href = `${BASE}/laporan/peserta/export/pdf`,
   },
 
   settings: {
