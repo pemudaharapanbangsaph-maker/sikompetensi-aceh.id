@@ -90,9 +90,10 @@ model Pelatihan {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  angkatan     Angkatan[]
-  analisis     AnalisisKebutuhan[]
-  pendaftaran  PendaftaranPortal[]
+  angkatan             Angkatan[]
+  analisis             AnalisisKebutuhan[]
+  pendaftaran          PendaftaranPortal[]
+  analisisDiklatItems  AnalisisDiklatItem[]
 }
 
 model Angkatan {
@@ -173,7 +174,7 @@ model DokumenPendaftaran {
   id              String   @id @default(cuid())
   pendaftaranId   String
   pendaftaran     PendaftaranPortal @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
-  tipe            String   // KTP | SURAT_TUGAS | NPWP | REK_BANK
+  tipe            String // KTP | SURAT_TUGAS | NPWP | REK_BANK
   namaFile        String
   ukuranFile      String
   filePath        String
@@ -219,6 +220,8 @@ model AnalisisDiklatItem {
   tahunPelaksanaan      Int      @default(2025)
   status                String   @default("AKTIF") // AKTIF | NONAKTIF
   dibuatOleh            String?
+  pelatihanId           String?
+  pelatihan             Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
