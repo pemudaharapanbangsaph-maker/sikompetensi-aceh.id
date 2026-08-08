@@ -4,7 +4,8 @@ import { getSession, hasPermission, auditLog } from '@/lib/auth'
 
 /**
  * POST /api/angkatan/[id]/sync-pendaftar
- * Ambil data pendaftar DITERIMA yang pelatihannya cocok, lalu jadikan peserta di angkatan ini.
+ * Ambil data pendaftar DITERIMA yang pelatihannya cocok (by ID), lalu jadikan peserta di angkatan ini.
+ * Matching: Angkatan.pelatihanId → AnalisisDiklatItem.pelatihanId → PendaftaranPortal.analisisDiklatItemId
  */
 export async function POST(
   req: Request,
@@ -19,29 +20,44 @@ export async function POST(
 
     const { id: angkatanId } = await params
 
-    // 1. Ambil data angkatan + nama pelatihan
+    // 1. Ambil data angkatan + pelatihanId
     const angkatan = await db.angkatan.findUnique({
       where: { id: angkatanId },
-      include: { pelatihan: { select: { id: true, nama: true } } },
+      include: { pelatihan: { select: { id: true, nama: true, kode: true } } },
     })
     if (!angkatan) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
 
+    const pelatihanId = angkatan.pelatihanId
     const namaPelatihan = angkatan.pelatihan?.nama || ''
-    if (!namaPelatihan) {
+    if (!pelatihanId || !namaPelatihan) {
       return NextResponse.json({ error: 'Angkatan belum terhubung ke pelatihan' }, { status: 400 })
     }
 
-    // 2. Cari pendaftar DITERIMA yang nama pelatihannya cocok
+    // 2. Cari AnalisisDiklatItem yang terhubung ke Pelatihan ini
+    const analisisItems = await db.analisisDiklatItem.findMany({
+      where: {
+        pelatihanId: pelatihanId,
+        status: 'AKTIF',
+      },
+      select: { id: true },
+    })
+
+    if (analisisItems.length === 0) {
+      return NextResponse.json({
+        added: 0,
+        skipped: 0,
+        skippedNames: [],
+        message: `Tidak ada analisis diklat yang terhubung ke pelatihan "${namaPelatihan}"`,
+      })
+    }
+
+    const analisisItemIds = analisisItems.map((item) => item.id)
+
+    // 3. Cari pendaftar DITERIMA yang memilih pelatihan ini (by analisisDiklatItemId)
     const pendaftarList = await db.pendaftaranPortal.findMany({
       where: {
         status: 'DITERIMA',
-        analisisDiklatItem: {
-          namaPelatihan: namaPelatihan,
-          status: 'AKTIF',
-        },
-      },
-      include: {
-        analisisDiklatItem: { select: { namaPelatihan: true } },
+        analisisDiklatItemId: { in: analisisItemIds },
       },
     })
 
@@ -50,18 +66,18 @@ export async function POST(
         added: 0,
         skipped: 0,
         skippedNames: [],
-        message: `Tidak ada pendaftar DITERIMA untuk pelatihan "${namaPelatihan}"`,
+        message: `Tidak ada pendaftar DITERIMA untuk pelatihan "${namaPelatihan}" (${angkatan.pelatihan?.kode})`,
       })
     }
 
-    // 3. Ambil peserta yang sudah ada di angkatan ini (by NIP)
+    // 4. Ambil peserta yang sudah ada di angkatan ini (by NIP)
     const existingInAngkatan = await db.pesertaAngkatan.findMany({
       where: { angkatanId },
       include: { peserta: { select: { nip: true } } },
     })
     const existingNips = new Set(existingInAngkatan.map((pa) => pa.peserta.nip))
 
-    // 4. Ambil semua NIP peserta master yang sudah ada
+    // 5. Ambil semua NIP peserta master yang sudah ada
     const allPeserta = await db.peserta.findMany({ select: { id: true, nip: true } })
     const nipToPesertaId = new Map(allPeserta.map((p) => [p.nip, p.id]))
 
@@ -82,7 +98,7 @@ export async function POST(
           data: {
             nip: pendaftar.nip,
             nama: pendaftar.nama,
-            jenisKelamin: 'L', // default dari pendaftar (tidak ada field jenis kelamin di form pendaftaran)
+            jenisKelamin: 'L',
             pangkatGolongan: pendaftar.pangkatGolongan || undefined,
             tempatLahir: pendaftar.tempatLahir || undefined,
             tanggalLahir: pendaftar.tanggalLahir || undefined,
