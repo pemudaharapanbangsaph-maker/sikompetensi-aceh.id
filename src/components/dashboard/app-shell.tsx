@@ -22,6 +22,7 @@ const UserView = lazy(() => import('@/components/views/user-view').then(m => ({ 
 const BackupView = lazy(() => import('@/components/views/backup-view').then(m => ({ default: m.BackupView })))
 const SettingsView = lazy(() => import('@/components/views/settings-view').then(m => ({ default: m.SettingsView })))
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
+const DaftarHadirView = lazy(() => import('@/components/views/daftar-hadir-view').then(m => ({ default: m.DaftarHadirView })))
 
 function ViewLoader() {
   return (
@@ -61,6 +62,8 @@ function renderView(view: string): React.ReactNode {
     case 'pendaftaran-list':
     case 'pendaftaran-dokumen':
       return <PendaftaranView />
+    case 'pendaftaran-daftar-hadir':
+      return <DaftarHadirView />
     case 'monitoring-pretest':
     case 'monitoring-posttest':
     case 'monitoring-kuesioner':
