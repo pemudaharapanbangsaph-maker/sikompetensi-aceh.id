@@ -304,8 +304,8 @@ function LaporanUjiView() {
   }
 
   const handleExportPDF = () => {
-    toast({ title: 'Mempersiapkan PDF', description: 'Membuka dialog cetak browser...' })
-    setTimeout(() => window.print(), 400)
+    toast({ title: 'Export PDF', description: 'Mengunduh file laporan-uji-kompetensi.pdf...' })
+    api.laporan.exportUjiKompetensiPdf()
   }
 
   const handleExportExcel = () => {
