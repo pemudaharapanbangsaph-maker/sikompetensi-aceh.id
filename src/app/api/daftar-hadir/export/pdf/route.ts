@@ -122,17 +122,17 @@ export async function GET(req: Request) {
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y
     let fy = finalY + 10
 
-    // Banda Aceh di atas, centered
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`${lokasi},       ${bulanNama} ${tahun}`, pageW / 2, fy, { align: 'center' })
-    fy += 14
-
     // 3 kolom: Tanda Tangan | DTO | Penyelenggara
     const colW = contentW / 3
     const signX1 = marginL + colW / 2
     const signX2 = marginL + colW + colW / 2
     const signX3 = marginL + colW * 2 + colW / 2
+
+    // Banda Aceh di kanan atas, di atas Penyelenggara
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`${lokasi},       ${bulanNama} ${tahun}`, signX3, fy, { align: 'right' })
+    fy += 14
 
     doc.text('Tanda Tangan', signX1, fy, { align: 'center' })
     doc.text('DTO', signX2, fy, { align: 'center' })
