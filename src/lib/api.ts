@@ -186,6 +186,7 @@ export const api = {
 
   laporan: {
     exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
+    exportPelatihanPdf: () => window.location.href = `${BASE}/laporan/pelatihan/export?format=pdf`,
     exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
     exportPesertaXls: () => window.location.href = `${BASE}/laporan/peserta/export`,
     exportPesertaPdf: () => window.location.href = `${BASE}/laporan/peserta/export/pdf`,
