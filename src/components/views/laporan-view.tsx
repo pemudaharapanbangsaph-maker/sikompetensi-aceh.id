@@ -136,8 +136,8 @@ function LaporanPelatihanView() {
   }
 
   const handleExportPDF = () => {
-    toast({ title: 'Mempersiapkan PDF', description: 'Membuka dialog cetak browser...' })
-    setTimeout(() => window.print(), 400)
+    toast({ title: 'Export PDF', description: 'Mengunduh file laporan-pelatihan.pdf...' })
+    api.laporan.exportPelatihanPdf()
   }
 
   const handleExportExcel = () => {
