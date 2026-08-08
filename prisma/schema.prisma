@@ -149,6 +149,7 @@ model PendaftaranPortal {
   id                String   @id @default(cuid())
   nama              String
   nip               String   @unique
+  jenisKelamin      String?  // L | P
   pangkatGolongan   String?
   tempatLahir       String?
   tanggalLahir      DateTime?
