@@ -31,6 +31,65 @@ const STATUS_MAP: Record<string, string> = {
 
 const REQUIRED_COLUMNS = ['Outcome', 'Nama Pelatihan']
 
+// --- Helper: generate kode pelatihan otomatis dari counter ---
+async function generateKodePelatihan(): Promise<string> {
+  const all = await db.pelatihan.findMany({
+    select: { kode: true },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+  })
+  let maxNum = 0
+  for (const p of all) {
+    const m = p.kode.match(/PL-(\d+)/)
+    if (m) maxNum = Math.max(maxNum, Number(m[1]))
+  }
+  return `PL-${String(maxNum + 1).padStart(3, '0')}`
+}
+
+// --- Helper: sinkronisasi satu item AnalisisDiklat → Pelatihan ---
+async function syncOneToPelatihan(analisisId: string, data: {
+  namaPelatihan: string
+  kategori: string
+  metodePembelajaran: string
+  durasiJP: number
+  durasiHari: number
+  tahunPelaksanaan: number
+  prioritas: string
+  targetOutput: string
+  status: string
+  outcome: string
+}, userId?: string) {
+  if (data.status !== 'AKTIF') return
+
+  const durasiHari = data.durasiHari > 0 ? data.durasiHari : Math.max(1, Math.ceil(data.durasiJP / 8))
+  const deskripsi = [
+    data.outcome ? `Outcome: ${data.outcome}` : '',
+    `Metode: ${data.metodePembelajaran === 'TATAP_MUKA' ? 'Tatap Muka' : data.metodePembelajaran === 'DARING' ? 'Daring' : 'Blended'}`,
+    `Prioritas: ${data.prioritas}`,
+    data.targetOutput ? `Target: ${data.targetOutput}` : '',
+    `Tahun: ${data.tahunPelaksanaan}`,
+  ].filter(Boolean).join(' | ')
+
+  const kode = await generateKodePelatihan()
+  const newPelatihan = await db.pelatihan.create({
+    data: {
+      kode,
+      nama: data.namaPelatihan,
+      kategori: data.kategori,
+      deskripsi,
+      jp: data.durasiJP || 8,
+      durasiHari,
+      status: 'AKTIF',
+      createdBy: userId,
+    },
+  })
+  // Simpan ID Pelatihan ke AnalisisDiklatItem
+  await db.analisisDiklatItem.update({
+    where: { id: analisisId },
+    data: { pelatihanId: newPelatihan.id },
+  })
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getSession()
@@ -69,7 +128,8 @@ export async function POST(req: Request) {
       const tahunRaw = row[findCol(['Tahun Pelaksanaan'])]
       const kategoriRaw = String(row[findCol(['Kategori'])] || 'Teknis')
       const statusRaw = String(row[findCol(['Status Publikasi'])] || 'Aktif')
-      const durasiHariRaw = row[findCol(['Jumlah Hari', 'Lama Hari', 'Durasi Hari'])]
+      const durasiJPRaw = Number(row[findCol(['Durasi (JP)', 'Jumlah Hari', 'Durasi JP', 'Jumlah Hari (JP)'])] || 0)
+      const durasiHariRaw = Number(row[findCol(['Durasi Hari', 'Jumlah Hari', 'Lama Hari', 'Durasi (Hari)'])] || 0)
 
       return {
         outcome: String(row[findCol(['Outcome'])] || ''),
@@ -79,8 +139,8 @@ export async function POST(req: Request) {
         namaPelatihan: String(row[findCol(['Nama Pelatihan'])] || ''),
         kategori: KATEGORI_MAP[kategoriRaw.toLowerCase()] || 'TEKNIS',
         metodePembelajaran: METODE_MAP[metodeRaw.toLowerCase()] || 'TATAP_MUKA',
-        durasiJP: Number(row[findCol(['Durasi (JP)', 'Durasi JP'])] || 0),
-        durasiHari: durasiHariRaw ? Number(durasiHariRaw) : 0,
+        durasiJP: durasiJPRaw,
+        durasiHari: durasiHariRaw,
         targetOutput: String(row[findCol(['Target Output'])] || ''),
         prioritas: PRIORITAS_MAP[prioritasRaw.toLowerCase()] || 'SEDANG',
         tahunPelaksanaan: tahunRaw ? Number(tahunRaw) : new Date().getFullYear(),
@@ -90,6 +150,37 @@ export async function POST(req: Request) {
     })
 
     const result = await db.analisisDiklatItem.createMany({ data: items })
+
+    // Sinkronisasi ke Pelatihan untuk setiap item yang baru dibuat
+    // Ambil item yang baru dibuat berdasarkan namaPelatihan + tahunPelaksanaan
+    const createdItems = await db.analisisDiklatItem.findMany({
+      where: {
+        namaPelatihan: { in: items.map(i => i.namaPelatihan) },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: items.length,
+    })
+
+    for (const createdItem of createdItems) {
+      const matchItem = items.find(i =>
+        i.namaPelatihan === createdItem.namaPelatihan &&
+        i.tahunPelaksanaan === createdItem.tahunPelaksanaan
+      )
+      if (matchItem) {
+        await syncOneToPelatihan(createdItem.id, {
+          namaPelatihan: createdItem.namaPelatihan,
+          kategori: createdItem.kategori,
+          metodePembelajaran: createdItem.metodePembelajaran,
+          durasiJP: createdItem.durasiJP,
+          durasiHari: createdItem.durasiHari,
+          tahunPelaksanaan: createdItem.tahunPelaksanaan,
+          prioritas: createdItem.prioritas,
+          targetOutput: createdItem.targetOutput,
+          status: createdItem.status,
+          outcome: createdItem.outcome,
+        }, session.user.id)
+      }
+    }
 
     await auditLog(session, 'IMPORT', 'ANALISIS_DIKLAT', `Import ${result.count} item analisis diklat dari XLS`, req)
 
