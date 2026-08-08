@@ -136,34 +136,8 @@ function LaporanPelatihanView() {
   }
 
   const handleExportPDF = () => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-    const statusCounts: Record<string, number> = {}
-    filtered.forEach((a) => { statusCounts[a.status] = (statusCounts[a.status] || 0) + 1 })
-    const statusRows = Object.entries(statusCounts).map(([s, c]) => {
-      const label = { PERENCANAAN: 'Perencanaan', BERJALAN: 'Berjalan', SELESAI: 'Selesai', DIBATALKAN: 'Dibatalkan' }[s] || s
-      return `<tr><td style="padding:6px 12px;border:1px solid #ddd">${label}</td><td style="padding:6px 12px;border:1px solid #ddd;text-align:center">${c}</td></tr>`
-    }).join('')
-    const tableRows = filtered.map((a, i) => `<tr>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${i + 1}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${a.pelatihan?.nama || '-'}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${a.namaAngkatan}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${a.tanggalMulai ? new Date(a.tanggalMulai).toLocaleDateString('id-ID') : '-'}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${a.lokasi || '-'}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${a._count?.peserta || 0}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${a.status}</td>
-    </tr>`).join('')
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Rekapitulasi Pelatihan</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{font-size:16px}h2{font-size:13px;margin-top:16px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}th{background:#0F4C81;color:#fff;padding:8px;text-align:left}.summary td{padding:4px 8px;border:1px solid #ddd}@media print{button{display:none}}</style></head><body>
-      <h1 style="text-align:center">REKAPITULASI PELATIHAN</h1>
-      <p style="text-align:center;font-size:12px;color:#666">BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti</p>
-      <p style="text-align:right;font-size:11px">Dicetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-      <h2>Ringkasan Status</h2>
-      <table class="summary"><tr><th style="padding:6px 12px;background:#0F4C81;color:#fff;border:1px solid #ddd">Status</th><th style="padding:6px 12px;background:#0F4C81;color:#fff;border:1px solid #ddd;text-align:center">Jumlah</th></tr>${statusRows}<tr style="font-weight:bold"><td style="padding:6px 12px;border:1px solid #ddd">Total</td><td style="padding:6px 12px;border:1px solid #ddd;text-align:center">${filtered.length}</td></tr></table>
-      <h2>Data Angkatan Pelatihan</h2>
-      <table><tr><th>No</th><th>Nama Pelatihan</th><th>Angkatan</th><th>Tanggal Mulai</th><th>Lokasi</th><th>Peserta</th><th>Status</th></tr>${tableRows}</table>
-      <button onclick="window.print()" style="margin-top:16px;padding:8px 20px;background:#0F4C81;color:#fff;border:none;border-radius:6px;cursor:pointer">Cetak / Simpan PDF</button>
-    </body></html>`)
-    printWindow.document.close()
+    toast({ title: 'Mempersiapkan PDF', description: 'Membuka dialog cetak browser...' })
+    setTimeout(() => window.print(), 400)
   }
 
   const handleExportExcel = () => {
@@ -330,35 +304,8 @@ function LaporanUjiView() {
   }
 
   const handleExportPDF = () => {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-    const statusCounts: Record<string, number> = {}
-    filtered.forEach((u) => { statusCounts[u.status] = (statusCounts[u.status] || 0) + 1 })
-    const statusRows = Object.entries(statusCounts).map(([s, c]) => {
-      const label = { DIJADWALKAN: 'Dijadwalkan', BERLANGSUNG: 'Berlangsung', SELESAI: 'Selesai', DIBATALKAN: 'Dibatalkan' }[s] || s
-      return `<tr><td style="padding:6px 12px;border:1px solid #ddd">${label}</td><td style="padding:6px 12px;border:1px solid #ddd;text-align:center">${c}</td></tr>`
-    }).join('')
-    const tableRows = filtered.map((u, i) => `<tr>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${i + 1}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${u.kode}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${u.skemaSertifikasi}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${new Date(u.tanggalUji).toLocaleDateString('id-ID')}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${u.tempat}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${u.jumlahPeserta}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd">${u.asesor?.map((a) => a.nama).join(', ') || '-'}</td>
-      <td style="padding:6px 8px;border:1px solid #ddd;text-align:center">${u.status}</td>
-    </tr>`).join('')
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>Rekapitulasi Uji Kompetensi</title><style>body{font-family:Arial,sans-serif;padding:20px}h1{font-size:16px}h2{font-size:13px;margin-top:16px}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px}th{background:#0F4C81;color:#fff;padding:8px;text-align:left}.summary td{padding:4px 8px;border:1px solid #ddd}@media print{button{display:none}}</style></head><body>
-      <h1 style="text-align:center">REKAPITULASI UJI KOMPETENSI</h1>
-      <p style="text-align:center;font-size:12px;color:#666">BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti</p>
-      <p style="text-align:right;font-size:11px">Dicetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-      <h2>Ringkasan Status</h2>
-      <table class="summary"><tr><th style="padding:6px 12px;background:#0F4C81;color:#fff;border:1px solid #ddd">Status</th><th style="padding:6px 12px;background:#0F4C81;color:#fff;border:1px solid #ddd;text-align:center">Jumlah</th></tr>${statusRows}<tr style="font-weight:bold"><td style="padding:6px 12px;border:1px solid #ddd">Total</td><td style="padding:6px 12px;border:1px solid #ddd;text-align:center">${filtered.length}</td></tr></table>
-      <h2>Data Uji Kompetensi</h2>
-      <table><tr><th>No</th><th>Kode</th><th>Skema Sertifikasi</th><th>Tanggal</th><th>Tempat</th><th>Peserta</th><th>Asesor</th><th>Status</th></tr>${tableRows}</table>
-      <button onclick="window.print()" style="margin-top:16px;padding:8px 20px;background:#0F4C81;color:#fff;border:none;border-radius:6px;cursor:pointer">Cetak / Simpan PDF</button>
-    </body></html>`)
-    printWindow.document.close()
+    toast({ title: 'Mempersiapkan PDF', description: 'Membuka dialog cetak browser...' })
+    setTimeout(() => window.print(), 400)
   }
 
   const handleExportExcel = () => {
@@ -525,12 +472,13 @@ function LaporanPesertaView() {
   }
 
   const handleExportPDF = () => {
-    toast({ title: 'Mempersiapkan PDF', description: 'Membuka dialog cetak browser...' })
-    setTimeout(() => window.print(), 400)
+    toast({ title: 'Export PDF', description: 'Mengunduh file laporan-peserta.pdf...' })
+    api.laporan.exportPesertaPdf()
   }
 
   const handleExportExcel = () => {
-    toast({ title: 'Export Excel', description: 'Fitur export Excel — data siap diunduh' })
+    toast({ title: 'Export Excel', description: 'Mengunduh file laporan-peserta.xlsx...' })
+    api.laporan.exportPesertaXls()
   }
 
   const filterOptions: FilterOption[] = [
