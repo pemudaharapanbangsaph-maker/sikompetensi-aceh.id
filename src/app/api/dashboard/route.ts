@@ -19,8 +19,11 @@ export async function GET() {
     ])
 
     const pelatihanBerjalan = await db.angkatan.count({ where: { status: 'BERJALAN' } })
-    const pesertaLulus = await db.pesertaAngkatan.count({ where: { status: 'LULUS' } })
-    const pesertaTidakLulus = await db.pesertaAngkatan.count({ where: { status: 'TIDAK_LULUS' } })
+    const angkatanSelesai = await db.angkatan.count({ where: { status: 'SELESAI' } })
+    const [pendaftaranPortal, pendaftaranMenunggu] = await Promise.all([
+      db.pendaftaranPortal.count(),
+      db.pendaftaranPortal.count({ where: { status: 'MENUNGGU' } }),
+    ])
     const ujiSelesai = await db.ujiKompetensi.count({ where: { status: 'SELESAI' } })
 
     // Grafik pelatihan per bulan (12 bulan terakhir)
@@ -35,17 +38,15 @@ export async function GET() {
       monthsData.push({ bulan: start.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }), jumlah })
     }
 
-    // Grafik kelulusan per pelatihan (top 6)
-    const angkatanSelesai = await db.angkatan.findMany({
-      where: { status: 'SELESAI' },
+    // Grafik peserta per angkatan terbaru (top 6)
+    const angkatanTerbaru = await db.angkatan.findMany({
       include: { pelatihan: true, _count: { select: { peserta: true } } },
       take: 6,
-      orderBy: { tanggalSelesai: 'desc' },
+      orderBy: { createdAt: 'desc' },
     })
-    const grafikKelulusan = await Promise.all(angkatanSelesai.map(async (a) => {
-      const lulus = await db.pesertaAngkatan.count({ where: { angkatanId: a.id, status: 'LULUS' } })
-      const tidakLulus = await db.pesertaAngkatan.count({ where: { angkatanId: a.id, status: 'TIDAK_LULUS' } })
-      return { nama: a.pelatihan?.nama?.substring(0, 20) || a.namaAngkatan, lulus, tidakLulus }
+    const grafikPesertaPerAngkatan = angkatanTerbaru.map((a) => ({
+      nama: a.pelatihan?.nama?.substring(0, 20) || a.namaAngkatan,
+      peserta: a._count.peserta,
     }))
 
     // Grafik kategori pelatihan
@@ -87,12 +88,13 @@ export async function GET() {
       totalAsesor,
       totalAnalisis,
       pelatihanBerjalan,
-      pesertaLulus,
-      pesertaTidakLulus,
+      angkatanSelesai,
+      pendaftaranPortal,
+      pendaftaranMenunggu,
       ujiSelesai,
       grafikPelatihanPerBulan: monthsData,
-      grafikKelulusan,
-      grafikKategoriPelatihan: grafikKategoriPelatihan,
+      grafikPesertaPerAngkatan,
+      grafikKategoriPelatihan,
       jadwalTerdekat,
       aktivitasTerbaru,
     })
