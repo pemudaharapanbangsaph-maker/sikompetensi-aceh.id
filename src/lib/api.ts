@@ -7,10 +7,11 @@ import type {
 const BASE = '/api'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const { headers: customHeaders, ...restOptions } = options || {}
   const res = await fetch(`${BASE}${url}`, {
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
-    ...options,
+    ...restOptions,
+    headers: customHeaders !== undefined ? customHeaders : { 'Content-Type': 'application/json' },
   })
   if (!res.ok) {
     let msg = `HTTP ${res.status}`
