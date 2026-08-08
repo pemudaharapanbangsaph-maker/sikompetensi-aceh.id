@@ -353,7 +353,7 @@ function PendaftaranDokumenView() {
   const [listLoading, setListLoading] = useState(true)
   const [listSearch, setListSearch] = useState('')
   const [listStatusFilter, setListStatusFilter] = useState('')
-  const [pelatihanOptions, setPelatihanOptions] = useState<{ id: string; kode: string; nama: string; jumlahPendaftar: number }[]>([])
+  const [pelatihanOptions, setPelatihanOptions] = useState<{ nama: string; jumlahPendaftar: number }[]>([])
   const [pelatihanFilter, setPelatihanFilter] = useState('')
 
   // Fetch list data (list mode)
@@ -363,7 +363,7 @@ function PendaftaranDokumenView() {
       const params: Record<string, string> = {}
       if (listSearch) params.search = listSearch
       if (listStatusFilter) params.status = listStatusFilter
-      if (pelatihanFilter) params.pelatihanId = pelatihanFilter
+      if (pelatihanFilter) params.namaPelatihan = pelatihanFilter
       params.pageSize = '100'
       const qs = '?' + new URLSearchParams(params).toString()
       const res = await fetch(`/api/pendaftaran${qs}`, { credentials: 'same-origin' })
@@ -542,15 +542,15 @@ function PendaftaranDokumenView() {
                   onChange={(e) => setListSearch(e.target.value)}
                   className="h-8 text-sm w-48"
                 />
-                                <Select value={pelatihanFilter || '__all__'} onValueChange={(v) => setPelatihanFilter(v === '__all__' ? '' : v)}>
+                  <Select value={pelatihanFilter || '__all__'} onValueChange={(v) => setPelatihanFilter(v === '__all__' ? '' : v)}>
                   <SelectTrigger className="h-8 text-sm w-56">
                     <SelectValue placeholder="Semua Pelatihan" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all__">Semua Pelatihan</SelectItem>
                     {pelatihanOptions.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.kode} — {p.nama} ({p.jumlahPendaftar})
+                      <SelectItem key={p.nama} value={p.nama}>
+                        {p.nama} ({p.jumlahPendaftar})
                       </SelectItem>
                     ))}
                   </SelectContent>
