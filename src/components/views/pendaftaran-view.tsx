@@ -398,18 +398,19 @@ function PendaftaranDokumenView() {
     else fetchDetailData()
   }, [isListMode, fetchListData, fetchDetailData])
 
-  // Handler: pilih pendaftar dari daftar
-  const handleSelectPendaftar = (item: PendaftaranItem) => {
-    _selectedPendaftaranId = item.id
-    setSelectedId(item.id)
-    setData(null)
-        // Fetch pelatihan options untuk dropdown filter
+  // Fetch pelatihan options untuk dropdown filter
   useEffect(() => {
     fetch('/api/pendaftaran/pelatihan-options', { credentials: 'same-origin' })
       .then((r) => r.json())
       .then(setPelatihanOptions)
       .catch(() => {})
   }, [])
+
+  // Handler: pilih pendaftar dari daftar
+  const handleSelectPendaftar = (item: PendaftaranItem) => {
+    _selectedPendaftaranId = item.id
+    setSelectedId(item.id)
+    setData(null)
   }
 
   // Handler: kembali ke daftar dari detail
