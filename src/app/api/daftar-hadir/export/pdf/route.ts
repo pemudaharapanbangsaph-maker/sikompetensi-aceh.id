@@ -34,56 +34,64 @@ export async function GET(req: Request) {
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [215.9, 355.6] })
-    const pageW = 215.9
-    const marginL = 15
-    const marginR = 15
+    // A4 Portrait
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = 210
+    const pageH = 297
+    const marginL = 20
+    const marginR = 20
+    const contentW = pageW - marginL - marginR
 
-    // HEADER
-    let y = 12
+    // ===== HEADER =====
+    let y = 15
+    doc.setFont('times', 'italic')
     doc.setFontSize(14)
-    doc.setFont('helvetica', 'bold')
     doc.text('DAFTAR HADIR PESERTA', pageW / 2, y, { align: 'center' })
     y += 7
 
+    doc.setFont('times', 'bold')
     doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    const pelatihanText = `${angkatan.pelatihan.nama.toUpperCase()} TAHUN ${tahun}`
+    const pelatihanText = `${angkatan.pelatihan.nama.toUpperCase()}`
     doc.text(pelatihanText, pageW / 2, y, { align: 'center' })
-    y += 7
+    y += 6
 
+    doc.setFont('times', 'bold')
+    doc.setFontSize(11)
+    doc.text(`TAHUN ${tahun}`, pageW / 2, y, { align: 'center' })
+    y += 6
+
+    doc.setFont('times', 'normal')
     doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
     doc.text(`${lokasi}, ${tglMulai} s.d ${tglSelesai} ${bulanNama} ${tahun}`, pageW / 2, y, { align: 'center' })
     y += 10
 
-    // FIELDS
+    // ===== INFO FIELDS =====
+    doc.setFont('times', 'normal')
     doc.setFontSize(10)
     const fields = [
-      ['Hari/Tanggal', ': ………………………….'],
-      ['Waktu', ': ………………………….'],
-      ['Fasilitator', ': ………………………….'],
-      ['Materi', '.…………….'],
+      'Hari/Tanggal',
+      'Waktu',
+      'Fasilitator',
+      'Materi',
     ]
-
-    for (const [label, value] of fields) {
-      doc.setFont('helvetica', 'normal')
+    for (const label of fields) {
       doc.text(`${label}`, marginL, y)
       const labelW = doc.getTextWidth(`${label} `)
-      doc.text(value, marginL + labelW, y)
-      y += 7
+      // Dotted line fill
+      const dots = '……………………………….'
+      doc.text(dots, marginL + labelW, y)
+      y += 6
     }
-    y += 3
+    y += 2
 
-    // TABLE
-    const headerRow = [['No.', 'NAMA', 'NIP', 'INSTANSI', 'Paraf', 'Paraf']]
+    // ===== TABLE =====
+    const headerRow = [['No.', 'NAMA', 'NIP', 'INSTANSI', 'TANDA TANGAN']]
     const bodyRows = pesertaList.map((p, i) => [
       String(i + 1),
       p.nama,
       p.nip,
       p.instansi || p.unitKerja || '-',
-      '',
-      '',
+      `${i + 1} ……….......`,
     ])
 
     autoTable(doc, {
@@ -91,67 +99,59 @@ export async function GET(req: Request) {
       head: headerRow,
       body: bodyRows,
       headStyles: {
-        fillColor: [0, 0, 0],
-        textColor: [255, 255, 255],
+        fillColor: [220, 220, 220],
+        textColor: [0, 0, 0],
         fontSize: 9,
         fontStyle: 'bold',
-        cellPadding: { top: 3, bottom: 3, left: 3, right: 3 },
+        font: 'times',
+        cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
         halign: 'center',
         valign: 'middle',
       },
       bodyStyles: {
         fontSize: 8,
-        cellPadding: { top: 4, bottom: 4, left: 2, right: 2 },
+        font: 'times',
+        cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
         textColor: [0, 0, 0],
         lineColor: [0, 0, 0],
-        lineWidth: 0.1,
+        lineWidth: 0.2,
       },
       columnStyles: {
         0: { cellWidth: 10, halign: 'center', valign: 'middle' },
         1: { cellWidth: 50 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 58 },
-        4: { cellWidth: 16, halign: 'center' },
-        5: { cellWidth: 16, halign: 'center' },
+        2: { cellWidth: 38 },
+        3: { cellWidth: 60 },
+        4: { cellWidth: contentW - 10 - 50 - 38 - 60, halign: 'center' },
       },
       margin: { left: marginL, right: marginR },
-      rowPageBreak: 'avoid',
       theme: 'grid',
     })
 
-    // FOOTER
+    // ===== FOOTER =====
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y
-    let fy = finalY + 10
+    let fy = finalY + 8
 
+    // Left: Petugas Piket Kelas
+    doc.setFont('times', 'normal')
     doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
     doc.text('Petugas Piket Kelas:', marginL, fy)
     fy += 7
-    doc.text('1.', marginL + 10, fy)
-    doc.text('(..................................)', marginL + 16, fy)
-    fy += 10
-    doc.text('2.', marginL + 10, fy)
-    doc.text('(..................................)', marginL + 16, fy)
+    doc.text('1. ', marginL + 8, fy)
+    doc.text('(..................................)', marginL + 14, fy)
+    fy += 7
+    doc.text('2. ', marginL + 8, fy)
+    doc.text('(..................................)', marginL + 14, fy)
 
+    // Right: Tanda Tangan Penyelenggara
     const signX = pageW - marginR
-    fy = finalY + 10
+    fy = finalY + 8
     doc.text('TANDA TANGAN', signX, fy, { align: 'right' })
     fy += 7
     doc.text('Penyelenggara', signX, fy, { align: 'right' })
-    fy += 14
-    doc.text(`${lokasi},       ${bulanNama} ${tahun}`, signX, fy, { align: 'right' })
+    fy += 5
+    doc.text(`${lokasi},     ${bulanNama} ${tahun}`, signX, fy, { align: 'right' })
     fy += 20
     doc.text('dto', signX, fy, { align: 'right' })
-
-    const pageCount = doc.getNumberOfPages()
-    const pageH = 355.6
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i)
-      doc.setFontSize(7)
-      doc.setTextColor(148, 163, 184)
-      doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, pageH - 8, { align: 'center' })
-      doc.setTextColor(0, 0, 0)
-    }
 
     const pdfBuf = Buffer.from(doc.output('arraybuffer'))
     const safeName = angkatan.pelatihan.nama.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').slice(0, 60)
