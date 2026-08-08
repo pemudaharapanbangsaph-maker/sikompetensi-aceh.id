@@ -46,7 +46,7 @@ async function generateKodePelatihan(): Promise<string> {
   return `PL-${String(maxNum + 1).padStart(3, '0')}`
 }
 
-// --- Helper: sinkronisasi satu item AnalisisDiklat → Pelatihan ---
+// --- Helper: sinkronisasi satu item AnalisisDiklat → Pelatihan + Angkatan default ---
 async function syncOneToPelatihan(analisisId: string, data: {
   namaPelatihan: string
   kategori: string
@@ -87,6 +87,21 @@ async function syncOneToPelatihan(analisisId: string, data: {
   await db.analisisDiklatItem.update({
     where: { id: analisisId },
     data: { pelatihanId: newPelatihan.id },
+  })
+
+  // Otomatis buat Angkatan default
+  const tahun = data.tahunPelaksanaan || new Date().getFullYear()
+  await db.angkatan.create({
+    data: {
+      pelatihanId: newPelatihan.id,
+      namaAngkatan: `Angkatan 1 - ${data.namaPelatihan}`,
+      tanggalMulai: new Date(tahun, 0, 1),
+      tanggalSelesai: new Date(tahun, 11, 31),
+      metode: data.metodePembelajaran || 'TATAP_MUKA',
+      kuota: 30,
+      status: 'PERENCANAAN',
+      createdBy: userId,
+    },
   })
 }
 
@@ -129,7 +144,7 @@ export async function POST(req: Request) {
       const kategoriRaw = String(row[findCol(['Kategori'])] || 'Teknis')
       const statusRaw = String(row[findCol(['Status Publikasi'])] || 'Aktif')
       const durasiJPRaw = Number(row[findCol(['Durasi (JP)', 'Jumlah Hari', 'Durasi JP', 'Jumlah Hari (JP)'])] || 0)
-      const durasiHariRaw = Number(row[findCol(['Durasi Hari', 'Jumlah Hari', 'Lama Hari', 'Durasi (Hari)'])] || 0)
+      const durasiHariRaw = Number(row[findCol(['Durasi Hari', 'Lama Hari', 'Durasi (Hari)'])] || 0)
 
       return {
         outcome: String(row[findCol(['Outcome'])] || ''),
@@ -151,8 +166,7 @@ export async function POST(req: Request) {
 
     const result = await db.analisisDiklatItem.createMany({ data: items })
 
-    // Sinkronisasi ke Pelatihan untuk setiap item yang baru dibuat
-    // Ambil item yang baru dibuat berdasarkan namaPelatihan + tahunPelaksanaan
+    // Sinkronisasi ke Pelatihan + Angkatan untuk setiap item yang baru dibuat
     const createdItems = await db.analisisDiklatItem.findMany({
       where: {
         namaPelatihan: { in: items.map(i => i.namaPelatihan) },
