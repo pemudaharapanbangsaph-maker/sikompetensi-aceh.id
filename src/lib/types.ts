@@ -38,7 +38,6 @@ export interface Pelatihan {
   durasiHari: number
   jp: number
   status: string
-  analisisDiklatId?: string | null
   createdAt: string
 }
 
@@ -177,11 +176,12 @@ export interface DashboardStats {
   totalAsesor: number
   totalAnalisis: number
   pelatihanBerjalan: number
-  pesertaLulus: number
-  pesertaTidakLulus: number
+  angkatanSelesai: number
+  pendaftaranPortal: number
+  pendaftaranMenunggu: number
   ujiSelesai: number
   grafikPelatihanPerBulan: { bulan: string; jumlah: number }[]
-  grafikKelulusan: { lulus: number; tidakLulus: number }[]
+  grafikPesertaPerAngkatan: { nama: string; peserta: number }[]
   grafikKategoriPelatihan: { kategori: string; jumlah: number }[]
   jadwalTerdekat: (Angkatan | UjiKompetensi)[]
   aktivitasTerbaru: AuditLog[]
@@ -197,7 +197,6 @@ export interface AnalisisDiklatItem {
   kategori: string
   metodePembelajaran: string
   durasiJP: number
-  durasiHari: number
   targetOutput: string
   prioritas: string
   tahunPelaksanaan: number
