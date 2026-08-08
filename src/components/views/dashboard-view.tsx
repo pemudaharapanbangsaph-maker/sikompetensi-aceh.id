@@ -10,8 +10,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   BookOpen, Users, Award, ClipboardList, Activity, TrendingUp,
-  Calendar, CheckCircle2, XCircle, UserCheck, BarChart3, Clock,
-  Plus, ArrowRight,
+  Calendar, CheckCircle2, UserCheck, BarChart3, Clock,
+  Plus, ArrowRight, FileCheck, ArrowDownToLine,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -72,7 +72,7 @@ export function DashboardView() {
             <p className="text-sm text-slate-400 mt-2 text-center max-w-md">Klik <span className="font-semibold text-[#1B5E20]">Tambah Analisis</span> untuk memulai mengelola kebutuhan diklat di sistem ini.</p>
             <Button
               onClick={() => setActiveView('analisis-input')}
-              className="mt-6 bg-gradient-to-r from-green-700 to-emerald-500 hover:from-green-800 hover:to-emerald-600 hover:-translate-y-0.5 shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300"
+              className="mt-6 bg-gradient-to-r from-[#195737] to-emerald-500 hover:from-[#0F4227] hover:to-emerald-600 hover:-translate-y-0.5 shadow-md shadow-[#16A34A]/20 hover:shadow-lg hover:shadow-[#16A34A]/30 transition-all duration-300"
             >
               <Plus className="w-4 h-4 mr-2" />
               Tambah Analisis
@@ -85,7 +85,7 @@ export function DashboardView() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={{ value: '12% bulan ini', up: true }} />
-        <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.pesertaLulus} lulus`} icon={Users} color="green" />
+        <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.totalAngkatan} angkatan`} icon={Users} color="green" />
         <StatCard title="Uji Kompetensi" value={stats.totalUjiKompetensi} subtitle={`${stats.ujiSelesai} selesai`} icon={Award} color="amber" />
         <StatCard title="Analisis Kebutuhan" value={stats.totalAnalisis} subtitle={`${stats.totalAsesor} asesor`} icon={ClipboardList} color="purple" />
       </div>
@@ -93,9 +93,9 @@ export function DashboardView() {
       {/* Secondary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         <StatCard title="Pelatihan Berjalan" value={stats.pelatihanBerjalan} icon={Activity} color="blue" />
-        <StatCard title="Peserta Lulus" value={stats.pesertaLulus} icon={CheckCircle2} color="green" />
-        <StatCard title="Peserta Tidak Lulus" value={stats.pesertaTidakLulus} icon={XCircle} color="red" />
-        <StatCard title="Tingkat Kelulusan" value={`${stats.pesertaLulus + stats.pesertaTidakLulus > 0 ? Math.round((stats.pesertaLulus / (stats.pesertaLulus + stats.pesertaTidakLulus)) * 100) : 0}%`} icon={UserCheck} color="green" />
+        <StatCard title="Angkatan Selesai" value={stats.angkatanSelesai} icon={CheckCircle2} color="green" />
+        <StatCard title="Pendaftaran Portal" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="amber" />
+        <StatCard title="Uji Kompetensi Selesai" value={stats.ujiSelesai} icon={FileCheck} color="green" />
       </div>
 
       {/* Charts */}
@@ -160,18 +160,18 @@ export function DashboardView() {
         </Card>
       </div>
 
-      {/* Kelulusan chart + Jadwal terdekat */}
+      {/* Peserta per Angkatan chart + Jadwal terdekat */}
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 border-slate-200 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <Award className="w-4 h-4 text-[#0F4C81]" />
-              Grafik Kelulusan per Angkatan
+              <UserCheck className="w-4 h-4 text-[#0F4C81]" />
+              Peserta per Angkatan Terbaru
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={stats.grafikKelulusan}>
+              <BarChart data={stats.grafikPesertaPerAngkatan}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="nama" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
@@ -179,9 +179,7 @@ export function DashboardView() {
                   contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
                   cursor={{ fill: '#f8fafc' }}
                 />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="lulus" name="Lulus" fill="#198754" radius={[4, 4, 0, 0]} maxBarSize={35} />
-                <Bar dataKey="tidakLulus" name="Tidak Lulus" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={35} />
+                <Bar dataKey="peserta" name="Jumlah Peserta" fill="#198754" radius={[4, 4, 0, 0]} maxBarSize={35} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -257,7 +255,7 @@ export function DashboardView() {
             ) : stats.aktivitasTerbaru.map((a) => (
               <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  a.aksi.includes('LOGIN') ? 'bg-green-100 text-green-600' :
+                  a.aksi.includes('LOGIN') ? 'bg-green-100 text-[#15803D]' :
                   a.aksi.includes('CREATE') ? 'bg-blue-100 text-blue-600' :
                   a.aksi.includes('UPDATE') ? 'bg-amber-100 text-amber-600' :
                   a.aksi.includes('DELETE') ? 'bg-red-100 text-red-600' :
