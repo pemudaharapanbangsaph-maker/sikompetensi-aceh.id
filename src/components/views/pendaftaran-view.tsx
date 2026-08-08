@@ -375,7 +375,7 @@ function PendaftaranDokumenView() {
     } finally {
       setListLoading(false)
     }
-  }, [listSearch, listStatusFilter, toast])
+    }, [listSearch, listStatusFilter, pelatihanFilter, toast])
 
   // Fetch detail data (detail mode)
   const fetchDetailData = useCallback(async () => {
@@ -403,6 +403,13 @@ function PendaftaranDokumenView() {
     _selectedPendaftaranId = item.id
     setSelectedId(item.id)
     setData(null)
+        // Fetch pelatihan options untuk dropdown filter
+  useEffect(() => {
+    fetch('/api/pendaftaran/pelatihan-options', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then(setPelatihanOptions)
+      .catch(() => {})
+  }, [])
   }
 
   // Handler: kembali ke daftar dari detail
@@ -535,6 +542,19 @@ function PendaftaranDokumenView() {
                   onChange={(e) => setListSearch(e.target.value)}
                   className="h-8 text-sm w-48"
                 />
+                                <Select value={pelatihanFilter || '__all__'} onValueChange={(v) => setPelatihanFilter(v === '__all__' ? '' : v)}>
+                  <SelectTrigger className="h-8 text-sm w-56">
+                    <SelectValue placeholder="Semua Pelatihan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Semua Pelatihan</SelectItem>
+                    {pelatihanOptions.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.kode} — {p.nama} ({p.jumlahPendaftar})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={listStatusFilter || undefined} onValueChange={(v) => setListStatusFilter(v === '__all__' ? '' : v)}>
                   <SelectTrigger className="h-8 text-sm w-32">
                     <SelectValue placeholder="Semua Status" />
