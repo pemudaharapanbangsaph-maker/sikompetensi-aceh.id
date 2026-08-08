@@ -98,7 +98,7 @@ export async function POST(
           data: {
             nip: pendaftar.nip,
             nama: pendaftar.nama,
-            jenisKelamin: 'L',
+            jenisKelamin: pendaftar.jenisKelamin || 'L',
             pangkatGolongan: pendaftar.pangkatGolongan || undefined,
             tempatLahir: pendaftar.tempatLahir || undefined,
             tanggalLahir: pendaftar.tanggalLahir || undefined,
