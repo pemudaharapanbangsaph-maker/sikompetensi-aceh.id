@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     const pageSize = Number(searchParams.get('pageSize') || 10)
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || ''
-    const pelatihanId = searchParams.get('pelatihanId') || ''
+    const namaPelatihan = searchParams.get('namaPelatihan') || ''
 
     const where: Record<string, unknown> = {}
     if (search) {
@@ -27,8 +27,8 @@ export async function GET(req: Request) {
       ]
     }
     if (status) where.status = status
-    if (pelatihanId) {
-      where.analisisDiklatItem = { pelatihanId: pelatihanId }
+    if (namaPelatihan) {
+      where.analisisDiklatItem = { namaPelatihan: namaPelatihan }
     }
 
     const [data, total] = await Promise.all([
