@@ -20,6 +20,8 @@ model User {
   email        String    @unique
   role         String    @default("OPERATOR") // SUPER_ADMIN | ADMIN_BIDANG | OPERATOR
   status       String    @default("AKTIF") // AKTIF | NONAKTIF
+  tempatLahir  String?
+  tanggalLahir DateTime?
   noTelp       String?
   fotoUrl      String?
   lastLogin    DateTime?
@@ -95,6 +97,7 @@ model Pelatihan {
   angkatan     Angkatan[]
   analisis     AnalisisKebutuhan[]
   pendaftaran  PendaftaranPortal[]
+  analisisDiklatItems AnalisisDiklatItem[]
 }
 
 model Angkatan {
@@ -149,6 +152,7 @@ model Dokumentasi {
 model PendaftaranPortal {
   id                String   @id @default(cuid())
   nama              String
+  jenisKelamin      String?
   nip               String   @unique
   pangkatGolongan   String?
   tempatLahir       String?
@@ -214,6 +218,9 @@ model AnalisisDiklatItem {
   namaPelatihan         String   @default("")
   kategori              String   @default("TEKNIS") // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
   metodePembelajaran    String   @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
+  durasiHari            Int?     @default(0)
+  pelatihanId           String?
+  pelatihan             Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
   durasiJP              Int      @default(0)
   targetOutput          String   @default("")
   prioritas             String   @default("SEDANG") // TINGGI | SEDANG | RENDAH
