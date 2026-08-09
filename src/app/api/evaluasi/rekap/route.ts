@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, hasPermission } from '@/lib/auth'
 
-// GET: rekap per angkatan — avg pre-test, avg post-test, avg kuesioner, improvement
+// GET: rekap per angkatan — avg pre-test, avg post-test, nilai akumulasi, improvement
 export async function GET() {
   try {
     const session = await getSession()
@@ -18,7 +18,7 @@ export async function GET() {
 
     const result = await Promise.all(
       angkatanList.map(async (a) => {
-        const [preAgg, postAgg, kuesAgg] = await Promise.all([
+        const [preAgg, postAgg] = await Promise.all([
           db.evaluasi.aggregate({
             _avg: { nilai: true },
             _count: { _all: true },
@@ -29,15 +29,10 @@ export async function GET() {
             _count: { _all: true },
             where: { angkatanId: a.id, jenisEvaluasi: 'POST_TEST' },
           }),
-          db.evaluasi.aggregate({
-            _avg: { nilai: true },
-            _count: { _all: true },
-            where: { angkatanId: a.id, jenisEvaluasi: 'KUESIONER' },
-          }),
         ])
         const avgPre = preAgg._avg.nilai ?? 0
         const avgPost = postAgg._avg.nilai ?? 0
-        const avgKues = kuesAgg._avg.nilai ?? 0
+        const nilaiAkumulasi = Math.round(((avgPre + avgPost) / 2) * 100) / 100
         const improvement = avgPre > 0 ? Math.round(((avgPost - avgPre) / avgPre) * 1000) / 10 : 0
         return {
           id: a.id,
@@ -45,11 +40,10 @@ export async function GET() {
           pelatihan: a.pelatihan?.nama || null,
           avgPreTest: Math.round(avgPre * 100) / 100,
           avgPostTest: Math.round(avgPost * 100) / 100,
-          avgKuesioner: Math.round(avgKues * 100) / 100,
+          nilaiAkumulasi,
           improvement,
           jumlahPreTest: preAgg._count._all,
           jumlahPostTest: postAgg._count._all,
-          jumlahKuesioner: kuesAgg._count._all,
         }
       })
     )
