@@ -60,7 +60,6 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'pendaftaran-list', label: 'Data Pendaftar', view: 'pendaftaran-list', permission: 'pendaftaran' },
       { key: 'pendaftaran-dokumen', label: 'Dokumen Peserta', view: 'pendaftaran-dokumen', permission: 'pendaftaran' },
-      { key: 'pendaftaran-daftar-hadir', label: 'Daftar Hadir', view: 'pendaftaran-daftar-hadir', permission: 'pendaftaran' },
     ],
   },
   {
@@ -68,7 +67,6 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'monitoring-pretest', label: 'Pre-Test', view: 'monitoring-pretest', permission: 'monitoring' },
       { key: 'monitoring-posttest', label: 'Post-Test', view: 'monitoring-posttest', permission: 'monitoring' },
-      { key: 'monitoring-kuesioner', label: 'Kuesioner', view: 'monitoring-kuesioner', permission: 'monitoring' },
       { key: 'monitoring-rekap', label: 'Rekap Evaluasi', view: 'monitoring-rekap', permission: 'monitoring' },
     ],
   },
