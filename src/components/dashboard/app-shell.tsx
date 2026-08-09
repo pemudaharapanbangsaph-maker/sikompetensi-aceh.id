@@ -22,7 +22,7 @@ const UserView = lazy(() => import('@/components/views/user-view').then(m => ({ 
 const BackupView = lazy(() => import('@/components/views/backup-view').then(m => ({ default: m.BackupView })))
 const SettingsView = lazy(() => import('@/components/views/settings-view').then(m => ({ default: m.SettingsView })))
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
-const UserAccountView = lazy(() => import('@/components/views/user-account-view').then(m => ({ default: m.UserAccountView })))
+const AccountView = lazy(() => import('@/components/views/account-view').then(m => ({ default: m.AccountView })))
 
 function ViewLoader() {
   return (
@@ -86,7 +86,7 @@ function renderView(view: string): React.ReactNode {
       return <SettingsView />
     case 'account-profil':
     case 'account-keamanan':
-      return <UserAccountView />
+      return <AccountView />
     default: return <DashboardView />
   }
 }
