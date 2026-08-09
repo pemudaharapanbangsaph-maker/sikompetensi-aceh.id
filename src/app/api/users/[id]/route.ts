@@ -4,7 +4,7 @@ import { getSession, auditLog, hashPassword, hasPermission } from '@/lib/auth'
 
 const USER_SELECT = {
   id: true, username: true, nama: true, email: true, role: true,
-  status: true, noTelp: true, lastLogin: true, createdAt: true,
+  status: true, noTelp: true, tempatLahir: true, tanggalLahir: true, lastLogin: true, createdAt: true,
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -28,11 +28,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!hasPermission(session.user.role, 'users:update')) {
+    const { id } = await params
+    // Izinkan user edit profil sendiri tanpa users:update permission
+    const isSelfEdit = id === session.user.id
+    if (!isSelfEdit && !hasPermission(session.user.role, 'users:update')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    const { id } = await params
     const body = await req.json()
+    // Untuk edit profil sendiri, hanya boleh ubah field tertentu
+    if (isSelfEdit) {
+      const allowed = ['nama', 'email', 'noTelp', 'tempatLahir', 'tanggalLahir']
+      const filtered: Record<string, unknown> = {}
+      for (const key of allowed) {
+        if (body[key] !== undefined) filtered[key] = body[key]
+      }
+      // tanggalLahir perlu convert ke Date
+      if (filtered.tanggalLahir) filtered.tanggalLahir = new Date(filtered.tanggalLahir as string)
+      else if (body.tanggalLahir === '' || body.tanggalLahir === null) filtered.tanggalLahir = null
+      const user = await db.user.update({ where: { id }, data: filtered, select: USER_SELECT })
+      return NextResponse.json(user)
+    }
+
     const { password, ...rest } = body
 
     const data: Record<string, unknown> = { ...rest }
