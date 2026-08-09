@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession, auditLog, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth'
+import { generate2FAPendingToken } from '@/app/api/2fa/verify-login/route'
 
 const MAX_ATTEMPTS = 5
 const LOCK_DURATION = 15 * 60 * 1000
@@ -42,8 +43,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Username atau password salah. Percobaan ${attempts}/${MAX_ATTEMPTS}` }, { status: 401 })
     }
 
-    const token = await createSession(user.id)
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+ const tempToken = generate2FAPendingToken(user.id)
+      return NextResponse.json({
+        requires2FA: true,
+        tempToken,
+        email: user.email,
+      })
+    }
 
+    const token = await createSession(user.id)
     const maxAge = remember ? SESSION_MAX_AGE * 24 * 7 : SESSION_MAX_AGE
 
     await auditLog({ user: { id: user.id, username: user.username, nama: user.nama, email: user.email, role: user.role as any, status: user.status } } as any, 'LOGIN', 'AUTH', `User ${user.username} berhasil login`, req)
@@ -59,7 +69,9 @@ export async function POST(req: Request) {
         lastLogin: user.lastLogin,
         createdAt: user.createdAt,
       },
+      token,
     })
+
     res.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -67,6 +79,7 @@ export async function POST(req: Request) {
       path: '/',
       maxAge,
     })
+
     return res
   } catch (e) {
     console.error('Login error:', e)
