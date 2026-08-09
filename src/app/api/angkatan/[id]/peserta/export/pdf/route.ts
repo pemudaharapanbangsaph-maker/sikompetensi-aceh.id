@@ -2,13 +2,6 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, hasPermission, auditLog } from '@/lib/auth'
 
-const STATUS_LABEL: Record<string, string> = {
-  TERDAFTAR: 'Terdaftar',
-  LULUS: 'Lulus',
-  TIDAK_LULUS: 'Tidak Lulus',
-  DROP_OUT: 'Drop Out',
-}
-
 const METODE_LABEL: Record<string, string> = {
   TATAP_MUKA: 'Tatap Muka',
   DARING: 'Daring',
@@ -48,11 +41,31 @@ export async function GET(
           include: { peserta: true },
           orderBy: { createdAt: 'asc' },
         },
+        evaluasi: {
+          include: { peserta: { select: { id: true } } },
+        },
       },
     })
 
     if (!angkatan) {
       return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
+    }
+
+    // Buat map evaluasi per peserta: { pesertaId: { PRE_TEST: nilai, POST_TEST: nilai } }
+    const evaluasiMap = new Map<string, Record<string, number>>()
+    for (const ev of angkatan.evaluasi) {
+      if (!ev.pesertaId) continue
+      if (ev.jenisEvaluasi !== 'PRE_TEST' && ev.jenisEvaluasi !== 'POST_TEST') continue
+      if (!evaluasiMap.has(ev.pesertaId)) {
+        evaluasiMap.set(ev.pesertaId, {})
+      }
+      const map = evaluasiMap.get(ev.pesertaId)!
+      // Jika ada multiple aspek, jumlahkan semua
+      if (map[ev.jenisEvaluasi] === undefined) {
+        map[ev.jenisEvaluasi] = ev.nilai
+      } else {
+        map[ev.jenisEvaluasi] += ev.nilai
+      }
     }
 
     // Dynamic import jspdf for server-side PDF generation
@@ -62,7 +75,6 @@ export async function GET(
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageWidth = doc.internal.pageSize.getWidth()
     const margin = 14
-    const usableWidth = pageWidth - margin * 2
 
     // === HEADER ===
     let y = 12
@@ -116,20 +128,31 @@ export async function GET(
     // === TABLE PESERTA ===
     const tableHeaders = [
       'No', 'NIP', 'Nama Peserta', 'L/P', 'Jabatan',
-      'Pangkat/Gol.', 'Unit Kerja', 'Instansi', 'Nilai',
+      'Pangkat/Gol.', 'Unit Kerja', 'Instansi', 'Pre-Test', 'Post-Test', 'Nilai',
     ]
 
-    const tableRows = angkatan.peserta.map((pa, idx) => [
-      String(idx + 1),
-      pa.peserta.nip,
-      pa.peserta.nama,
-      pa.peserta.jenisKelamin === 'L' ? 'L' : 'P',
-      pa.peserta.jabatan || '-',
-      pa.peserta.pangkatGolongan || '-',
-      pa.peserta.unitKerja || '-',
-      pa.peserta.instansi || '-',
-      pa.nilaiAkhir != null ? String(pa.nilaiAkhir) : '-',
-    ])
+    const tableRows = angkatan.peserta.map((pa, idx) => {
+      const ev = evaluasiMap.get(pa.pesertaId)
+      const preTest = ev?.PRE_TEST
+      const postTest = ev?.POST_TEST
+      let nilaiAkhir = '-'
+      if (preTest !== undefined && postTest !== undefined) {
+        nilaiAkhir = ((preTest + postTest) / 2).toFixed(1)
+      }
+      return [
+        String(idx + 1),
+        pa.peserta.nip,
+        pa.peserta.nama,
+        pa.peserta.jenisKelamin === 'L' ? 'L' : 'P',
+        pa.peserta.jabatan || '-',
+        pa.peserta.pangkatGolongan || '-',
+        pa.peserta.unitKerja || '-',
+        pa.peserta.instansi || '-',
+        preTest !== undefined ? String(preTest) : '-',
+        postTest !== undefined ? String(postTest) : '-',
+        nilaiAkhir,
+      ]
+    })
 
     autoTable(doc, {
       head: [tableHeaders],
@@ -155,15 +178,17 @@ export async function GET(
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 8 },   // No
-        1: { cellWidth: 30 },                      // NIP
-        2: { cellWidth: 45 },                      // Nama
-        3: { halign: 'center', cellWidth: 10 },    // L/P
-        4: { cellWidth: 40 },                      // Jabatan
-        5: { cellWidth: 25 },                      // Pangkat
-        6: { cellWidth: 40 },                      // Unit Kerja
-        7: { cellWidth: 40 },                      // Instansi
-        8: { halign: 'center', cellWidth: 12 },    // Nilai
+        0: { halign: 'center', cellWidth: 7 },   // No
+        1: { cellWidth: 28 },                      // NIP
+        2: { cellWidth: 40 },                      // Nama
+        3: { halign: 'center', cellWidth: 9 },    // L/P
+        4: { cellWidth: 35 },                      // Jabatan
+        5: { cellWidth: 22 },                      // Pangkat
+        6: { cellWidth: 35 },                      // Unit Kerja
+        7: { cellWidth: 35 },                      // Instansi
+        8: { halign: 'center', cellWidth: 16 },   // Pre-Test
+        9: { halign: 'center', cellWidth: 16 },   // Post-Test
+        10: { halign: 'center', cellWidth: 14 },  // Nilai
       },
       didDrawPage: (data) => {
         // Footer di setiap halaman
