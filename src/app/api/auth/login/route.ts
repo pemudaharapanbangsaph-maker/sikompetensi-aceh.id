@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword, createSession, auditLog, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth'
-import { generate2FAPendingToken } from '@/app/api/2fa/verify-login/route'
+import { generate2FAPendingToken } from '@/lib/two-factor'
 
 const MAX_ATTEMPTS = 5
 const LOCK_DURATION = 15 * 60 * 1000
