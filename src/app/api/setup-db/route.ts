@@ -6,10 +6,8 @@ export const dynamic = 'force-dynamic'
 
 function getDbPath(): string {
   const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-  // Extract path from "file:./db/custom.db" or "file:/tmp/custom.db"
   const match = dbUrl.match(/file:(.+)/)
   let dbPath = match ? match[1] : './db/custom.db'
-  // Resolve relative paths
   if (dbPath.startsWith('./')) {
     dbPath = path.join(process.cwd(), dbPath.substring(2))
   }
@@ -18,12 +16,7 @@ function getDbPath(): string {
 
 export async function GET() {
   const dbPath = getDbPath()
-  const flagPath = path.join(path.dirname(dbPath), '.db-initialized')
-
-  // If already initialized, skip
-  if (fs.existsSync(flagPath)) {
-    return NextResponse.json({ status: 'already_initialized' })
-  }
+  const results: string[] = []
 
   try {
     const Database = (await import('better-sqlite3')).default
@@ -37,34 +30,60 @@ export async function GET() {
     const db = new Database(dbPath)
     db.pragma('journal_mode = WAL')
 
-    // Check if tables already exist
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='User'").get()
+    // ========== MIGRATIONS ==========
 
-    if (!tables) {
-      const schemaPath = path.join(process.cwd(), 'prisma', 'schema.sql')
-      const schemaSql = fs.readFileSync(schemaPath, 'utf-8')
-      const statements = schemaSql
-        .split(';')
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
-      for (const stmt of statements) {
-        db.exec(stmt)
+    // 1. User table - add 2FA columns
+    try {
+      const userCols = db.pragma('table_info(User)') as { name: string }[]
+      const userColNames = new Set(userCols.map(c => c.name))
+
+      if (!userColNames.has('twoFactorSecret')) {
+        db.exec("ALTER TABLE User ADD COLUMN twoFactorSecret TEXT")
+        results.push('User: added twoFactorSecret column')
       }
+      if (!userColNames.has('twoFactorEnabled')) {
+        db.exec("ALTER TABLE User ADD COLUMN twoFactorEnabled BOOLEAN NOT NULL DEFAULT 0")
+        results.push('User: added twoFactorEnabled column')
+      }
+    } catch (e: any) {
+      results.push(`User migration skipped: ${e.message}`)
+    }
+
+    // 2. AnalisisDiklatItem table - add kategori & status
+    try {
+      const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='AnalisisDiklatItem'").get()
+      if (tableExists) {
+        const cols = db.pragma('table_info(AnalisisDiklatItem)') as { name: string }[]
+        const colNames = new Set(cols.map(c => c.name))
+
+        if (!colNames.has('kategori')) {
+          db.exec("ALTER TABLE AnalisisDiklatItem ADD COLUMN kategori TEXT NOT NULL DEFAULT 'TEKNIS'")
+          results.push('AnalisisDiklatItem: added kategori column')
+        }
+        if (!colNames.has('status')) {
+          db.exec("ALTER TABLE AnalisisDiklatItem ADD COLUMN status TEXT NOT NULL DEFAULT 'AKTIF'")
+          results.push('AnalisisDiklatItem: added status column')
+        }
+      }
+    } catch (e: any) {
+      results.push(`AnalisisDiklatItem migration skipped: ${e.message}`)
+    }
+
+    if (results.length === 0) {
+      results.push('Schema already up to date - no changes needed')
     }
 
     db.close()
 
-    // Mark as initialized
-    fs.writeFileSync(flagPath, new Date().toISOString())
-
-    return NextResponse.json({ status: 'initialized' })
+    return NextResponse.json({
+      status: 'ok',
+      dbPath,
+      results,
+      timestamp: new Date().toISOString(),
+    })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('DB setup error:', message)
-    if (message.includes('already exists')) {
-      fs.writeFileSync(flagPath, new Date().toISOString())
-      return NextResponse.json({ status: 'already_up_to_date' })
-    }
-    return NextResponse.json({ status: 'error', message }, { status: 500 })
+    return NextResponse.json({ status: 'error', message, results }, { status: 500 })
   }
 }
