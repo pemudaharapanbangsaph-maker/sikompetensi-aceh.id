@@ -28,58 +28,156 @@ export function AccountView() {
 
 function ProfilSection() {
   const { user } = useAuthStore()
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState({ tempatLahir: '', tanggalLahir: '' })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (user) setForm({ tempatLahir: (user as any).tempatLahir || '', tanggalLahir: (user as any).tanggalLahir ? (user as any).tanggalLahir.split('T')[0] : '' })
+  }, [user])
+
+  const handleSave = async () => {
+    if (!user) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) { toast.error('Gagal menyimpan'); return }
+      const updated = await res.json()
+      useAuthStore.getState().setUser({ ...user, ...updated } as any)
+      toast.success('Profil berhasil diperbarui')
+      setEditing(false)
+    } catch { toast.error('Terjadi kesalahan') }
+    finally { setSaving(false) }
+  }
+
   if (!user) return null
 
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-[#0F4C81]" />
-            Informasi Akun
-          </CardTitle>
-          <CardDescription>Detail akun yang sedang digunakan</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-[#0F4C81]" />
+              Informasi Akun
+            </CardTitle>
+            <CardDescription>Detail akun yang sedang digunakan</CardDescription>
+          </div>
+          {!editing && (
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <User className="w-3.5 h-3.5 mr-1.5" /> Edit Profil
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Nama Lengkap</Label>
-              <p className="text-sm font-medium text-slate-900">{user.nama}</p>
+          {editing ? (
+            <div className="space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">Nama Lengkap</Label>
+                  <p className="text-sm font-medium text-slate-900">{user.nama}</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">Username</Label>
+                  <p className="text-sm font-medium text-slate-900">{user.username}</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">Email</Label>
+                  <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-slate-400" />{user.email}
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">No. Telepon</Label>
+                  <p className="text-sm font-medium text-slate-900">{(user as any).noTelp || '-'}</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">Tempat Lahir</Label>
+                  <Input value={form.tempatLahir} onChange={e => setForm(p => ({ ...p, tempatLahir: e.target.value }))} placeholder="Kota/Kabupaten" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-slate-500">Tanggal Lahir</Label>
+                  <Input type="date" value={form.tanggalLahir} onChange={e => setForm(p => ({ ...p, tanggalLahir: e.target.value }))} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Role</Label>
+                  <Badge className={user.role === 'SUPER_ADMIN' ? 'bg-[#195737] text-white' : 'bg-slate-100 text-slate-700'}>
+                    {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'ADMIN_BIDANG' ? 'Admin Bidang' : 'Operator'}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Status</Label>
+                  <Badge className="bg-green-100 text-green-700">Aktif</Badge>
+                </div>
+                {user.lastLogin && (
+                  <div className="space-y-1 sm:col-span-2">
+                    <Label className="text-xs text-slate-500">Terakhir Login</Label>
+                    <p className="text-sm text-slate-700 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      {new Date(user.lastLogin).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" onClick={() => setEditing(false)} className="flex-1">Batal</Button>
+                <Button onClick={handleSave} disabled={saving} className="flex-1 bg-[#195737] hover:bg-[#0F4227]">
+                  {saving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Menyimpan...</> : 'Simpan'}
+                </Button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Username</Label>
-              <p className="text-sm font-medium text-slate-900">{user.username}</p>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Email</Label>
-              <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
-                {user.email}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Role</Label>
-              <Badge className={user.role === 'SUPER_ADMIN' ? 'bg-[#195737] text-white' : 'bg-slate-100 text-slate-700'}>
-                {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'ADMIN_BIDANG' ? 'Admin Bidang' : 'Operator'}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-slate-500">Status</Label>
-              <Badge className="bg-green-100 text-green-700">Aktif</Badge>
-            </div>
-            {user.lastLogin && (
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <Label className="text-xs text-slate-500">Terakhir Login</Label>
-                <p className="text-sm text-slate-700 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {new Date(user.lastLogin).toLocaleString('id-ID', {
-                    day: 'numeric', month: 'long', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit',
-                  })}
+                <Label className="text-xs text-slate-500">Nama Lengkap</Label>
+                <p className="text-sm font-medium text-slate-900">{user.nama}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Username</Label>
+                <p className="text-sm font-medium text-slate-900">{user.username}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Email</Label>
+                <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />{user.email}
                 </p>
               </div>
-            )}
-          </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">No. Telepon</Label>
+                <p className="text-sm font-medium text-slate-900">{(user as any).noTelp || '-'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Tempat Lahir</Label>
+                <p className="text-sm font-medium text-slate-900">{(user as any).tempatLahir || '-'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Tanggal Lahir</Label>
+                <p className="text-sm font-medium text-slate-900">{(user as any).tanggalLahir ? new Date((user as any).tanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Role</Label>
+                <Badge className={user.role === 'SUPER_ADMIN' ? 'bg-[#195737] text-white' : 'bg-slate-100 text-slate-700'}>
+                  {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'ADMIN_BIDANG' ? 'Admin Bidang' : 'Operator'}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Status</Label>
+                <Badge className="bg-green-100 text-green-700">Aktif</Badge>
+              </div>
+              {user.lastLogin && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-slate-500">Terakhir Login</Label>
+                  <p className="text-sm text-slate-700 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    {new Date(user.lastLogin).toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
