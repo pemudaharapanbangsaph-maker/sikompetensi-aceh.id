@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useUIStore, useAuthStore, useNavStore } from '@/store/auth-store'
+import type { ViewKey } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -53,6 +54,8 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'settings-logo': { title: 'Logo', subtitle: 'Pengaturan logo instansi' },
   'settings-login': { title: 'Pengaturan Login', subtitle: 'Konfigurasi keamanan login' },
   'settings-audit': { title: 'Audit Log', subtitle: 'Log audit sistem' },
+  'account-profil': { title: 'Profil Saya', subtitle: 'Kelola informasi pribadi akun Anda' },
+  'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Kelola keamanan dan kata sandi akun' },
 }
 
 export function Topbar() {
@@ -146,13 +149,13 @@ export function Topbar() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('account-profil' as ViewKey)}>
             <UserIcon className="w-4 h-4 mr-2" /> Profil Saya
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('account-keamanan' as ViewKey)}>
             <ShieldCheck className="w-4 h-4 mr-2" /> Keamanan
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('settings-profil' as ViewKey)}>
             <Settings className="w-4 h-4 mr-2" /> Pengaturan
           </DropdownMenuItem>
           <DropdownMenuSeparator />
