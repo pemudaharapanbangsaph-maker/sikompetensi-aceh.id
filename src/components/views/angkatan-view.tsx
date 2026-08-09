@@ -666,6 +666,22 @@ function PesertaPerKegiatanView() {
   }, [selectedId, toast])
 
   const pesertaList = angkatan?.peserta || []
+
+  // Buat map evaluasi: pesertaId -> { PRE_TEST: nilai, POST_TEST: nilai }
+  const evaluasiMap = useMemo(() => {
+    const map = new Map<string, Record<string, number>>()
+    const evList = (angkatan as any)?.evaluasi || []
+    for (const ev of evList) {
+      if (!ev.pesertaId) continue
+      if (ev.jenisEvaluasi !== 'PRE_TEST' && ev.jenisEvaluasi !== 'POST_TEST') continue
+      if (!map.has(ev.pesertaId)) map.set(ev.pesertaId, {})
+      const m = map.get(ev.pesertaId)!
+      if (m[ev.jenisEvaluasi] === undefined) m[ev.jenisEvaluasi] = ev.nilai
+      else m[ev.jenisEvaluasi] += ev.nilai
+    }
+    return map
+  }, [angkatan])
+
   const filteredPeserta = search
     ? pesertaList.filter((pa) => {
         const nama = (pa as PesertaAngkatan).peserta?.nama || ''
@@ -783,52 +799,51 @@ function PesertaPerKegiatanView() {
       <PageHeader title="Peserta Per Kegiatan" description="Lihat dan kelola data peserta per kegiatan/angkatan pelatihan" />
 
       <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          {/* Dropdown - full width, standalone row */}
-          <div>
-            <Label className="mb-1.5 block">Pilih Kegiatan (Angkatan)</Label>
-            <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
-              <SelectContent>
-                {angkatanList.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Info + tombol aksi - separate row */}
-          {selectedAngkatan && (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-              <div className="text-xs text-slate-500">
-                <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
-                <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
-              </div>
-              <div className="text-xs text-slate-500">
-                <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
-                <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
-              </div>
-              <div className="sm:col-span-2 flex flex-wrap gap-2">
-                <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-                  {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
-                </Button>
-                <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-                  <Upload className="w-4 h-4" /> Import
-                </Button>
-                <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
-                  <Download className="w-4 h-4" /> Template
-                </Button>
-                <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
-                  <FileSpreadsheet className="w-4 h-4" /> Excel
-                </Button>
-                <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
-                  <FileDown className="w-4 h-4" /> PDF
-                </Button>
-              </div>
+        <CardContent className="p-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label>Pilih Kegiatan (Angkatan)</Label>
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
+                <SelectContent>
+                  {angkatanList.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            {selectedAngkatan && (
+              <>
+                <div className="text-xs text-slate-500">
+                  <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
+                  <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
+                </div>
+                <div className="text-xs text-slate-500">
+                  <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
+                  <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                    {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
+                  </Button>
+                  <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                    <Upload className="w-4 h-4" /> Import
+                  </Button>
+                  <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
+                    <Download className="w-4 h-4" /> Template
+                  </Button>
+                  <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
+                    <FileSpreadsheet className="w-4 h-4" /> Excel
+                  </Button>
+                  <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
+                    <FileDown className="w-4 h-4" /> PDF
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -882,8 +897,10 @@ function PesertaPerKegiatanView() {
                       <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 150 }}>Jabatan</th>
                       <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 100 }}>Pangkat/Gol.</th>
                       <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 180 }}>Unit Kerja</th>
-                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 160 }}>Instansi</th>
-                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 80 }}>Nilai Akhir</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 140 }}>Instansi</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 65 }}>Pre-Test</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 65 }}>Post-Test</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5" style={{ width: 70 }}>Nilai Akhir</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -908,7 +925,9 @@ function PesertaPerKegiatanView() {
                           <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap">{peserta?.pangkatGolongan || '-'}</td>
                           <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate">{peserta?.unitKerja || '-'}</td>
                           <td className="px-3 py-2 text-xs text-slate-600 whitespace-nowrap truncate">{peserta?.instansi || '-'}</td>
-                          <td className="px-3 py-2 text-center text-xs font-semibold text-slate-700">{pa.nilaiAkhir != null ? pa.nilaiAkhir : '-'}</td>
+                          <td className="px-3 py-2 text-center text-xs text-amber-700 font-medium">{(() => { const ev = evaluasiMap.get(pa.pesertaId); return ev?.PRE_TEST != null ? ev.PRE_TEST : '-' })()}</td>
+                          <td className="px-3 py-2 text-center text-xs text-[#0F4C81] font-medium">{(() => { const ev = evaluasiMap.get(pa.pesertaId); return ev?.POST_TEST != null ? ev.POST_TEST : '-' })()}</td>
+                          <td className="px-3 py-2 text-center text-xs font-bold text-[#195737]">{(() => { const ev = evaluasiMap.get(pa.pesertaId); if (ev?.PRE_TEST != null && ev?.POST_TEST != null) return ((ev.PRE_TEST + ev.POST_TEST) / 2).toFixed(1); return '-' })()}</td>
                         </motion.tr>
                       )
                     })}
