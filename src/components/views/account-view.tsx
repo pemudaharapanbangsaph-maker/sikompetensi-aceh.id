@@ -29,11 +29,17 @@ export function AccountView() {
 function ProfilSection() {
   const { user } = useAuthStore()
   const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({ tempatLahir: '', tanggalLahir: '' })
+  const [form, setForm] = useState({ nama: '', email: '', noTelp: '', tempatLahir: '', tanggalLahir: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (user) setForm({ tempatLahir: (user as any).tempatLahir || '', tanggalLahir: (user as any).tanggalLahir ? (user as any).tanggalLahir.split('T')[0] : '' })
+    if (user) setForm({
+      nama: user.nama || '',
+      email: user.email || '',
+      noTelp: (user as any).noTelp || '',
+      tempatLahir: (user as any).tempatLahir || '',
+      tanggalLahir: (user as any).tanggalLahir ? (user as any).tanggalLahir.split('T')[0] : '',
+    })
   }, [user])
 
   const handleSave = async () => {
@@ -78,7 +84,7 @@ function ProfilSection() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500">Nama Lengkap</Label>
-                  <p className="text-sm font-medium text-slate-900">{user.nama}</p>
+                  <Input value={form.nama} onChange={e => setForm(p => ({ ...p, nama: e.target.value }))} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500">Username</Label>
@@ -86,13 +92,11 @@ function ProfilSection() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500">Email</Label>
-                  <p className="text-sm font-medium text-slate-900 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />{user.email}
-                  </p>
+                  <Input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500">No. Telepon</Label>
-                  <p className="text-sm font-medium text-slate-900">{(user as any).noTelp || '-'}</p>
+                  <Input value={form.noTelp} onChange={e => setForm(p => ({ ...p, noTelp: e.target.value }))} placeholder="08xxxxxxxxxx" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs text-slate-500">Tempat Lahir</Label>
