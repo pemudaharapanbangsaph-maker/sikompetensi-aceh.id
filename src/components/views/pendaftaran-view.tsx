@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavStore } from '@/store/auth-store'
 import { DataTable, PageHeader, type Column, type FilterOption } from '@/components/shared/data-table'
 import { formatTanggalSingkat, formatDateTime } from '@/components/shared/ui-helpers'
@@ -127,10 +127,20 @@ function PendaftaranListView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [pelatihanFilter, setPelatihanFilter] = useState('')
+  const [pelatihanOptions, setPelatihanOptions] = useState<{ id: string; nama: string }[]>([])
 
   // delete state
   const [deleteTarget, setDeleteTarget] = useState<PendaftaranItem | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Fetch pelatihan options untuk dropdown filter
+  useEffect(() => {
+    fetch('/api/portal/pelatihan-list', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((list: { id: string; nama: string }[]) => setPelatihanOptions(list))
+      .catch(() => {})
+  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -138,6 +148,7 @@ function PendaftaranListView() {
       const params: Record<string, string | number | undefined> = {
         page, pageSize, search,
         status: statusFilter || undefined,
+        pelatihanId: pelatihanFilter || undefined,
       }
       const qs = '?' + new URLSearchParams(
         Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
@@ -152,7 +163,7 @@ function PendaftaranListView() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search, statusFilter, toast])
+  }, [page, pageSize, search, statusFilter, pelatihanFilter, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -246,6 +257,19 @@ function PendaftaranListView() {
     <div>
       <PageHeader title="Data Pendaftar" description="Kelola pendaftaran peserta dari portal publik">
         <div className="flex items-center gap-2">
+          {pelatihanOptions.length > 1 && (
+            <Select value={pelatihanFilter || '__all__'} onValueChange={(v) => { setPelatihanFilter(v === '__all__' ? '' : v); setPage(1) }}>
+              <SelectTrigger className="h-9 text-sm w-56">
+                <SelectValue placeholder="Semua Pelatihan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Semua Pelatihan</SelectItem>
+                {pelatihanOptions.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -355,6 +379,19 @@ function PendaftaranDokumenView() {
   const [listLoading, setListLoading] = useState(true)
   const [listSearch, setListSearch] = useState('')
   const [listStatusFilter, setListStatusFilter] = useState('')
+  const [listPelatihanFilter, setListPelatihanFilter] = useState('')
+
+  // Unique pelatihan list dari data yang sudah di-load
+  const pelatihanOptions = useMemo(() => {
+    const set = new Set(listData.map((d) => d.pelatihan).filter(Boolean))
+    return Array.from(set).sort()
+  }, [listData])
+
+  // Filtered data berdasarkan pelatihan
+  const filteredListData = useMemo(() => {
+    if (!listPelatihanFilter) return listData
+    return listData.filter((d) => d.pelatihan === listPelatihanFilter)
+  }, [listData, listPelatihanFilter])
 
   // Fetch list data (list mode)
   const fetchListData = useCallback(async () => {
@@ -529,6 +566,17 @@ function PendaftaranDokumenView() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <CardTitle className="text-sm font-bold text-slate-900">Daftar Pendaftar & Dokumen</CardTitle>
               <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                <Select value={listPelatihanFilter || '__all__'} onValueChange={(v) => setListPelatihanFilter(v === '__all__' ? '' : v)}>
+                  <SelectTrigger className="h-8 text-sm w-52">
+                    <SelectValue placeholder="Semua Pelatihan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Semua Pelatihan</SelectItem>
+                    {pelatihanOptions.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
                   placeholder="Cari nama, NIP..."
                   value={listSearch}
@@ -555,10 +603,10 @@ function PendaftaranDokumenView() {
                 <Loader2 className="w-6 h-6 animate-spin text-[#0F4C81]" />
                 <p className="text-sm text-slate-500">Memuat data pendaftar...</p>
               </div>
-            ) : listData.length === 0 ? (
+            ) : filteredListData.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                <p className="text-sm text-slate-400">Belum ada data pendaftar</p>
+                <p className="text-sm text-slate-400">Tidak ada pendaftar untuk pelatihan ini</p>
               </div>
             ) : (
               <div className="max-h-[60vh] overflow-y-auto">
@@ -574,7 +622,7 @@ function PendaftaranDokumenView() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {listData.map((item, idx) => {
+                    {filteredListData.map((item, idx) => {
                       const Icon = STATUS_ICON[item.status] || AlertCircle
                       const docComplete = item.jumlahDokumen >= 4
                       return (
