@@ -228,7 +228,7 @@ function EvaluasiDataTable({ jenisEvaluasi, showAspek }: DataTableProps) {
     {
       key: 'nilai', header: 'Nilai', render: (r) => {
         const v = Number(r.nilai) || 0
-        const color = v >= 80 ? 'text-green-700' : v >= 60 ? 'text-amber-700' : 'text-red-700'
+        const color = v >= 80 ? 'text-[#195737]' : v >= 60 ? 'text-amber-700' : 'text-red-700'
         return <span className={`font-bold ${color}`}>{v}</span>
       },
     },
@@ -391,11 +391,10 @@ interface RekapRow {
   pelatihan: string | null
   avgPreTest: number
   avgPostTest: number
-  avgKuesioner: number
+  nilaiAkumulasi: number
   improvement: number
   jumlahPreTest: number
   jumlahPostTest: number
-  jumlahKuesioner: number
 }
 
 function MonitoringRekapView() {
@@ -420,19 +419,14 @@ function MonitoringRekapView() {
   }, [toast])
 
   const stats = useMemo(() => {
-    if (rows.length === 0) return { avgPre: 0, avgPost: 0, improvement: 0, avgKues: 0 }
+    if (rows.length === 0) return { avgPre: 0, avgPost: 0, improvement: 0, avgAkumulasi: 0 }
     const totalPre = rows.reduce((s, r) => s + r.avgPreTest, 0)
     const totalPost = rows.reduce((s, r) => s + r.avgPostTest, 0)
-    const totalKues = rows.reduce((s, r) => s + r.avgKuesioner, 0)
     const avgPre = Math.round((totalPre / rows.length) * 100) / 100
     const avgPost = Math.round((totalPost / rows.length) * 100) / 100
     const improvement = avgPre > 0 ? Math.round(((avgPost - avgPre) / avgPre) * 1000) / 10 : 0
-    return {
-      avgPre,
-      avgPost,
-      improvement,
-      avgKues: Math.round((totalKues / rows.length) * 100) / 100,
-    }
+    const avgAkumulasi = Math.round(((avgPre + avgPost) / 2) * 100) / 100
+    return { avgPre, avgPost, improvement, avgAkumulasi }
   }, [rows])
 
   const chartData = useMemo(
@@ -448,7 +442,7 @@ function MonitoringRekapView() {
     <div className="space-y-4">
       <PageHeader
         title="Rekap Monitoring & Evaluasi"
-        description="Rekapitulasi nilai pre-test, post-test, dan kuesioner per angkatan"
+        description="Rekapitulasi nilai pre-test, post-test, dan nilai akumulasi per angkatan"
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
@@ -460,7 +454,7 @@ function MonitoringRekapView() {
           icon={stats.improvement >= 0 ? ArrowUp : ArrowDown}
           color={stats.improvement >= 0 ? 'green' : 'red'}
         />
-        <StatCard title="Rata-rata Kuesioner" value={stats.avgKues} icon={ClipboardCheck} color="purple" />
+        <StatCard title="Nilai Akumulasi" value={stats.avgAkumulasi} icon={Award} color="green" />
       </div>
 
       {loading ? (
@@ -508,7 +502,7 @@ function MonitoringRekapView() {
                       <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Avg Pre-Test</th>
                       <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Avg Post-Test</th>
                       <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Peningkatan</th>
-                      <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Avg Kuesioner</th>
+                      <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Nilai Akumulasi</th>
                       <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Jumlah Data</th>
                     </tr>
                   </thead>
@@ -520,14 +514,14 @@ function MonitoringRekapView() {
                         <td className="px-4 py-2.5 text-right font-medium text-amber-700">{r.avgPreTest || '-'}</td>
                         <td className="px-4 py-2.5 text-right font-medium text-[#0F4C81]">{r.avgPostTest || '-'}</td>
                         <td className="px-4 py-2.5 text-right">
-                          <span className={`inline-flex items-center gap-0.5 font-semibold ${r.improvement >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                          <span className={`inline-flex items-center gap-0.5 font-semibold ${r.improvement >= 0 ? 'text-[#195737]' : 'text-red-700'}`}>
                             {r.improvement >= 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
                             {r.improvement}%
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-right font-medium text-slate-700">{r.avgKuesioner || '-'}</td>
+                        <td className="px-4 py-2.5 text-right font-bold text-[#195737]">{r.nilaiAkumulasi || '-'}</td>
                         <td className="px-4 py-2.5 text-right text-xs text-slate-500">
-                          {r.jumlahPreTest + r.jumlahPostTest + r.jumlahKuesioner}
+                          {r.jumlahPreTest + r.jumlahPostTest}
                         </td>
                       </tr>
                     ))}
