@@ -120,6 +120,8 @@ const EMPTY_FORM: Partial<User> & { password?: string } = {
   role: 'OPERATOR',
   status: 'AKTIF',
   noTelp: '',
+  tempatLahir: '',
+  tanggalLahir: '',
 }
 
 function UserDataView() {
@@ -207,6 +209,8 @@ function UserDataView() {
       role: item.role,
       status: item.status,
       noTelp: item.noTelp || '',
+      tempatLahir: (item as any).tempatLahir || '',
+      tanggalLahir: (item as any).tanggalLahir ? (item as any).tanggalLahir.split('T')[0] : '',
     })
     setDialogOpen(true)
   }
@@ -229,6 +233,8 @@ function UserDataView() {
         role: form.role as User['role'],
         status: form.status as string,
         noTelp: form.noTelp || null,
+        tempatLahir: form.tempatLahir || null,
+        tanggalLahir: form.tanggalLahir ? new Date(form.tanggalLahir) : null,
       }
       if (form.password && form.password.trim() !== '') {
         payload.password = form.password
@@ -428,6 +434,14 @@ function UserDataView() {
               <Input value={form.noTelp || ''} onChange={(e) => setForm({ ...form, noTelp: e.target.value })} placeholder="08xx-xxxx-xxxx" />
             </div>
             <div className="space-y-1.5">
+              <Label>Tempat Lahir</Label>
+              <Input value={(form as any).tempatLahir || ''} onChange={(e) => setForm({ ...form, tempatLahir: e.target.value })} placeholder="Kota/Kabupaten" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tanggal Lahir</Label>
+              <Input type="date" value={(form as any).tanggalLahir || ''} onChange={(e) => setForm({ ...form, tanggalLahir: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
               <Label>Role</Label>
               <Select value={form.role || 'OPERATOR'} onValueChange={(v) => setForm({ ...form, role: v as User['role'] })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -554,7 +568,7 @@ function UserDataView() {
 const ROLE_META: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string; ring: string }> = {
   SUPER_ADMIN: { icon: ShieldCheck, color: 'text-red-700 bg-red-50', ring: 'ring-red-100' },
   ADMIN_BIDANG: { icon: UserCog, color: 'text-amber-700 bg-amber-50', ring: 'ring-amber-100' },
-  OPERATOR: { icon: UserCheck, color: 'text-green-700 bg-green-50', ring: 'ring-green-100' },
+  OPERATOR: { icon: UserCheck, color: 'text-[#195737] bg-green-50', ring: 'ring-green-100' },
 }
 
 function UserHakAksesView() {
@@ -591,7 +605,7 @@ function UserHakAksesView() {
                       <li key={mod} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-md hover:bg-slate-50">
                         <span className={`text-sm ${allowed ? 'text-slate-700' : 'text-slate-400'}`}>{mod}</span>
                         {allowed ? (
-                          <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-[#15803D] flex-shrink-0" />
                         ) : (
                           <X className="w-4 h-4 text-slate-300 flex-shrink-0" />
                         )}
@@ -672,7 +686,7 @@ function UserLogView() {
 
   const aksiBadgeClass = (aksi: string): string => {
     const map: Record<string, string> = {
-      CREATE: 'bg-green-100 text-green-700 border-green-200',
+      CREATE: 'bg-green-100 text-[#195737] border-[#86EFAC]',
       UPDATE: 'bg-blue-100 text-blue-700 border-blue-200',
       DELETE: 'bg-red-100 text-red-700 border-red-200',
       LOGIN: 'bg-purple-100 text-purple-700 border-purple-200',
