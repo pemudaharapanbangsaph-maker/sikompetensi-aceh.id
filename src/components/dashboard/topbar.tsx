@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useUIStore, useAuthStore, useNavStore } from '@/store/auth-store'
-import type { ViewKey } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -54,14 +53,13 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'settings-logo': { title: 'Logo', subtitle: 'Pengaturan logo instansi' },
   'settings-login': { title: 'Pengaturan Login', subtitle: 'Konfigurasi keamanan login' },
   'settings-audit': { title: 'Audit Log', subtitle: 'Log audit sistem' },
-  'account-profil': { title: 'Profil Saya', subtitle: 'Kelola informasi pribadi akun Anda' },
-  'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Kelola keamanan dan kata sandi akun' },
 }
 
 export function Topbar() {
   const { toggleSidebar, sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
   const { user, logout } = useAuthStore()
   const { activeView, setActiveView } = useNavStore()
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   const [notifOpen, setNotifOpen] = useState(false)
   const title = viewTitles[activeView] || { title: 'Dashboard', subtitle: '' }
 
@@ -149,15 +147,19 @@ export function Topbar() {
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('account-profil' as ViewKey)}>
+          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('account-profil')}>
             <UserIcon className="w-4 h-4 mr-2" /> Profil Saya
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('account-keamanan' as ViewKey)}>
-            <ShieldCheck className="w-4 h-4 mr-2" /> Keamanan
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('settings-profil' as ViewKey)}>
-            <Settings className="w-4 h-4 mr-2" /> Pengaturan
-          </DropdownMenuItem>
+          {isSuperAdmin && (
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('account-keamanan')}>
+              <ShieldCheck className="w-4 h-4 mr-2" /> Keamanan
+            </DropdownMenuItem>
+          )}
+          {isSuperAdmin && (
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setActiveView('settings-profil')}>
+              <Settings className="w-4 h-4 mr-2" /> Pengaturan
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50" onClick={() => logout()}>
             <LogOut className="w-4 h-4 mr-2" /> Keluar
