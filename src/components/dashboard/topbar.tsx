@@ -61,7 +61,7 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
 export function Topbar() {
   const { toggleSidebar, sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
   const { user, logout } = useAuthStore()
-  const { activeView } = useNavStore()
+  const { activeView, setActiveView } = useNavStore()
   const [notifOpen, setNotifOpen] = useState(false)
   const title = viewTitles[activeView] || { title: 'Dashboard', subtitle: '' }
 
