@@ -15,6 +15,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       include: {
         pelatihan: true,
         peserta: { include: { peserta: true } },
+        evaluasi: {
+          include: { peserta: { select: { id: true } } },
+        },
         _count: { select: { peserta: true, kehadiran: true, ujiKompetensi: true } },
       },
     })
