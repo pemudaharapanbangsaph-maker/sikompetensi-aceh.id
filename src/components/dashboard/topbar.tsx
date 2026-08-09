@@ -53,6 +53,8 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'settings-logo': { title: 'Logo', subtitle: 'Pengaturan logo instansi' },
   'settings-login': { title: 'Pengaturan Login', subtitle: 'Konfigurasi keamanan login' },
   'settings-audit': { title: 'Audit Log', subtitle: 'Log audit sistem' },
+  'account-profil': { title: 'Profil Saya', subtitle: 'Informasi akun dan profil' },
+  'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
 }
 
 export function Topbar() {
