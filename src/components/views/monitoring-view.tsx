@@ -420,12 +420,17 @@ function MonitoringRekapView() {
 
   const stats = useMemo(() => {
     if (rows.length === 0) return { avgPre: 0, avgPost: 0, improvement: 0, avgAkumulasi: 0 }
-    const totalPre = rows.reduce((s, r) => s + r.avgPreTest, 0)
-    const totalPost = rows.reduce((s, r) => s + r.avgPostTest, 0)
-    const avgPre = Math.round((totalPre / rows.length) * 100) / 100
-    const avgPost = Math.round((totalPost / rows.length) * 100) / 100
+    // Hanya hitung rata-rata dari angkatan yang sudah ada data evaluasinya
+    const rowsWithPre = rows.filter(r => r.jumlahPreTest > 0)
+    const rowsWithPost = rows.filter(r => r.jumlahPostTest > 0)
+    const avgPre = rowsWithPre.length > 0
+      ? Math.round((rowsWithPre.reduce((s, r) => s + r.avgPreTest, 0) / rowsWithPre.length) * 100) / 100
+      : 0
+    const avgPost = rowsWithPost.length > 0
+      ? Math.round((rowsWithPost.reduce((s, r) => s + r.avgPostTest, 0) / rowsWithPost.length) * 100) / 100
+      : 0
     const improvement = avgPre > 0 ? Math.round(((avgPost - avgPre) / avgPre) * 1000) / 10 : 0
-    const avgAkumulasi = Math.round(((avgPre + avgPost) / 2) * 100) / 100
+    const avgAkumulasi = (avgPre > 0 || avgPost > 0) ? Math.round(((avgPre + avgPost) / 2) * 100) / 100 : 0
     return { avgPre, avgPost, improvement, avgAkumulasi }
   }, [rows])
 
