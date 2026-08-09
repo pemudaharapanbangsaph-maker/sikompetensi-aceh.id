@@ -1,25 +1,8 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { createSession, auditLog, SESSION_COOKIE_NAME, SESSION_MAX_AGE } from '@/lib/auth'
+import { validate2FAPendingToken, consume2FAPending } from '@/lib/two-factor'
 import { authenticator } from 'otplib'
-import crypto from 'crypto'
-
-// In-memory store for pending 2FA verifications (userId -> { tempToken, expires })
-const pending2FA = new Map<string, { tempToken: string; expires: number }>()
-
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, val] of pending2FA.entries()) {
-    if (val.expires < now) pending2FA.delete(key)
-  }
-}, 5 * 60 * 1000)
-
-export function generate2FAPendingToken(userId: string): string {
-  const tempToken = crypto.randomBytes(32).toString('hex')
-  pending2FA.set(userId, { tempToken, expires: Date.now() + 3 * 60 * 1000 }) // 3 minutes
-  return tempToken
-}
 
 export async function POST(req: Request) {
   try {
@@ -34,25 +17,14 @@ export async function POST(req: Request) {
     }
 
     // Find user by temp token
-    let userId: string | null = null
-    for (const [uid, data] of pending2FA.entries()) {
-      if (data.tempToken === tempToken) {
-        if (data.expires < Date.now()) {
-          pending2FA.delete(uid)
-          return NextResponse.json({ error: 'Kode sudah kadaluarsa. Silakan login kembali.' }, { status: 400 })
-        }
-        userId = uid
-        break
-      }
-    }
-
+    const userId = validate2FAPendingToken(tempToken)
     if (!userId) {
-      return NextResponse.json({ error: 'Sesi login tidak ditemukan. Silakan login kembali.' }, { status: 400 })
+      return NextResponse.json({ error: 'Sesi login tidak ditemukan atau sudah kadaluarsa. Silakan login kembali.' }, { status: 400 })
     }
 
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user || !user.twoFactorSecret || !user.twoFactorEnabled) {
-      pending2FA.delete(userId)
+      consume2FAPending(userId)
       return NextResponse.json({ error: '2FA tidak aktif untuk user ini' }, { status: 400 })
     }
 
@@ -62,7 +34,7 @@ export async function POST(req: Request) {
     }
 
     // Clean up pending entry
-    pending2FA.delete(userId)
+    consume2FAPending(userId)
 
     // Create session
     const token = await createSession(user.id)
