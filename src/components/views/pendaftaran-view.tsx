@@ -28,6 +28,7 @@ interface PendaftaranItem {
   nama: string
   nip: string
   pangkatGolongan: string
+  jenisKelamin: string
   tempatLahir: string
   tanggalLahir: string
   jabatan: string
@@ -218,6 +219,7 @@ function PendaftaranListView() {
       ),
     },
     { key: 'nip', header: 'NIP', render: (row) => <span className="text-xs font-mono">{row.nip}</span> },
+    { key: 'jenisKelamin', header: 'L/P', render: (row) => <span className="text-xs text-slate-600">{row.jenisKelamin === 'L' ? 'Laki-laki' : row.jenisKelamin === 'P' ? 'Perempuan' : '-'}</span> },
     { key: 'jabatan', header: 'Jabatan', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.jabatan || '-'}</span> },
     { key: 'unitKerja', header: 'Unit Kerja', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.unitKerja || '-'}</span> },
     { key: 'instansi', header: 'Instansi', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.instansi || '-'}</span> },
@@ -344,7 +346,7 @@ function PendaftaranDokumenView() {
   // Edit biodata dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editForm, setEditForm] = useState({
-    nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
+    nama: '', nip: '', pangkatGolongan: '', jenisKelamin: '', tempatLahir: '', tanggalLahir: '',
     jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
   })
 
@@ -353,8 +355,6 @@ function PendaftaranDokumenView() {
   const [listLoading, setListLoading] = useState(true)
   const [listSearch, setListSearch] = useState('')
   const [listStatusFilter, setListStatusFilter] = useState('')
-  const [pelatihanOptions, setPelatihanOptions] = useState<{ nama: string; jumlahPendaftar: number }[]>([])
-  const [pelatihanFilter, setPelatihanFilter] = useState('')
 
   // Fetch list data (list mode)
   const fetchListData = useCallback(async () => {
@@ -363,7 +363,6 @@ function PendaftaranDokumenView() {
       const params: Record<string, string> = {}
       if (listSearch) params.search = listSearch
       if (listStatusFilter) params.status = listStatusFilter
-      if (pelatihanFilter) params.namaPelatihan = pelatihanFilter
       params.pageSize = '100'
       const qs = '?' + new URLSearchParams(params).toString()
       const res = await fetch(`/api/pendaftaran${qs}`, { credentials: 'same-origin' })
@@ -375,7 +374,7 @@ function PendaftaranDokumenView() {
     } finally {
       setListLoading(false)
     }
-    }, [listSearch, listStatusFilter, pelatihanFilter, toast])
+  }, [listSearch, listStatusFilter, toast])
 
   // Fetch detail data (detail mode)
   const fetchDetailData = useCallback(async () => {
@@ -397,14 +396,6 @@ function PendaftaranDokumenView() {
     if (isListMode) fetchListData()
     else fetchDetailData()
   }, [isListMode, fetchListData, fetchDetailData])
-
-  // Fetch pelatihan options untuk dropdown filter
-  useEffect(() => {
-    fetch('/api/pendaftaran/pelatihan-options', { credentials: 'same-origin' })
-      .then((r) => r.json())
-      .then(setPelatihanOptions)
-      .catch(() => {})
-  }, [])
 
   // Handler: pilih pendaftar dari daftar
   const handleSelectPendaftar = (item: PendaftaranItem) => {
@@ -453,6 +444,7 @@ function PendaftaranDokumenView() {
       nama: data.nama,
       nip: data.nip,
       pangkatGolongan: data.pangkatGolongan,
+      jenisKelamin: (data as any).jenisKelamin || '',
       tempatLahir: data.tempatLahir,
       tanggalLahir: data.tanggalLahir,
       jabatan: data.jabatan,
@@ -543,19 +535,6 @@ function PendaftaranDokumenView() {
                   onChange={(e) => setListSearch(e.target.value)}
                   className="h-8 text-sm w-48"
                 />
-                  <Select value={pelatihanFilter || '__all__'} onValueChange={(v) => setPelatihanFilter(v === '__all__' ? '' : v)}>
-                  <SelectTrigger className="h-8 text-sm w-56">
-                    <SelectValue placeholder="Semua Pelatihan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Semua Pelatihan</SelectItem>
-                    {pelatihanOptions.map((p) => (
-                      <SelectItem key={p.nama} value={p.nama}>
-                        {p.nama} ({p.jumlahPendaftar})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Select value={listStatusFilter || undefined} onValueChange={(v) => setListStatusFilter(v === '__all__' ? '' : v)}>
                   <SelectTrigger className="h-8 text-sm w-32">
                     <SelectValue placeholder="Semua Status" />
@@ -675,6 +654,7 @@ function PendaftaranDokumenView() {
         { label: 'Nama Lengkap', value: data.nama },
         { label: 'NIP', value: data.nip },
         { label: 'Pangkat/Golongan', value: data.pangkatGolongan },
+        { label: 'Jenis Kelamin', value: (data as any).jenisKelamin === 'L' ? 'Laki-laki' : (data as any).jenisKelamin === 'P' ? 'Perempuan' : '-' },
         { label: 'Tempat Lahir', value: data.tempatLahir },
         { label: 'Tanggal Lahir', value: data.tanggalLahir },
       ],
@@ -838,6 +818,18 @@ function PendaftaranDokumenView() {
               <div className="space-y-1.5">
                 <Label>Pangkat/Golongan</Label>
                 <Input value={editForm.pangkatGolongan} onChange={editSet('pangkatGolongan')} placeholder="Contoh: III/c" className="h-10" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Jenis Kelamin</Label>
+                <select
+                  value={editForm.jenisKelamin}
+                  onChange={(e) => setEditForm((p) => ({ ...p, jenisKelamin: e.target.value }))}
+                  className="w-full h-10 bg-white border border-slate-300 rounded-md text-sm px-3 focus:outline-none focus:ring-2 focus:ring-[#195737]/20 focus:border-[#195737]"
+                >
+                  <option value="">-- Pilih --</option>
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
               </div>
               <div className="space-y-1.5">
                 <Label>Tempat Lahir</Label>
