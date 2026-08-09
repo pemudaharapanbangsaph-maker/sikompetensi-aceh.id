@@ -15,7 +15,6 @@ export async function GET(req: Request) {
     const pageSize = Number(searchParams.get('pageSize') || 10)
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || ''
-    const namaPelatihan = searchParams.get('namaPelatihan') || ''
 
     const where: Record<string, unknown> = {}
     if (search) {
@@ -27,9 +26,6 @@ export async function GET(req: Request) {
       ]
     }
     if (status) where.status = status
-    if (namaPelatihan) {
-      where.analisisDiklatItem = { namaPelatihan: namaPelatihan }
-    }
 
     const [data, total] = await Promise.all([
       db.pendaftaranPortal.findMany({
@@ -50,6 +46,7 @@ export async function GET(req: Request) {
       nama: d.nama,
       nip: d.nip,
       pangkatGolongan: d.pangkatGolongan || '',
+      jenisKelamin: d.jenisKelamin || '',
       tempatLahir: d.tempatLahir || '',
       tanggalLahir: d.tanggalLahir ? d.tanggalLahir.toISOString().slice(0, 10) : '',
       jabatan: d.jabatan || '',
