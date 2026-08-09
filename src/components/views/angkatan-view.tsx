@@ -780,14 +780,17 @@ function PesertaPerKegiatanView() {
         credentials: 'same-origin',
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Gagal sinkronisasi')
+      if (!res.ok) {
+        const msg = data.detail ? `${data.error}: ${data.detail}` : (data.error || 'Gagal sinkronisasi')
+        throw new Error(msg)
+      }
       setSyncResult(data)
       if (data.added > 0) {
         toast({ title: 'Sinkronisasi Berhasil', description: data.message, duration: 4000 } as any)
         reloadAngkatan()
       }
     } catch (e) {
-      toast({ title: 'Gagal Sinkronisasi', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 4000 } as any)
+      toast({ title: 'Gagal Sinkronisasi', description: e instanceof Error ? e.message : 'Terjadi kesalahan', variant: 'destructive', duration: 8000 } as any)
     } finally {
       setSyncing(false)
       setSyncDialogOpen(true)
