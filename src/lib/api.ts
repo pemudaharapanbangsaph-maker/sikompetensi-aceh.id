@@ -30,6 +30,11 @@ export const api = {
     request<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password, remember }) }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: () => request<{ user: User }>('/auth/me'),
+  getProfile: () => request<{ user: User }>('/auth/profile'),
+  updateProfile: (data: { nama: string; email: string; noTelp?: string; tempatLahir?: string; tanggalLahir?: string }) =>
+    request<{ user: User }>('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>('/auth/password', { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) }),
 
   // ===== Dashboard =====
   dashboard: () => request<DashboardStats>('/dashboard'),
@@ -186,11 +191,7 @@ export const api = {
 
   laporan: {
     exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
-    exportPelatihanPdf: () => window.location.href = `${BASE}/laporan/pelatihan/export?format=pdf`,
     exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
-    exportUjiKompetensiPdf: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export?format=pdf`,
-    exportPesertaXls: () => window.location.href = `${BASE}/laporan/peserta/export`,
-    exportPesertaPdf: () => window.location.href = `${BASE}/laporan/peserta/export/pdf`,
   },
 
   settings: {
