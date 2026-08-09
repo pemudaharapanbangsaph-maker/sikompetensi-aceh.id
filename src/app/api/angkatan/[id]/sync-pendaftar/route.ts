@@ -82,7 +82,7 @@ export async function POST(
           data: {
             nip: pendaftar.nip,
             nama: pendaftar.nama,
-            jenisKelamin: 'L', // default dari pendaftar (tidak ada field jenis kelamin di form pendaftaran)
+            jenisKelamin: pendaftar.jenisKelamin || undefined,
             pangkatGolongan: pendaftar.pangkatGolongan || undefined,
             tempatLahir: pendaftar.tempatLahir || undefined,
             tanggalLahir: pendaftar.tanggalLahir || undefined,
@@ -123,8 +123,6 @@ export async function POST(
     return NextResponse.json({ added, skipped: skippedNames.length, skippedNames, message })
   } catch (e) {
     console.error('sync-pendaftar error:', e)
-    const errMsg = e instanceof Error ? e.message : String(e)
-    // Tampilkan detail error untuk SUPER_ADMIN (di toast frontend)
-    return NextResponse.json({ error: 'Gagal sinkronisasi data pendaftar', detail: errMsg }, { status: 500 })
+    return NextResponse.json({ error: 'Gagal sinkronisasi data pendaftar' }, { status: 500 })
   }
 }
