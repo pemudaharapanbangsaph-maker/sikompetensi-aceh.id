@@ -21,6 +21,8 @@ model User {
   role         String    @default("OPERATOR") // SUPER_ADMIN | ADMIN_BIDANG | OPERATOR
   status       String    @default("AKTIF") // AKTIF | NONAKTIF
   noTelp       String?
+  tempatLahir  String?
+  tanggalLahir DateTime?
   fotoUrl      String?
   lastLogin    DateTime?
   loginAttempts Int      @default(0)
@@ -90,10 +92,9 @@ model Pelatihan {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  angkatan             Angkatan[]
-  analisis             AnalisisKebutuhan[]
-  pendaftaran          PendaftaranPortal[]
-  analisisDiklatItems  AnalisisDiklatItem[]
+  angkatan     Angkatan[]
+  analisis     AnalisisKebutuhan[]
+  pendaftaran  PendaftaranPortal[]
 }
 
 model Angkatan {
@@ -149,7 +150,6 @@ model PendaftaranPortal {
   id                String   @id @default(cuid())
   nama              String
   nip               String   @unique
-  jenisKelamin      String?  // L | P
   pangkatGolongan   String?
   tempatLahir       String?
   tanggalLahir      DateTime?
@@ -175,7 +175,7 @@ model DokumenPendaftaran {
   id              String   @id @default(cuid())
   pendaftaranId   String
   pendaftaran     PendaftaranPortal @relation(fields: [pendaftaranId], references: [id], onDelete: Cascade)
-  tipe            String // KTP | SURAT_TUGAS | NPWP | REK_BANK
+  tipe            String   // KTP | SURAT_TUGAS | NPWP | REK_BANK
   namaFile        String
   ukuranFile      String
   filePath        String
@@ -215,14 +215,11 @@ model AnalisisDiklatItem {
   kategori              String   @default("TEKNIS") // TEKNIS | MANAJERIAL | FUNGSIONAL | SOSIAL_KULTURAL
   metodePembelajaran    String   @default("TATAP_MUKA") // TATAP_MUKA | DARING | BLENDED
   durasiJP              Int      @default(0)
-  durasiHari            Int      @default(0)
   targetOutput          String   @default("")
   prioritas             String   @default("SEDANG") // TINGGI | SEDANG | RENDAH
   tahunPelaksanaan      Int      @default(2025)
   status                String   @default("AKTIF") // AKTIF | NONAKTIF
   dibuatOleh            String?
-  pelatihanId           String?
-  pelatihan             Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
