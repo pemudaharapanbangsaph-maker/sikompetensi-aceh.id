@@ -6,6 +6,8 @@ export interface User {
   role: 'SUPER_ADMIN' | 'ADMIN_BIDANG' | 'OPERATOR'
   status: string
   noTelp?: string | null
+  tempatLahir?: string | null
+  tanggalLahir?: string | null
   lastLogin?: string | null
   createdAt: string
 }
@@ -176,12 +178,11 @@ export interface DashboardStats {
   totalAsesor: number
   totalAnalisis: number
   pelatihanBerjalan: number
-  angkatanSelesai: number
-  pendaftaranPortal: number
-  pendaftaranMenunggu: number
+  pesertaLulus: number
+  pesertaTidakLulus: number
   ujiSelesai: number
   grafikPelatihanPerBulan: { bulan: string; jumlah: number }[]
-  grafikPesertaPerAngkatan: { nama: string; peserta: number }[]
+  grafikKelulusan: { lulus: number; tidakLulus: number }[]
   grafikKategoriPelatihan: { kategori: string; jumlah: number }[]
   jadwalTerdekat: (Angkatan | UjiKompetensi)[]
   aktivitasTerbaru: AuditLog[]
