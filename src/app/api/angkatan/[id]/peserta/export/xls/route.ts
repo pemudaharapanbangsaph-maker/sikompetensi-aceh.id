@@ -49,6 +49,9 @@ export async function GET(
           include: { peserta: true },
           orderBy: { createdAt: 'asc' },
         },
+        evaluasi: {
+          include: { peserta: { select: { id: true } } },
+        },
       },
     })
 
@@ -56,22 +59,50 @@ export async function GET(
       return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
     }
 
+    // Buat map evaluasi per peserta: { pesertaId: { PRE_TEST: nilai, POST_TEST: nilai } }
+    const evaluasiMap = new Map<string, Record<string, number>>()
+    for (const ev of angkatan.evaluasi) {
+      if (!ev.pesertaId) continue
+      if (ev.jenisEvaluasi !== 'PRE_TEST' && ev.jenisEvaluasi !== 'POST_TEST') continue
+      if (!evaluasiMap.has(ev.pesertaId)) {
+        evaluasiMap.set(ev.pesertaId, {})
+      }
+      const map = evaluasiMap.get(ev.pesertaId)!
+      // Jika ada multiple aspek, jumlahkan semua
+      if (map[ev.jenisEvaluasi] === undefined) {
+        map[ev.jenisEvaluasi] = ev.nilai
+      } else {
+        map[ev.jenisEvaluasi] += ev.nilai
+      }
+    }
+
     // === Sheet 1: Daftar Peserta ===
-    const rows = angkatan.peserta.map((pa, idx) => ({
-      No: idx + 1,
-      NIP: pa.peserta.nip,
-      Nama: pa.peserta.nama,
-      'L/P': pa.peserta.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
-      'Tempat Lahir': pa.peserta.tempatLahir || '-',
-      'Tanggal Lahir': pa.peserta.tanggalLahir ? fmtTanggal(pa.peserta.tanggalLahir) : '-',
-      Jabatan: pa.peserta.jabatan || '-',
-      'Pangkat/Golongan': pa.peserta.pangkatGolongan || '-',
-      'Unit Kerja': pa.peserta.unitKerja || '-',
-      Instansi: pa.peserta.instansi || '-',
-      'No. Telp': pa.peserta.noTelp || '-',
-      Email: pa.peserta.email || '-',
-      'Nilai Akhir': pa.nilaiAkhir ?? '-',
-    }))
+    const rows = angkatan.peserta.map((pa, idx) => {
+      const ev = evaluasiMap.get(pa.pesertaId)
+      const preTest = ev?.PRE_TEST
+      const postTest = ev?.POST_TEST
+      let nilaiAkhir: string | number = '-'
+      if (preTest !== undefined && postTest !== undefined) {
+        nilaiAkhir = Number(((preTest + postTest) / 2).toFixed(1))
+      }
+      return {
+        No: idx + 1,
+        NIP: pa.peserta.nip,
+        Nama: pa.peserta.nama,
+        'L/P': pa.peserta.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan',
+        'Tempat Lahir': pa.peserta.tempatLahir || '-',
+        'Tanggal Lahir': pa.peserta.tanggalLahir ? fmtTanggal(pa.peserta.tanggalLahir) : '-',
+        Jabatan: pa.peserta.jabatan || '-',
+        'Pangkat/Golongan': pa.peserta.pangkatGolongan || '-',
+        'Unit Kerja': pa.peserta.unitKerja || '-',
+        Instansi: pa.peserta.instansi || '-',
+        'No. Telp': pa.peserta.noTelp || '-',
+        Email: pa.peserta.email || '-',
+        'Nilai Pre-Test': preTest !== undefined ? preTest : '-',
+        'Nilai Post-Test': postTest !== undefined ? postTest : '-',
+        'Nilai Akhir': nilaiAkhir,
+      }
+    })
 
     // Tambah baris total
     rows.push({
@@ -87,6 +118,8 @@ export async function GET(
       Instansi: '',
       'No. Telp': '',
       Email: '',
+      'Nilai Pre-Test': '',
+      'Nilai Post-Test': '',
       'Nilai Akhir': String(angkatan.peserta.length),
     })
 
@@ -114,7 +147,7 @@ export async function GET(
     wsPeserta['!cols'] = [
       { wch: 5 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 16 },
       { wch: 14 }, { wch: 25 }, { wch: 20 }, { wch: 25 }, { wch: 25 },
-      { wch: 16 }, { wch: 25 }, { wch: 12 },
+      { wch: 16 }, { wch: 25 }, { wch: 14 }, { wch: 14 }, { wch: 12 },
     ]
     XLSX.utils.book_append_sheet(wb, wsPeserta, 'Daftar Peserta')
 
