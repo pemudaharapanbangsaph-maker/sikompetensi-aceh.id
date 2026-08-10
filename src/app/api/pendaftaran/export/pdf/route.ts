@@ -9,9 +9,11 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status') || ''
+    const analisisDiklatItemId = searchParams.get('analisisDiklatItemId') || ''
 
     const where: Record<string, unknown> = {}
     if (status) where.status = status
+    if (analisisDiklatItemId) where.analisisDiklatItemId = analisisDiklatItemId
 
     const data = await db.pendaftaranPortal.findMany({
       where,
@@ -59,13 +61,11 @@ export async function GET(req: Request) {
     doc.text(`Ditolak: ${ditolak}`, 190, 39)
 
     // Table
-    const JK_LABEL: Record<string, string> = { L: 'Laki-laki', P: 'Perempuan' }
     const rows = data.map((d, i) => [
       i + 1,
       d.nama,
       d.nip,
       d.pangkatGolongan || '-',
-      JK_LABEL[d.jenisKelamin || ''] || '-',
       d.jabatan || '-',
       d.unitKerja || '-',
       d.instansi || '-',
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
     autoTable(doc, {
       startY: 46,
       head: [[
-        'No', 'Nama', 'NIP', 'Pangkat/Gol', 'L/P', 'Jabatan',
+        'No', 'Nama', 'NIP', 'Pangkat/Gol', 'Jabatan',
         'Unit Kerja', 'Instansi', 'No. HP', 'Pelatihan', 'Dok', 'Status', 'Tgl Daftar',
       ]],
       body: rows,
@@ -100,18 +100,17 @@ export async function GET(req: Request) {
       },
       columnStyles: {
         0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 28 },
-        2: { cellWidth: 26 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 28 },
         3: { cellWidth: 16 },
-        4: { cellWidth: 16, halign: 'center' },
-        5: { cellWidth: 26 },
-        6: { cellWidth: 28 },
-        7: { cellWidth: 28 },
-        8: { cellWidth: 18 },
-        9: { cellWidth: 42 },
-        10: { cellWidth: 10, halign: 'center' },
-        11: { cellWidth: 16, halign: 'center' },
-        12: { cellWidth: 20 },
+        4: { cellWidth: 28 },
+        5: { cellWidth: 32 },
+        6: { cellWidth: 32 },
+        7: { cellWidth: 18 },
+        8: { cellWidth: 45 },
+        9: { cellWidth: 10, halign: 'center' },
+        10: { cellWidth: 16, halign: 'center' },
+        11: { cellWidth: 22 },
       },
       margin: { left: 14, right: 14 },
     })
