@@ -21,6 +21,7 @@ export interface FilterOption {
   key: string
   label: string
   options: { value: string; label: string }[]
+  width?: string
 }
 
 interface DataTableProps<T> {
@@ -80,7 +81,7 @@ export function DataTable<T>({
                 value={filterValues[f.key] || 'all'}
                 onValueChange={(v) => onFilterChange?.(f.key, v === 'all' ? '' : v)}
               >
-                <SelectTrigger className="h-9 w-full sm:w-40">
+                <SelectTrigger className={cn('h-9 w-full', f.width || 'sm:w-40')}>
                   <SelectValue placeholder={f.label} />
                 </SelectTrigger>
                 <SelectContent>
