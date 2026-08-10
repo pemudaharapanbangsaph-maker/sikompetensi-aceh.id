@@ -128,7 +128,8 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'monitoring:view', 'monitoring:create', 'monitoring:update',
     'laporan:view', 'laporan:export',
     'backup:view', 'backup:create', 'backup:restore',
-  ],
+    'settings:view', 'settings:update',
+],
   OPERATOR: [
     'dashboard:view',
     'analisis:view', 'analisis:create', 'analisis:update',
