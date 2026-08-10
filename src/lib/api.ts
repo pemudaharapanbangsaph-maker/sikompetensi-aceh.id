@@ -7,10 +7,18 @@ import type {
 const BASE = '/api'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  // Build headers: start with JSON default, merge any custom headers from options
+  const customHeaders = options?.headers || {}
+  const isFormData = options?.body instanceof FormData
+  const headers: Record<string, string> = isFormData
+    ? { ...(customHeaders as Record<string, string>) }
+    : { 'Content-Type': 'application/json', ...(customHeaders as Record<string, string>) }
+
+  const { headers: _ignored, ...restOptions } = options || {}
   const res = await fetch(`${BASE}${url}`, {
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
-    ...options,
+    ...restOptions,
+    headers,
   })
   if (!res.ok) {
     let msg = `HTTP ${res.status}`
@@ -30,11 +38,6 @@ export const api = {
     request<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password, remember }) }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: () => request<{ user: User }>('/auth/me'),
-  getProfile: () => request<{ user: User }>('/auth/profile'),
-  updateProfile: (data: { nama: string; email: string; noTelp?: string; tempatLahir?: string; tanggalLahir?: string }) =>
-    request<{ user: User }>('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
-  changePassword: (currentPassword: string, newPassword: string) =>
-    request<{ message: string }>('/auth/password', { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) }),
 
   // ===== Dashboard =====
   dashboard: () => request<DashboardStats>('/dashboard'),
