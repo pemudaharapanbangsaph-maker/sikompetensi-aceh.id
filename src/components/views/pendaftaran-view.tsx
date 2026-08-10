@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavStore } from '@/store/auth-store'
 import { DataTable, PageHeader, type Column, type FilterOption } from '@/components/shared/data-table'
 import { formatTanggalSingkat, formatDateTime } from '@/components/shared/ui-helpers'
@@ -28,7 +28,6 @@ interface PendaftaranItem {
   nama: string
   nip: string
   pangkatGolongan: string
-  jenisKelamin: string
   tempatLahir: string
   tanggalLahir: string
   jabatan: string
@@ -127,20 +126,10 @@ function PendaftaranListView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [pelatihanFilter, setPelatihanFilter] = useState('')
-  const [pelatihanOptions, setPelatihanOptions] = useState<{ id: string; nama: string }[]>([])
 
   // delete state
   const [deleteTarget, setDeleteTarget] = useState<PendaftaranItem | null>(null)
   const [deleting, setDeleting] = useState(false)
-
-  // Fetch pelatihan options untuk dropdown filter
-  useEffect(() => {
-    fetch('/api/portal/pelatihan-list', { credentials: 'same-origin' })
-      .then((r) => r.json())
-      .then((list: { id: string; nama: string }[]) => setPelatihanOptions(list))
-      .catch(() => {})
-  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -148,7 +137,6 @@ function PendaftaranListView() {
       const params: Record<string, string | number | undefined> = {
         page, pageSize, search,
         status: statusFilter || undefined,
-        pelatihanId: pelatihanFilter || undefined,
       }
       const qs = '?' + new URLSearchParams(
         Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
@@ -163,7 +151,7 @@ function PendaftaranListView() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search, statusFilter, pelatihanFilter, toast])
+  }, [page, pageSize, search, statusFilter, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -230,7 +218,6 @@ function PendaftaranListView() {
       ),
     },
     { key: 'nip', header: 'NIP', render: (row) => <span className="text-xs font-mono">{row.nip}</span> },
-    { key: 'jenisKelamin', header: 'L/P', render: (row) => <span className="text-xs text-slate-600">{row.jenisKelamin === 'L' ? 'Laki-laki' : row.jenisKelamin === 'P' ? 'Perempuan' : '-'}</span> },
     { key: 'jabatan', header: 'Jabatan', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.jabatan || '-'}</span> },
     { key: 'unitKerja', header: 'Unit Kerja', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.unitKerja || '-'}</span> },
     { key: 'instansi', header: 'Instansi', render: (row) => <span className="text-slate-600 max-w-[150px] truncate block">{row.instansi || '-'}</span> },
@@ -257,19 +244,6 @@ function PendaftaranListView() {
     <div>
       <PageHeader title="Data Pendaftar" description="Kelola pendaftaran peserta dari portal publik">
         <div className="flex items-center gap-2">
-          {pelatihanOptions.length > 1 && (
-            <Select value={pelatihanFilter || '__all__'} onValueChange={(v) => { setPelatihanFilter(v === '__all__' ? '' : v); setPage(1) }}>
-              <SelectTrigger className="h-9 text-sm w-56">
-                <SelectValue placeholder="Semua Pelatihan" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">Semua Pelatihan</SelectItem>
-                {pelatihanOptions.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -370,7 +344,7 @@ function PendaftaranDokumenView() {
   // Edit biodata dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editForm, setEditForm] = useState({
-    nama: '', nip: '', pangkatGolongan: '', jenisKelamin: '', tempatLahir: '', tanggalLahir: '',
+    nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
     jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
   })
 
@@ -379,19 +353,6 @@ function PendaftaranDokumenView() {
   const [listLoading, setListLoading] = useState(true)
   const [listSearch, setListSearch] = useState('')
   const [listStatusFilter, setListStatusFilter] = useState('')
-  const [listPelatihanFilter, setListPelatihanFilter] = useState('')
-
-  // Unique pelatihan list dari data yang sudah di-load
-  const pelatihanOptions = useMemo(() => {
-    const set = new Set(listData.map((d) => d.pelatihan).filter(Boolean))
-    return Array.from(set).sort()
-  }, [listData])
-
-  // Filtered data berdasarkan pelatihan
-  const filteredListData = useMemo(() => {
-    if (!listPelatihanFilter) return listData
-    return listData.filter((d) => d.pelatihan === listPelatihanFilter)
-  }, [listData, listPelatihanFilter])
 
   // Fetch list data (list mode)
   const fetchListData = useCallback(async () => {
@@ -439,6 +400,7 @@ function PendaftaranDokumenView() {
     _selectedPendaftaranId = item.id
     setSelectedId(item.id)
     setData(null)
+    setLoading(true) // Set loading immediately to prevent flash of empty state
   }
 
   // Handler: kembali ke daftar dari detail
@@ -481,7 +443,6 @@ function PendaftaranDokumenView() {
       nama: data.nama,
       nip: data.nip,
       pangkatGolongan: data.pangkatGolongan,
-      jenisKelamin: (data as any).jenisKelamin || '',
       tempatLahir: data.tempatLahir,
       tanggalLahir: data.tanggalLahir,
       jabatan: data.jabatan,
@@ -522,14 +483,26 @@ function PendaftaranDokumenView() {
   }
 
   const handleDownloadDokumen = async (id: string, tipe: string, label: string) => {
+    if (!id || !tipe) {
+      toast({ title: 'Gagal mengunduh', description: 'ID pendaftaran atau tipe dokumen tidak valid', variant: 'destructive' })
+      return
+    }
     try {
       const res = await fetch(`/api/pendaftaran/${id}/dokumen/${tipe}`, { credentials: 'same-origin' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`
+        try { const err = await res.json(); errMsg = err.error || errMsg } catch {}
+        throw new Error(errMsg)
+      }
+      const contentType = res.headers.get('content-type') || ''
       const blob = await res.blob()
+      if (blob.size === 0) throw new Error('File kosong')
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${label.replace(/\s+/g, '_')}.pdf`
+      // Determine extension from content-type or default to pdf
+      const ext = contentType.includes('image/') ? contentType.split('/')[1].replace('jpeg', 'jpg') : 'pdf'
+      a.download = `${label.replace(/\s+/g, '_')}.${ext}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -566,17 +539,6 @@ function PendaftaranDokumenView() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <CardTitle className="text-sm font-bold text-slate-900">Daftar Pendaftar & Dokumen</CardTitle>
               <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-                <Select value={listPelatihanFilter || '__all__'} onValueChange={(v) => setListPelatihanFilter(v === '__all__' ? '' : v)}>
-                  <SelectTrigger className="h-8 text-sm w-52">
-                    <SelectValue placeholder="Semua Pelatihan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Semua Pelatihan</SelectItem>
-                    {pelatihanOptions.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Input
                   placeholder="Cari nama, NIP..."
                   value={listSearch}
@@ -603,10 +565,10 @@ function PendaftaranDokumenView() {
                 <Loader2 className="w-6 h-6 animate-spin text-[#0F4C81]" />
                 <p className="text-sm text-slate-500">Memuat data pendaftar...</p>
               </div>
-            ) : filteredListData.length === 0 ? (
+            ) : listData.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                <p className="text-sm text-slate-400">Tidak ada pendaftar untuk pelatihan ini</p>
+                <p className="text-sm text-slate-400">Belum ada data pendaftar</p>
               </div>
             ) : (
               <div className="max-h-[60vh] overflow-y-auto">
@@ -622,7 +584,7 @@ function PendaftaranDokumenView() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredListData.map((item, idx) => {
+                    {listData.map((item, idx) => {
                       const Icon = STATUS_ICON[item.status] || AlertCircle
                       const docComplete = item.jumlahDokumen >= 4
                       return (
@@ -680,7 +642,8 @@ function PendaftaranDokumenView() {
     )
   }
 
-  if (!data) {
+  // Only show empty state if we're not in a transitional loading state
+  if (!data && !loading) {
     return (
       <div className="text-center py-20">
         <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
@@ -693,6 +656,10 @@ function PendaftaranDokumenView() {
     )
   }
 
+  if (!data) {
+    return null
+  }
+
   const StatusIcon = STATUS_ICON[data.status] || AlertCircle
 
   const detailSections = [
@@ -702,7 +669,6 @@ function PendaftaranDokumenView() {
         { label: 'Nama Lengkap', value: data.nama },
         { label: 'NIP', value: data.nip },
         { label: 'Pangkat/Golongan', value: data.pangkatGolongan },
-        { label: 'Jenis Kelamin', value: (data as any).jenisKelamin === 'L' ? 'Laki-laki' : (data as any).jenisKelamin === 'P' ? 'Perempuan' : '-' },
         { label: 'Tempat Lahir', value: data.tempatLahir },
         { label: 'Tanggal Lahir', value: data.tanggalLahir },
       ],
@@ -866,18 +832,6 @@ function PendaftaranDokumenView() {
               <div className="space-y-1.5">
                 <Label>Pangkat/Golongan</Label>
                 <Input value={editForm.pangkatGolongan} onChange={editSet('pangkatGolongan')} placeholder="Contoh: III/c" className="h-10" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Jenis Kelamin</Label>
-                <select
-                  value={editForm.jenisKelamin}
-                  onChange={(e) => setEditForm((p) => ({ ...p, jenisKelamin: e.target.value }))}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-md text-sm px-3 focus:outline-none focus:ring-2 focus:ring-[#195737]/20 focus:border-[#195737]"
-                >
-                  <option value="">-- Pilih --</option>
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
               </div>
               <div className="space-y-1.5">
                 <Label>Tempat Lahir</Label>
