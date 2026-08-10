@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
@@ -56,7 +56,7 @@ const PRIORITAS_COLORS: Record<string, string> = {
 }
 
 export function LoginPage() {
-  const { login, loading } = useAuthStore()
+  const { login, loading, setUser } = useAuthStore()
   const rememberedUser = typeof window !== 'undefined' ? localStorage.getItem('bpsdm_remembered_user') : null
   const [view, setView] = useState<ViewMode>('landing')
   const [username, setUsername] = useState(rememberedUser || '')
@@ -65,7 +65,10 @@ export function LoginPage() {
   const [remember, setRemember] = useState(!!rememberedUser)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
-
+  // 2FA state
+  const [pending2FA, setPending2FA] = useState<{ tempToken: string; email: string } | null>(null)
+  const [totpCode, setTotpCode] = useState('')
+  const [twoFALoading, setTwoFALoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,13 +84,71 @@ export function LoginPage() {
       } else {
         localStorage.removeItem('bpsdm_remembered_user')
       }
-      await login(username.trim(), password, remember)
+      // Call API directly to detect 2FA
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ username: username.trim(), password, remember }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Login gagal')
+        return
+      }
+      // Check if 2FA is required
+      if (data.requires2FA) {
+        setPending2FA({ tempToken: data.tempToken, email: data.email })
+        return
+      }
+      // Normal login - set cookie backup and user
+      if (data.token) {
+        const maxAge = remember ? 7 * 24 * 60 * 60 : 30 * 60
+        document.cookie = `bpsdm_session=${encodeURIComponent(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`
+      }
+      setUser(data.user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal')
     }
   }
 
-  const goBack = () => { setView('landing'); setError(''); setInfo('') }
+  const handle2FAVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!pending2FA || totpCode.length !== 6) {
+      setError('Masukkan kode 6 digit dari Google Authenticator')
+      return
+    }
+    setTwoFALoading(true)
+    try {
+      const res = await fetch('/api/2fa/verify-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ tempToken: pending2FA.tempToken, code: totpCode, remember }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Verifikasi kode gagal')
+        return
+      }
+      if (data.token) {
+        const maxAge = remember ? 7 * 24 * 60 * 60 : 30 * 60
+        document.cookie = `bpsdm_session=${encodeURIComponent(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`
+      }
+      setPending2FA(null)
+      setTotpCode('')
+      setUser(data.user)
+    } catch {
+      setError('Terjadi kesalahan jaringan')
+    } finally {
+      setTwoFALoading(false)
+    }
+  }
+
+  const cancel2FA = () => { setPending2FA(null); setTotpCode(''); setError(''); setPassword('') }
+
+  const goBack = () => { setView('landing'); setError(''); setInfo(''); setPending2FA(null); setTotpCode('') }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FFFEF9]">
@@ -153,7 +214,7 @@ export function LoginPage() {
             {view === 'landing' && (
               <LandingRight onEnter={() => setView('login')} onPrograms={() => setView('programs')} onPendaftaran={() => setView('pendaftaran')} />
             )}
-            {view === 'login' && (
+            {view === 'login' && !pending2FA && (
               <LoginRight
                 username={username} setUsername={setUsername}
                 password={password} setPassword={setPassword}
@@ -163,6 +224,16 @@ export function LoginPage() {
                 info={info} setInfo={setInfo}
                 loading={loading} onSubmit={handleSubmit}
                 onBack={goBack}
+              />
+            )}
+            {view === 'login' && pending2FA && (
+              <TwoFARight
+                email={pending2FA.email}
+                totpCode={totpCode} setTotpCode={setTotpCode}
+                error={error} setError={setError}
+                loading={twoFALoading}
+                onSubmit={handle2FAVerify}
+                onCancel={cancel2FA}
               />
             )}
           </AnimatePresence>
@@ -506,6 +577,97 @@ function LoginRight({
             Belum punya akun?{' '}
             <button type="button" onClick={() => setInfo('Aktivasi akun ASN dilakukan oleh Admin Bidang. Hubungi BPSDM Aceh untuk pengajuan.')} className="text-[#195737] hover:text-[#0F4227] font-semibold hover:underline">Aktivasi Akun ASN</button>
           </p>
+        </form>
+        <p className="text-center text-xs text-slate-400 mt-10">
+          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
+// ==========================================================================
+// RIGHT PANEL: 2FA VERIFICATION
+// ==========================================================================
+
+interface TwoFARightProps {
+  email: string
+  totpCode: string
+  setTotpCode: (v: string) => void
+  error: string
+  setError: (v: string) => void
+  loading: boolean
+  onSubmit: (e: React.FormEvent) => void
+  onCancel: () => void
+}
+
+function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, onSubmit, onCancel }: TwoFARightProps) {
+  return (
+    <motion.div
+      key="twofa-right"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.4 }}
+      className="flex-1 lg:flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#F5F5F7]"
+    >
+      <div className="w-full max-w-md">
+        <div className="mb-8">
+          <button type="button" onClick={onCancel} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4">
+            <ArrowLeft className="w-4 h-4" />
+            Kembali
+          </button>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center">
+              <Smartphone className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Verifikasi 2FA</h2>
+              <p className="text-sm text-slate-500">Langkah keamanan tambahan</p>
+            </div>
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-blue-800">Buka Google Authenticator</p>
+                <p className="text-xs text-blue-600 mt-1">Masukkan kode 6 digit yang ditampilkan di aplikasi Google Authenticator untuk akun <strong>{email}</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <form onSubmit={onSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="totp" className="text-sm font-semibold text-slate-700">Kode Autentikasi</Label>
+            <div className="relative">
+              <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400" />
+              <Input
+                id="totp"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={totpCode}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 6)
+                  setTotpCode(val)
+                  setError('')
+                }}
+                placeholder="Masukkan 6 digit kode"
+                maxLength={6}
+                className="pl-11 pr-4 h-14 bg-white border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20 rounded-lg text-2xl font-bold text-center tracking-[0.5em]"
+                disabled={loading}
+              />
+            </div>
+            <p className="text-xs text-slate-400">Kode berubah setiap 30 detik</p>
+          </div>
+          {error && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{error}</span>
+            </motion.div>
+          )}
+          <Button type="submit" disabled={totpCode.length !== 6 || loading} className="login-btn w-full h-12 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-base rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+            {loading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memverifikasi...</>) : 'Verifikasi & Masuk'}
+          </Button>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
           © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
