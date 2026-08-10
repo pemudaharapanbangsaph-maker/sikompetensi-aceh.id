@@ -122,7 +122,7 @@ export function AppShell() {
         </main>
         <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Sistem Informasi Kompetensi Teknis</span>
+            <span className="font-semibold">Sistem Informasi Kompetensi Teknis Inti</span>
             <span className="text-blue-200">— BPSDM Provinsi Aceh</span>
           </div>
           <div className="text-blue-200">
