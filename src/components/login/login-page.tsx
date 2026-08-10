@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,7 +9,7 @@ import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Sh
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
-type ViewMode = 'landing' | 'login' | '2fa' | 'programs' | 'pendaftaran'
+type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran'
 
 interface Program {
   id: string
@@ -65,7 +65,7 @@ export function LoginPage() {
   const [remember, setRemember] = useState(!!rememberedUser)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
-  const [pending2FA, setPending2FA] = useState<{ tempToken: string; email: string } | null>(null)
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,31 +81,7 @@ export function LoginPage() {
       } else {
         localStorage.removeItem('bpsdm_remembered_user')
       }
-      // Call login API directly to handle 2FA
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ username: username.trim(), password, remember }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || 'Login gagal')
-        return
-      }
-      if (data.requires2FA) {
-        setPending2FA({ tempToken: data.tempToken, email: data.email })
-        setView('2fa')
-        return
-      }
-      // Normal login - set cookie from client side as backup
-      if (data.token) {
-        const maxAge = remember ? 7 * 24 * 60 * 60 : 30 * 60
-        document.cookie = `bpsdm_session=${encodeURIComponent(data.token)}; path=/; max-age=${maxAge}; SameSite=Lax`
-      }
-      // Use auth store to set user
-      const { setUser } = useAuthStore.getState()
-      setUser(data.user)
+      await login(username.trim(), password, remember)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal')
     }
@@ -187,20 +163,6 @@ export function LoginPage() {
                 info={info} setInfo={setInfo}
                 loading={loading} onSubmit={handleSubmit}
                 onBack={goBack}
-              />
-            )}
-            {view === '2fa' && pending2FA && (
-              <TwoFARight
-                tempToken={pending2FA.tempToken}
-                email={pending2FA.email}
-                remember={remember}
-                onBack={() => { setPending2FA(null); setView('login'); setError('') }}
-                onVerified={(user, token) => {
-                  const maxAge = remember ? 7 * 24 * 60 * 60 : 30 * 60
-                  document.cookie = `bpsdm_session=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax`
-                  const { setUser } = useAuthStore.getState()
-                  setUser(user)
-                }}
               />
             )}
           </AnimatePresence>
@@ -554,155 +516,6 @@ function LoginRight({
 }
 
 // ==========================================================================
-// RIGHT PANEL: 2FA VERIFICATION
-// ==========================================================================
-
-function TwoFARight({ tempToken, email, remember, onBack, onVerified }: {
-  tempToken: string
-  email: string
-  remember: boolean
-  onBack: () => void
-  onVerified: (user: any, token: string) => void
-}) {
-  const [code, setCode] = useState(['', '', '', '', '', ''])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-
-  useEffect(() => {
-    inputRefs.current[0]?.focus()
-  }, [])
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus()
-    }
-  }
-
-  const handleChange = (index: number, value: string) => {
-    if (!/\d/.test(value) && value !== '') return
-    const newCode = [...code]
-    newCode[index] = value.slice(-1)
-    setCode(newCode)
-    setError('')
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-    const newCode = [...code]
-    for (let i = 0; i < pasted.length && i < 6; i++) {
-      newCode[i] = pasted[i]
-    }
-    setCode(newCode)
-    const nextIndex = Math.min(pasted.length, 5)
-    inputRefs.current[nextIndex]?.focus()
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const fullCode = code.join('')
-    if (fullCode.length !== 6) {
-      setError('Masukkan kode 6 digit lengkap')
-      return
-    }
-    setLoading(true)
-    setError('')
-    try {
-      const res = await fetch('/api/2fa/verify-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ tempToken, code: fullCode, remember }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error || 'Kode tidak valid')
-        return
-      }
-      onVerified(data.user, data.token)
-    } catch {
-      setError('Terjadi kesalahan jaringan')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <motion.div
-      key="2fa-right"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.4 }}
-      className="flex-1 lg:flex-1 flex items-center justify-center p-6 sm:p-10 bg-[#F5F5F7]"
-    >
-      <div className="w-full max-w-md">
-        <div className="mb-8">
-          <button type="button" onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4">
-            <ArrowLeft className="w-4 h-4" />
-            Kembali ke Login
-          </button>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-[#195737]/10 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-[#195737]" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Verifikasi 2FA</h2>
-              <p className="text-sm text-slate-500">Masukkan kode dari Google Authenticator</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6">
-          <div className="text-center">
-            <p className="text-sm text-slate-600">
-              Kode verifikasi telah dikirim ke aplikasi <strong>Google Authenticator</strong>
-            </p>
-            <p className="text-xs text-slate-400 mt-1">terdaftar pada: <strong>{email}</strong></p>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="flex justify-center gap-3" onPaste={handlePaste}>
-              {code.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="w-12 h-14 text-center text-xl font-bold rounded-lg border-2 border-slate-200 focus:border-[#195737] focus:ring-2 focus:ring-[#195737]/20 outline-none transition-all"
-                  disabled={loading}
-                  autoComplete="one-time-code"
-                />
-              ))}
-            </div>
-            {error && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-2 p-3 mt-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{error}</span>
-              </motion.div>
-            )}
-            <Button type="submit" disabled={loading || code.join('').length !== 6} className="w-full h-12 mt-6 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-base rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
-              {loading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memverifikasi...</>) : 'Verifikasi & Masuk'}
-            </Button>
-          </form>
-          <p className="text-center text-xs text-slate-400">
-            Kode berubah setiap 30 detik. Pastikan waktu HP sudah tepat.
-          </p>
-        </div>
-        <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
-        </p>
-      </div>
-    </motion.div>
-  )
-}
-
-// ==========================================================================
 // FULL-SCREEN: FORM PENDAFTARAN PELATIHAN
 // ==========================================================================
 
@@ -719,7 +532,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false)
   const [pelatihanList, setPelatihanList] = useState<PelatihanOption[]>([])
   const [form, setForm] = useState({
-    nama: '', nip: '', pangkatGolongan: '', jenisKelamin: '', tempatLahir: '', tanggalLahir: '',
+    nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
     jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
   })
   const [files, setFiles] = useState<Record<string, File>>({})
@@ -736,12 +549,13 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
 
   // Cek semua field form terisi
   const formComplete = [
-    form.nama, form.nip, form.pangkatGolongan, form.jenisKelamin, form.tempatLahir, form.tanggalLahir,
+    form.nama, form.nip, form.pangkatGolongan, form.tempatLahir, form.tanggalLahir,
     form.jabatan, form.unitKerja, form.instansi, form.nomorHP, form.nomorRekening, form.npwp, form.pelatihanId,
   ].every((v) => v.trim() !== '') && /^\d{18}$/.test(form.nip.trim())
 
-  // Cek semua 4 dokumen sudah dipilih
-  const docsComplete = DOKUMEN_TYPES.every((d) => files[d.tipe])
+  // Cek dokumen wajib sudah dipilih (Surat Tugas opsional)
+  const REQUIRED_DOKUMEN = DOKUMEN_TYPES.filter((d) => d.tipe !== 'SURAT_TUGAS')
+  const docsComplete = REQUIRED_DOKUMEN.every((d) => files[d.tipe])
 
   // Tombol Daftar aktif hanya jika form + dokumen lengkap
   const canSubmit = formComplete && docsComplete
@@ -821,7 +635,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
 
   const inputCls = 'w-full h-11 bg-white border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20 rounded-lg text-sm'
   const req = <span className="text-red-500 font-bold"> *</span>
-  const filledCount = DOKUMEN_TYPES.filter((d) => files[d.tipe]).length
+  const filledCount = REQUIRED_DOKUMEN.filter((d) => files[d.tipe]).length
 
   return (
     <motion.div key="pendaftaran-right" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }} className="min-h-screen flex flex-col bg-[#FFFEF9]">
@@ -869,13 +683,6 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Nama Lengkap{req}</Label><Input {...{ value: form.nama, onChange: set('nama'), placeholder: 'Masukkan nama lengkap', className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">NIP{req}</Label><Input {...{ value: form.nip, onChange: set('nip'), placeholder: '18 digit NIP', maxLength: 18, className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Pangkat/Golongan{req}</Label><Input {...{ value: form.pangkatGolongan, onChange: set('pangkatGolongan'), placeholder: 'Contoh: III/c', className: inputCls }} /></div>
-                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jenis Kelamin{req}</Label>
-                  <select value={form.jenisKelamin} onChange={set('jenisKelamin')} className={inputCls}>
-                    <option value="">-- Pilih --</option>
-                    <option value="L">Laki-laki</option>
-                    <option value="P">Perempuan</option>
-                  </select>
-                </div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tempat Lahir{req}</Label><Input {...{ value: form.tempatLahir, onChange: set('tempatLahir'), placeholder: 'Kota/Kabupaten', className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tanggal Lahir{req}</Label><Input type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} className={inputCls} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jabatan{req}</Label><Input {...{ value: form.jabatan, onChange: set('jabatan'), placeholder: 'Jabatan saat ini', className: inputCls }} /></div>
@@ -914,23 +721,24 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
 
             {/* === SECTION 4: Upload Dokumen Wajib === */}
             <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen Pendukung <span className="text-xs font-normal text-slate-400">(wajib upload semua)</span></h3>
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen Pendukung <span className="text-xs font-normal text-slate-400">(3 wajib, 1 opsional)</span></h3>
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-                <strong>Petunjuk:</strong> Upload semua dokumen dalam format <strong>PDF</strong> (maks. 5MB per file).
+                <strong>Petunjuk:</strong> Upload dokumen dalam format <strong>PDF</strong> (maks. 5MB per file). Surat Tugas bersifat <strong>opsional</strong>.
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 {DOKUMEN_TYPES.map((d) => {
                   const hasFile = !!files[d.tipe]
+                  const isOptional = d.tipe === 'SURAT_TUGAS'
                   return (
-                    <div key={d.tipe} className={`rounded-xl border-2 p-4 space-y-2 transition-all ${hasFile ? 'border-green-300 bg-green-50/50' : 'border-slate-200 bg-slate-50/50'}`}>
+                    <div key={d.tipe} className={`rounded-xl border-2 p-4 space-y-2 transition-all ${hasFile ? 'border-green-300 bg-green-50/50' : isOptional ? 'border-slate-200 bg-slate-50/30' : 'border-slate-200 bg-slate-50/50'}`}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="text-sm font-bold text-slate-800">{d.label}{req}</h4>
+                          <h4 className="text-sm font-bold text-slate-800">{d.label}{!isOptional ? req : ''} {isOptional && <span className="text-xs font-normal text-slate-400 ml-1">(Opsional)</span>}</h4>
                           <p className="text-xs text-slate-500 mt-0.5">{d.desc}</p>
                         </div>
                         {hasFile && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                       </div>
-                      <label className={`flex items-center justify-center gap-2 w-full h-11 rounded-lg border-2 border-dashed text-sm font-medium cursor-pointer transition-colors ${hasFile ? 'border-green-400 text-green-700 bg-green-50 hover:bg-green-100' : 'border-[#195737]/30 text-[#195737] hover:bg-[#195737]/5 hover:border-[#195737]/60'}`}>
+                      <label className={`flex items-center justify-center gap-2 w-full h-11 rounded-lg border-2 border-dashed text-sm font-medium cursor-pointer transition-colors ${hasFile ? 'border-green-400 text-green-700 bg-green-50 hover:bg-green-100' : isOptional ? 'border-slate-300 text-slate-500 hover:bg-slate-100 hover:border-slate-400' : 'border-[#195737]/30 text-[#195737] hover:bg-[#195737]/5 hover:border-[#195737]/60'}`}>
                         <UploadIcon className="w-4 h-4" />
                         {hasFile ? files[d.tipe].name : 'Pilih File PDF'}
                         <input type="file" accept=".pdf" disabled={loading} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; handleFileSelect(d.tipe, f) }} />
@@ -939,7 +747,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                   )
                 })}
               </div>
-              <p className="text-xs text-slate-400 text-center">Dokumen terupload: {filledCount}/{DOKUMEN_TYPES.length}</p>
+              <p className="text-xs text-slate-400 text-center">Dokumen wajib terupload: {filledCount}/{REQUIRED_DOKUMEN.length} (Surat Tugas opsional)</p>
             </div>
 
             {/* === TOMBOL DAFTAR BESAR === */}
@@ -954,13 +762,13 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 ) : !formComplete ? (
                   <><AlertCircle className="w-7 h-7" /> Lengkapi Semua Data Form Terlebih Dahulu</>
                 ) : !docsComplete ? (
-                  <><AlertCircle className="w-7 h-7" /> Upload Semua Dokumen Wajib ({filledCount}/{DOKUMEN_TYPES.length})</>
+                  <><AlertCircle className="w-7 h-7" /> Upload Semua Dokumen Wajib ({filledCount}/{REQUIRED_DOKUMEN.length})</>
                 ) : (
                   <><ArrowRight className="w-7 h-7" /> DAFTAR SEKARANG</>
                 )}
               </button>
               {!canSubmit && (
-                <p className="text-center text-xs text-slate-400 mt-3">Pastikan semua data form terisi dan {DOKUMEN_TYPES.length} dokumen PDF sudah diupload</p>
+                <p className="text-center text-xs text-slate-400 mt-3">Pastikan semua data form terisi dan {REQUIRED_DOKUMEN.length} dokumen wajib PDF sudah diupload (Surat Tugas opsional)</p>
               )}
             </div>
           </form>
