@@ -120,8 +120,6 @@ const EMPTY_FORM: Partial<User> & { password?: string } = {
   role: 'OPERATOR',
   status: 'AKTIF',
   noTelp: '',
-  tempatLahir: '',
-  tanggalLahir: '',
 }
 
 function UserDataView() {
@@ -209,48 +207,52 @@ function UserDataView() {
       role: item.role,
       status: item.status,
       noTelp: item.noTelp || '',
-      tempatLahir: (item as any).tempatLahir || '',
-      tanggalLahir: (item as any).tanggalLahir ? (item as any).tanggalLahir.split('T')[0] : '',
     })
     setDialogOpen(true)
   }
 
   const handleSave = async () => {
-    if (!form.username || !form.email || !form.nama) {
+    if (!form.username?.trim() || !form.email?.trim() || !form.nama?.trim()) {
       toast({ title: 'Validasi', description: 'Username, Nama, dan Email wajib diisi', variant: 'destructive' })
       return
     }
-    if (!editing && !form.password) {
-      toast({ title: 'Validasi', description: 'Password wajib diisi untuk user baru', variant: 'destructive' })
+    if (!editing && (!form.password || !form.password.trim())) {
+      toast({ title: 'Validasi', description: 'Password wajib diisi untuk user baru (min. 6 karakter)', variant: 'destructive' })
+      return
+    }
+    if (form.password && form.password.trim().length > 0 && form.password.trim().length < 6) {
+      toast({ title: 'Validasi', description: 'Password minimal 6 karakter', variant: 'destructive' })
       return
     }
     setSaving(true)
     try {
-      const payload: Partial<User> & { password?: string } = {
-        username: form.username,
-        nama: form.nama,
-        email: form.email,
-        role: form.role as User['role'],
-        status: form.status as string,
-        noTelp: form.noTelp || null,
-        tempatLahir: form.tempatLahir || null,
-        tanggalLahir: form.tanggalLahir ? new Date(form.tanggalLahir) : null,
+      const payload: Record<string, unknown> = {
+        username: form.username.trim(),
+        nama: form.nama.trim(),
+        email: form.email.trim(),
+        role: form.role || 'OPERATOR',
+        status: form.status || 'AKTIF',
+        noTelp: form.noTelp?.trim() || null,
       }
-      if (form.password && form.password.trim() !== '') {
-        payload.password = form.password
+      if (!editing) {
+        // New user: password is always required
+        payload.password = form.password.trim()
+      } else if (form.password && form.password.trim() !== '') {
+        // Edit user: only update password if provided
+        payload.password = form.password.trim()
       }
       if (editing) {
-        await api.users.update(editing.id, payload)
+        await api.users.update(editing.id, payload as any)
         toast({ title: 'Berhasil', description: 'Data user diperbarui' })
       } else {
-        await api.users.create(payload as Parameters<typeof api.users.create>[0])
+        await api.users.create(payload as any)
         toast({ title: 'Berhasil', description: 'User baru ditambahkan' })
       }
       setDialogOpen(false)
       fetchData()
       fetchAllUsers()
     } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+      toast({ title: 'Gagal menyimpan user', description: (e as Error).message, variant: 'destructive' })
     } finally {
       setSaving(false)
     }
@@ -432,14 +434,6 @@ function UserDataView() {
             <div className="space-y-1.5">
               <Label>No. Telepon</Label>
               <Input value={form.noTelp || ''} onChange={(e) => setForm({ ...form, noTelp: e.target.value })} placeholder="08xx-xxxx-xxxx" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Tempat Lahir</Label>
-              <Input value={(form as any).tempatLahir || ''} onChange={(e) => setForm({ ...form, tempatLahir: e.target.value })} placeholder="Kota/Kabupaten" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Tanggal Lahir</Label>
-              <Input type="date" value={(form as any).tanggalLahir || ''} onChange={(e) => setForm({ ...form, tanggalLahir: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label>Role</Label>
