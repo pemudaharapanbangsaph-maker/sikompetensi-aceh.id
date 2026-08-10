@@ -101,6 +101,24 @@ const TIPE_DOKUMEN_LABELS: Record<string, string> = {
 let _selectedPendaftaranId = ''
 
 // ===========================================================================
+// SHARED HOOK: Fetch pelatihan options for dropdown filter
+// ===========================================================================
+function usePelatihanOptions() {
+  const [options, setOptions] = useState<{ value: string; label: string }[]>([])
+  useEffect(() => {
+    fetch('/api/analisis-diklat?pageSize=500&status=AKTIF', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.data) {
+          setOptions(json.data.map((d: { id: string; namaPelatihan: string }) => ({ value: d.id, label: d.namaPelatihan })))
+        }
+      })
+      .catch(() => {})
+  }, [])
+  return options
+}
+
+// ===========================================================================
 // ROOT COMPONENT
 // ===========================================================================
 
@@ -126,6 +144,8 @@ function PendaftaranListView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [pelatihanFilter, setPelatihanFilter] = useState('')
+  const pelatihanOptions = usePelatihanOptions()
 
   // delete state
   const [deleteTarget, setDeleteTarget] = useState<PendaftaranItem | null>(null)
@@ -137,6 +157,7 @@ function PendaftaranListView() {
       const params: Record<string, string | number | undefined> = {
         page, pageSize, search,
         status: statusFilter || undefined,
+        analisisDiklatItemId: pelatihanFilter || undefined,
       }
       const qs = '?' + new URLSearchParams(
         Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
@@ -151,19 +172,23 @@ function PendaftaranListView() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search, statusFilter, toast])
+  }, [page, pageSize, search, statusFilter, pelatihanFilter, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   // Export handlers
   const handleExportXls = () => {
-    const params = statusFilter ? `?status=${statusFilter}` : ''
-    window.location.href = `/api/pendaftaran/export/xls${params}`
+    const p: string[] = []
+    if (statusFilter) p.push(`status=${statusFilter}`)
+    if (pelatihanFilter) p.push(`analisisDiklatItemId=${pelatihanFilter}`)
+    window.location.href = `/api/pendaftaran/export/xls${p.length ? '?' + p.join('&') : ''}`
   }
 
   const handleExportPdf = () => {
-    const params = statusFilter ? `?status=${statusFilter}` : ''
-    window.location.href = `/api/pendaftaran/export/pdf${params}`
+    const p: string[] = []
+    if (statusFilter) p.push(`status=${statusFilter}`)
+    if (pelatihanFilter) p.push(`analisisDiklatItemId=${pelatihanFilter}`)
+    window.location.href = `/api/pendaftaran/export/pdf${p.length ? '?' + p.join('&') : ''}`
   }
 
   const handleRowClick = (item: PendaftaranItem) => {
@@ -191,6 +216,12 @@ function PendaftaranListView() {
   }
 
   const filters: FilterOption[] = [
+    {
+      key: 'pelatihan',
+      label: 'Pelatihan',
+      options: pelatihanOptions,
+      width: 'sm:w-56',
+    },
     {
       key: 'status',
       label: 'Status',
@@ -276,8 +307,9 @@ function PendaftaranListView() {
         onSearchChange={(v) => { setSearch(v); setPage(1) }}
         onPageChange={setPage}
         filters={filters}
-        filterValues={{ status: statusFilter }}
+        filterValues={{ pelatihan: pelatihanFilter, status: statusFilter }}
         onFilterChange={(key, value) => {
+          if (key === 'pelatihan') { setPelatihanFilter(value); setPage(1) }
           if (key === 'status') { setStatusFilter(value); setPage(1) }
         }}
         onRefresh={fetchData}
@@ -353,6 +385,8 @@ function PendaftaranDokumenView() {
   const [listLoading, setListLoading] = useState(true)
   const [listSearch, setListSearch] = useState('')
   const [listStatusFilter, setListStatusFilter] = useState('')
+  const [listPelatihanFilter, setListPelatihanFilter] = useState('')
+  const listPelatihanOptions = usePelatihanOptions()
 
   // Fetch list data (list mode)
   const fetchListData = useCallback(async () => {
@@ -361,6 +395,7 @@ function PendaftaranDokumenView() {
       const params: Record<string, string> = {}
       if (listSearch) params.search = listSearch
       if (listStatusFilter) params.status = listStatusFilter
+      if (listPelatihanFilter) params.analisisDiklatItemId = listPelatihanFilter
       params.pageSize = '100'
       const qs = '?' + new URLSearchParams(params).toString()
       const res = await fetch(`/api/pendaftaran${qs}`, { credentials: 'same-origin' })
@@ -372,7 +407,7 @@ function PendaftaranDokumenView() {
     } finally {
       setListLoading(false)
     }
-  }, [listSearch, listStatusFilter, toast])
+  }, [listSearch, listStatusFilter, listPelatihanFilter, toast])
 
   // Fetch detail data (detail mode)
   const fetchDetailData = useCallback(async () => {
@@ -539,12 +574,17 @@ function PendaftaranDokumenView() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <CardTitle className="text-sm font-bold text-slate-900">Daftar Pendaftar & Dokumen</CardTitle>
               <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-                <Input
-                  placeholder="Cari nama, NIP..."
-                  value={listSearch}
-                  onChange={(e) => setListSearch(e.target.value)}
-                  className="h-8 text-sm w-48"
-                />
+                <Select value={listPelatihanFilter || '__all__'} onValueChange={(v) => setListPelatihanFilter(v === '__all__' ? '' : v)}>
+                  <SelectTrigger className="h-8 text-sm w-48">
+                    <SelectValue placeholder="Semua Pelatihan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Semua Pelatihan</SelectItem>
+                    {listPelatihanOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={listStatusFilter || undefined} onValueChange={(v) => setListStatusFilter(v === '__all__' ? '' : v)}>
                   <SelectTrigger className="h-8 text-sm w-32">
                     <SelectValue placeholder="Semua Status" />
@@ -556,6 +596,12 @@ function PendaftaranDokumenView() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Input
+                  placeholder="Cari nama, NIP..."
+                  value={listSearch}
+                  onChange={(e) => setListSearch(e.target.value)}
+                  className="h-8 text-sm w-40"
+                />
               </div>
             </div>
           </CardHeader>
