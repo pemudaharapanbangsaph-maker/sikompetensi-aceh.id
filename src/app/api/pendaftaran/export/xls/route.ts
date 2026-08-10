@@ -10,9 +10,11 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get('status') || ''
+    const analisisDiklatItemId = searchParams.get('analisisDiklatItemId') || ''
 
     const where: Record<string, unknown> = {}
     if (status) where.status = status
+    if (analisisDiklatItemId) where.analisisDiklatItemId = analisisDiklatItemId
 
     const data = await db.pendaftaranPortal.findMany({
       where,
@@ -30,7 +32,6 @@ export async function GET(req: Request) {
       'Nama Lengkap': d.nama,
       'NIP': d.nip,
       'Pangkat/Golongan': d.pangkatGolongan || '',
-      'Jenis Kelamin': d.jenisKelamin === 'L' ? 'Laki-laki' : d.jenisKelamin === 'P' ? 'Perempuan' : '',
       'Tempat Lahir': d.tempatLahir || '',
       'Tanggal Lahir': d.tanggalLahir ? d.tanggalLahir.toISOString().slice(0, 10) : '',
       'Jabatan': d.jabatan || '',
@@ -54,7 +55,7 @@ export async function GET(req: Request) {
 
     // Column widths
     ws['!cols'] = [
-      { wch: 5 }, { wch: 25 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
+      { wch: 5 }, { wch: 25 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
       { wch: 24 }, { wch: 28 }, { wch: 28 }, { wch: 16 }, { wch: 22 }, { wch: 22 },
       { wch: 35 }, { wch: 14 }, { wch: 16 }, { wch: 6 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
     ]
