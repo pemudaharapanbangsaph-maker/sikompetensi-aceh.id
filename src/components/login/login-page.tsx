@@ -532,7 +532,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false)
   const [pelatihanList, setPelatihanList] = useState<PelatihanOption[]>([])
   const [form, setForm] = useState({
-    nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
+    nama: '', nip: '', pangkatGolongan: '', jenisKelamin: '', tempatLahir: '', tanggalLahir: '',
     jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
   })
   const [files, setFiles] = useState<Record<string, File>>({})
@@ -549,7 +549,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
 
   // Cek semua field form terisi
   const formComplete = [
-    form.nama, form.nip, form.pangkatGolongan, form.tempatLahir, form.tanggalLahir,
+    form.nama, form.nip, form.pangkatGolongan, form.jenisKelamin, form.tempatLahir, form.tanggalLahir,
     form.jabatan, form.unitKerja, form.instansi, form.nomorHP, form.nomorRekening, form.npwp, form.pelatihanId,
   ].every((v) => v.trim() !== '') && /^\d{18}$/.test(form.nip.trim())
 
@@ -683,6 +683,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Nama Lengkap{req}</Label><Input {...{ value: form.nama, onChange: set('nama'), placeholder: 'Masukkan nama lengkap', className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">NIP{req}</Label><Input {...{ value: form.nip, onChange: set('nip'), placeholder: '18 digit NIP', maxLength: 18, className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Pangkat/Golongan{req}</Label><Input {...{ value: form.pangkatGolongan, onChange: set('pangkatGolongan'), placeholder: 'Contoh: III/c', className: inputCls }} /></div>
+                <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jenis Kelamin{req}</Label><select value={form.jenisKelamin} onChange={set('jenisKelamin')} className={`w-full h-11 bg-white border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20 rounded-lg text-sm px-3 ${!form.jenisKelamin ? 'text-slate-400' : 'text-slate-900'}`}><option value="">-- Pilih --</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tempat Lahir{req}</Label><Input {...{ value: form.tempatLahir, onChange: set('tempatLahir'), placeholder: 'Kota/Kabupaten', className: inputCls }} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Tanggal Lahir{req}</Label><Input type="date" value={form.tanggalLahir} onChange={set('tanggalLahir')} className={inputCls} /></div>
                 <div className="space-y-1.5"><Label className="text-xs font-semibold text-slate-600">Jabatan{req}</Label><Input {...{ value: form.jabatan, onChange: set('jabatan'), placeholder: 'Jabatan saat ini', className: inputCls }} /></div>
