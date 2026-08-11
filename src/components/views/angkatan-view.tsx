@@ -199,6 +199,7 @@ function AngkatanDataTable() {
     })
     setDialogOpen(true)
   }
+  }
   const handleSave = async () => {
     if (!form.pelatihanId || !form.namaAngkatan || !form.tanggalMulai || !form.tanggalSelesai) {
       toast({ title: 'Validasi', description: 'Pelatihan, nama angkatan, dan periode wajib diisi', variant: 'destructive' })
