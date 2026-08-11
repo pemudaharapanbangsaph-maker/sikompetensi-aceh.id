@@ -523,7 +523,8 @@ function KehadiranView() {
                 <div className="text-xs text-slate-500">
                   <p>Metode: <span className="font-medium text-slate-700">{metodeLabel(angkatan.metode)}</span></p>
                   <p>Status: <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === angkatan.status)?.label || angkatan.status}</span></p>
-              </>
+                 </div>
+                </>
             )}
           </div>
         </CardContent>
