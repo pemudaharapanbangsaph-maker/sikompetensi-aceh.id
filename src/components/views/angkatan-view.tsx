@@ -499,37 +499,38 @@ function KehadiranView() {
       <PageHeader title="Kehadiran Peserta" description="Catat kehadiran peserta pelatihan per angkatan dan tanggal" />
 
       <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-4">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-            <div className="space-y-1.5">
-              <Label>Pilih Kegiatan (Angkatan)</Label>
-              <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
-                <SelectContent>
-                  {angkatanList.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {angkatan && (
-              <>
-                <div className="text-xs text-slate-500">
-                  <p>Periode: <span className="font-medium text-slate-700">{formatTanggalSingkat(angkatan.tanggalMulai)} s/d {formatTanggalSingkat(angkatan.tanggalSelesai)}</span></p>
-                  <p>Lokasi: <span className="font-medium text-slate-700">{angkatan.lokasi || '-'}</span></p>
-                </div>
-                <div className="text-xs text-slate-500">
-                  <p>Metode: <span className="font-medium text-slate-700">{metodeLabel(angkatan.metode)}</span></p>
-                  <p>Status: <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === angkatan.status)?.label || angkatan.status}</span></p>
-                 </div>
-                </>
-            )}
+        <CardContent className="p-4 space-y-3">
+          <div>
+            <Label>Pilih Kegiatan (Angkatan)</Label>
+            <Select value={selectedId} onValueChange={setSelectedId}>
+              <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
+              <SelectContent>
+                {angkatanList.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          {angkatan && (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-500">
+              <div>
+                <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(angkatan.tanggalMulai)} s/d {formatTanggalSingkat(angkatan.tanggalSelesai)}</span></p>
+              </div>
+              <div>
+                <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{angkatan.lokasi || '-'}</span></p>
+              </div>
+              <div>
+                <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(angkatan.metode)}</span></p>
+              </div>
+              <div>
+                <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === angkatan.status)?.label || angkatan.status}</span></p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
-
       {!selectedId ? (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
@@ -810,52 +811,56 @@ function PesertaPerKegiatanView() {
       <PageHeader title="Peserta Per Kegiatan" description="Lihat dan kelola data peserta per kegiatan/angkatan pelatihan" />
 
       <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-4">
-  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-    <div className="space-y-1.5">
-      <Label>Pilih Kegiatan (Angkatan)</Label>
-      <Select value={selectedId} onValueChange={setSelectedId}>
-        <SelectTrigger><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
-        <SelectContent>
-          {angkatanList.map((a) => (
-            <SelectItem key={a.id} value={a.id}>
-              {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-    {selectedAngkatan && (
-      <>
-        <div className="text-xs text-slate-500">
-          <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
-          <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
-        </div>
-        <div className="text-xs text-slate-500">
-          <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
-          <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
-          </Button>
-          <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-            <Upload className="w-4 h-4" /> Import
-          </Button>
-          <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
-            <Download className="w-4 h-4" /> Template
-          </Button>
-          <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
-            <FileSpreadsheet className="w-4 h-4" /> Excel
-          </Button>
-          <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
-            <FileDown className="w-4 h-4" /> PDF
-          </Button>
-        </div>
-      </>
-    )}
-  </div>
-</CardContent>
+        <CardContent className="p-4 space-y-3">
+          <div>
+            <Label>Pilih Kegiatan (Angkatan)</Label>
+            <Select value={selectedId} onValueChange={setSelectedId}>
+              <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
+              <SelectContent>
+                {angkatanList.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedAngkatan && (
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-500">
+                <div>
+                  <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
+                </div>
+                <div>
+                  <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
+                </div>
+                <div>
+                  <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
+                </div>
+                <div>
+                  <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 shrink-0">
+                <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                  {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
+                </Button>
+                <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+                  <Upload className="w-4 h-4" /> Import
+                </Button>
+                <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
+                  <Download className="w-4 h-4" /> Template
+                </Button>
+                <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
+                  <FileSpreadsheet className="w-4 h-4" /> Excel
+                </Button>
+                <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
+                  <FileDown className="w-4 h-4" /> PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
       </Card>
       {!selectedId ? (
         <Card className="border-slate-200 shadow-sm">
