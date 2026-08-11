@@ -172,13 +172,15 @@ function AngkatanDataTable() {
     setForm(updated)
   }
 
-  const handleTanggalMulaiChange = (val: string) => {
+    const handleTanggalMulaiChange = (val: string) => {
     const updated = { ...form, tanggalMulai: val }
     if (form.pelatihanId && val) {
       updated.tanggalSelesai = calcEndDate(val, form.pelatihanId)
     }
     setForm(updated)
-      const openCreate = () => {
+  }                              // ← INI YANG HILANG!
+
+  const openCreate = () => {     // ← indent 2 spasi, bukan 6
     setEditing(null)
     setForm({ ...EMPTY_FORM })
     setDialogOpen(true)
@@ -199,7 +201,7 @@ function AngkatanDataTable() {
     })
     setDialogOpen(true)
   }
-  }
+
   const handleSave = async () => {
     if (!form.pelatihanId || !form.namaAngkatan || !form.tanggalMulai || !form.tanggalSelesai) {
       toast({ title: 'Validasi', description: 'Pelatihan, nama angkatan, dan periode wajib diisi', variant: 'destructive' })
