@@ -178,6 +178,26 @@ function AngkatanDataTable() {
       updated.tanggalSelesai = calcEndDate(val, form.pelatihanId)
     }
     setForm(updated)
+      const openCreate = () => {
+    setEditing(null)
+    setForm({ ...EMPTY_FORM })
+    setDialogOpen(true)
+  }
+
+  const openEdit = (item: Angkatan) => {
+    setEditing(item)
+    setForm({
+      pelatihanId: item.pelatihanId,
+      namaAngkatan: item.namaAngkatan,
+      tanggalMulai: toDateInput(item.tanggalMulai),
+      tanggalSelesai: toDateInput(item.tanggalSelesai),
+      lokasi: item.lokasi || '',
+      metode: item.metode,
+      kuota: item.kuota,
+      status: item.status,
+      catatan: item.catatan || '',
+    })
+    setDialogOpen(true)
   }
   const handleSave = async () => {
     if (!form.pelatihanId || !form.namaAngkatan || !form.tanggalMulai || !form.tanggalSelesai) {
@@ -327,7 +347,7 @@ function AngkatanDataTable() {
             </div>
             <div className="space-y-1.5">
               <Label>Tanggal Selesai <span className="text-red-500">*</span></Label>
-              <Input type="date" value={toDateInput(form.tanggalMulai)} onChange={(e) => handleTanggalMulaiChange(e.target.value)} />
+              <Input type="date" value={toDateInput(form.tanggalSelesai)} onChange={(e) => setForm({ ...form, tanggalSelesai: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label>Lokasi</Label>
@@ -475,13 +495,13 @@ function KehadiranView() {
     <div className="space-y-4">
       <PageHeader title="Kehadiran Peserta" description="Catat kehadiran peserta pelatihan per angkatan dan tanggal" />
 
-      <Card className="border-slate-200 shadow-sm">
+        <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-4">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             <div className="space-y-1.5">
-              <Label>Pilih Angkatan</Label>
+              <Label>Pilih Kegiatan (Angkatan)</Label>
               <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger><SelectValue placeholder="Pilih angkatan..." /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
                 <SelectContent>
                   {angkatanList.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
@@ -491,15 +511,18 @@ function KehadiranView() {
                 </SelectContent>
               </Select>
             </div>
-            {angkatan && (
+            {selectedAngkatan && (
               <>
                 <div className="text-xs text-slate-500">
-                  <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(angkatan.tanggalMulai)} s/d {formatTanggalSingkat(angkatan.tanggalSelesai)}</span></p>
-                  <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(angkatan.metode)}</span></p>
+                  <p>Periode: <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
+                  <p>Lokasi: <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
                 </div>
                 <div className="text-xs text-slate-500">
-                  <p><span className="text-slate-400">Peserta:</span> <span className="font-medium text-slate-700">{pesertaList.length} orang</span></p>
-                  <p><span className="text-slate-400">Total Hari:</span> <span className="font-medium text-slate-700">{dates.length} hari</span></p>
+                  <p>Metode: <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
+                  <p>Status: <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {/* tombol-tombol: Ambil Data Pendaftar, Import, Template, Excel, PDF */}
                 </div>
               </>
             )}
