@@ -514,7 +514,7 @@ function KehadiranView() {
                 </SelectContent>
               </Select>
             </div>
-            {selectedAngkatan && (
+            {angkatan && (
               <>
                 <div className="text-xs text-slate-500">
                   <p>Periode: <span className="font-medium text-slate-700">{formatTanggalSingkat(angkatan.tanggalMulai)} s/d {formatTanggalSingkat(angkatan.tanggalSelesai)}</span></p>
