@@ -517,12 +517,12 @@ function KehadiranView() {
             {selectedAngkatan && (
               <>
                 <div className="text-xs text-slate-500">
-                  <p>Periode: <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
-                  <p>Lokasi: <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
+                  <p>Periode: <span className="font-medium text-slate-700">{formatTanggalSingkat(angkatan.tanggalMulai)} s/d {formatTanggalSingkat(angkatan.tanggalSelesai)}</span></p>
+                  <p>Lokasi: <span className="font-medium text-slate-700">{angkatan.lokasi || '-'}</span></p>
                 </div>
                 <div className="text-xs text-slate-500">
-                  <p>Metode: <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
-                  <p>Status: <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
+                  <p>Metode: <span className="font-medium text-slate-700">{metodeLabel(angkatan.metode)}</span></p>
+                  <p>Status: <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === angkatan.status)?.label || angkatan.status}</span></p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {/* tombol-tombol: Ambil Data Pendaftar, Import, Template, Excel, PDF */}
