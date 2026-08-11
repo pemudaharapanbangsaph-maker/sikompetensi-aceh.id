@@ -498,7 +498,7 @@ function KehadiranView() {
     <div className="space-y-4">
       <PageHeader title="Kehadiran Peserta" description="Catat kehadiran peserta pelatihan per angkatan dan tanggal" />
 
-        <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-4">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             <div className="space-y-1.5">
@@ -523,10 +523,6 @@ function KehadiranView() {
                 <div className="text-xs text-slate-500">
                   <p>Metode: <span className="font-medium text-slate-700">{metodeLabel(angkatan.metode)}</span></p>
                   <p>Status: <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === angkatan.status)?.label || angkatan.status}</span></p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {/* tombol-tombol: Ambil Data Pendaftar, Import, Template, Excel, PDF */}
-                </div>
               </>
             )}
           </div>
