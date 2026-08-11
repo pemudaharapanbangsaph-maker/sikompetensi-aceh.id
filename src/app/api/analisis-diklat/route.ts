@@ -1,3 +1,5 @@
+// src/app/api/analisis-diklat/route.ts
+
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
