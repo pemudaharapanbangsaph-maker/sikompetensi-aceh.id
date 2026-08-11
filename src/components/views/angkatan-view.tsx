@@ -152,29 +152,33 @@ function AngkatanDataTable() {
 
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
   const handleFilter = (k: string, v: string) => { setFilters((p) => ({ ...p, [k]: v })); setPage(1) }
-
-  const openCreate = () => {
-    setEditing(null)
-    setForm({ ...EMPTY_FORM })
-    setDialogOpen(true)
+    // Auto-calculate tanggalSelesai based on pelatihan's durasiHari
+  const calcEndDate = (startDate: string, pelatihanId: string): string => {
+    const selected = pelatihanList.find((p) => p.id === pelatihanId)
+    const durasiHari = selected?.durasiHari || 1
+    if (!startDate) return ''
+    const start = new Date(startDate)
+    const end = new Date(start)
+    end.setDate(end.getDate() + durasiHari - 1)
+    return toDateInput(end.toISOString())
   }
 
-  const openEdit = (item: Angkatan) => {
-    setEditing(item)
-    setForm({
-      pelatihanId: item.pelatihanId,
-      namaAngkatan: item.namaAngkatan,
-      tanggalMulai: toDateInput(item.tanggalMulai),
-      tanggalSelesai: toDateInput(item.tanggalSelesai),
-      lokasi: item.lokasi || '',
-      metode: item.metode,
-      kuota: item.kuota,
-      status: item.status,
-      catatan: item.catatan || '',
-    })
-    setDialogOpen(true)
+  const handlePelatihanChange = (v: string) => {
+    const pid = v === 'none' ? '' : v
+    const updated = { ...form, pelatihanId: pid }
+    if (pid && updated.tanggalMulai) {
+      updated.tanggalSelesai = calcEndDate(updated.tanggalMulai, pid)
+    }
+    setForm(updated)
   }
 
+  const handleTanggalMulaiChange = (val: string) => {
+    const updated = { ...form, tanggalMulai: val }
+    if (form.pelatihanId && val) {
+      updated.tanggalSelesai = calcEndDate(val, form.pelatihanId)
+    }
+    setForm(updated)
+  }
   const handleSave = async () => {
     if (!form.pelatihanId || !form.namaAngkatan || !form.tanggalMulai || !form.tanggalSelesai) {
       toast({ title: 'Validasi', description: 'Pelatihan, nama angkatan, dan periode wajib diisi', variant: 'destructive' })
@@ -305,7 +309,7 @@ function AngkatanDataTable() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
             <div className="sm:col-span-2 space-y-1.5">
               <Label>Pelatihan <span className="text-red-500">*</span></Label>
-              <Select value={form.pelatihanId || 'none'} onValueChange={(v) => setForm({ ...form, pelatihanId: v === 'none' ? '' : v })}>
+              <Select value={form.pelatihanId || 'none'} onValueChange={handlePelatihanChange}>
                 <SelectTrigger><SelectValue placeholder="Pilih pelatihan..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— Pilih pelatihan —</SelectItem>
@@ -323,7 +327,7 @@ function AngkatanDataTable() {
             </div>
             <div className="space-y-1.5">
               <Label>Tanggal Selesai <span className="text-red-500">*</span></Label>
-              <Input type="date" value={toDateInput(form.tanggalSelesai)} onChange={(e) => setForm({ ...form, tanggalSelesai: e.target.value })} />
+              <Input type="date" value={toDateInput(form.tanggalMulai)} onChange={(e) => handleTanggalMulaiChange(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Lokasi</Label>
@@ -783,58 +787,53 @@ function PesertaPerKegiatanView() {
       <PageHeader title="Peserta Per Kegiatan" description="Lihat dan kelola data peserta per kegiatan/angkatan pelatihan" />
 
       <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-4 space-y-3">
-          <div>
-            <Label>Pilih Kegiatan (Angkatan)</Label>
-            <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger className="mt-1.5"><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
-              <SelectContent>
-                {angkatanList.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {selectedAngkatan && (
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-500">
-                <div>
-                  <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
-                </div>
-                <div>
-                  <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
-                </div>
-                <div>
-                  <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
-                </div>
-                <div>
-                  <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 shrink-0">
-                <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-                  {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
-                </Button>
-                <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
-                  <Upload className="w-4 h-4" /> Import
-                </Button>
-                <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
-                  <Download className="w-4 h-4" /> Template
-                </Button>
-                <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
-                  <FileSpreadsheet className="w-4 h-4" /> Excel
-                </Button>
-                <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
-                  <FileDown className="w-4 h-4" /> PDF
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
+        <CardContent className="p-4">
+  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+    <div className="space-y-1.5">
+      <Label>Pilih Kegiatan (Angkatan)</Label>
+      <Select value={selectedId} onValueChange={setSelectedId}>
+        <SelectTrigger><SelectValue placeholder="Pilih kegiatan..." /></SelectTrigger>
+        <SelectContent>
+          {angkatanList.map((a) => (
+            <SelectItem key={a.id} value={a.id}>
+              {a.namaAngkatan} {a.pelatihan ? `(${a.pelatihan.kode})` : ''}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+    {selectedAngkatan && (
+      <>
+        <div className="text-xs text-slate-500">
+          <p><span className="text-slate-400">Periode:</span> <span className="font-medium text-slate-700">{formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</span></p>
+          <p><span className="text-slate-400">Lokasi:</span> <span className="font-medium text-slate-700">{selectedAngkatan.lokasi || '-'}</span></p>
+        </div>
+        <div className="text-xs text-slate-500">
+          <p><span className="text-slate-400">Metode:</span> <span className="font-medium text-slate-700">{metodeLabel(selectedAngkatan.metode)}</span></p>
+          <p><span className="text-slate-400">Status:</span> <span className="font-medium text-slate-700">{STATUS_ANGKATAN.find((s) => s.value === selectedAngkatan.status)?.label || selectedAngkatan.status}</span></p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={handleSyncPendaftar} disabled={syncing || !selectedAngkatan?.pelatihan} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ClipboardList className="w-4 h-4" />} Ambil Data Pendaftar
+          </Button>
+          <Button onClick={openImportDialog} size="sm" variant="outline" className="h-9 border-[#195737] text-[#195737] hover:bg-[#195737] hover:text-white">
+            <Upload className="w-4 h-4" /> Import
+          </Button>
+          <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
+            <Download className="w-4 h-4" /> Template
+          </Button>
+          <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
+            <FileSpreadsheet className="w-4 h-4" /> Excel
+          </Button>
+          <Button onClick={handleExportPdf} disabled={!selectedId || pesertaList.length === 0} size="sm" className="bg-[#0F4C81] hover:bg-[#0a3a63] h-9">
+            <FileDown className="w-4 h-4" /> PDF
+          </Button>
+        </div>
+      </>
+    )}
+  </div>
+</CardContent>
       </Card>
-
       {!selectedId ? (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
