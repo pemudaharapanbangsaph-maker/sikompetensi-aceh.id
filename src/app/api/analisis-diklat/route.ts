@@ -86,14 +86,18 @@ async function syncToPelatihan(analisisId: string, data: {
     })
     pelatihanId = newPelatihan.id
 
-    // Otomatis buat Angkatan default agar muncul di dropdown Peserta Per Kegiatan
+     // Otomatis buat Angkatan default agar muncul di dropdown Peserta Per Kegiatan
     const tahun = data.tahunPelaksanaan || new Date().getFullYear()
+    const startAngkatan = new Date(tahun, 0, 1)
+    const endAngkatan = new Date(startAngkatan)
+    const hariAngkatan = durasiHari > 0 ? durasiHari : 1
+    endAngkatan.setDate(endAngkatan.getDate() + hariAngkatan - 1)
     await db.angkatan.create({
       data: {
         pelatihanId: newPelatihan.id,
         namaAngkatan: `Angkatan 1 - ${data.namaPelatihan}`,
-        tanggalMulai: new Date(tahun, 0, 1),
-        tanggalSelesai: new Date(tahun, 11, 31),
+        tanggalMulai: startAngkatan,
+        tanggalSelesai: endAngkatan,
         metode: data.metodePembelajaran || 'TATAP_MUKA',
         kuota: 30,
         status: 'PERENCANAAN',
