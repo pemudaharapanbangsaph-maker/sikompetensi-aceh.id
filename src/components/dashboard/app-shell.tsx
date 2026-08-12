@@ -22,7 +22,6 @@ const UserView = lazy(() => import('@/components/views/user-view').then(m => ({ 
 const BackupView = lazy(() => import('@/components/views/backup-view').then(m => ({ default: m.BackupView })))
 const SettingsView = lazy(() => import('@/components/views/settings-view').then(m => ({ default: m.SettingsView })))
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
-const AccountView = lazy(() => import('@/components/views/account-view').then(m => ({ default: m.AccountView })))
 
 function ViewLoader() {
   return (
@@ -49,6 +48,7 @@ function renderView(view: string): React.ReactNode {
     case 'pelatihan-kehadiran':
     case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
+    case 'uji-biodata':
     case 'uji-jadwal':
     case 'uji-penilaian':
     case 'uji-hasil':
@@ -84,9 +84,6 @@ function renderView(view: string): React.ReactNode {
     case 'settings-login':
     case 'settings-audit':
       return <SettingsView />
-    case 'account-profil':
-    case 'account-keamanan':
-      return <AccountView />
     default: return <DashboardView />
   }
 }
@@ -122,7 +119,7 @@ export function AppShell() {
         </main>
         <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-semibold">Sistem Informasi Kompetensi Teknis Inti</span>
+            <span className="font-semibold">Sistem Informasi Kompetensi Teknis</span>
             <span className="text-blue-200">— BPSDM Provinsi Aceh</span>
           </div>
           <div className="text-blue-200">
