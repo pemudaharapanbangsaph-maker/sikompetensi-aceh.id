@@ -21,7 +21,7 @@ import {
 import {
   Pencil, Trash2, Plus, Save, X, Award, ClipboardCheck, BarChart3,
   CalendarDays, UserCheck, UserX, Percent, ArrowRight, Eye, Users, CheckCircle2,
-  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft,
+  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft, Lock, RotateCcw,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -1168,6 +1168,8 @@ function UjiBiodataPesertaView() {
   const [loading, setLoading] = useState(false)
   const [fetched, setFetched] = useState(false)
   const [search, setSearch] = useState('')
+  const [locked, setLocked] = useState(false)
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
 
   // Detail
   const [selectedId, setSelectedId] = useState('')
@@ -1199,6 +1201,8 @@ function UjiBiodataPesertaView() {
       if (!res.ok) throw new Error('Gagal memuat data')
       const json = await res.json()
       setData(json.data || [])
+      setLocked(true)
+      toast({ title: 'Berhasil', description: `${(json.data || []).length} peserta ditemukan. Pelatihan terkunci.`, })
     } catch (e) {
       toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
     } finally {
@@ -1403,6 +1407,16 @@ function UjiBiodataPesertaView() {
     )
   }
 
+  // Reset / ganti pelatihan
+  const handleUnlock = () => {
+    setSelectedPelatihan('')
+    setData([])
+    setFetched(false)
+    setSearch('')
+    setLocked(false)
+    setShowUnlockDialog(false)
+  }
+
   // =============================================
   // LIST MODE - Dropdown + Tombol Ambil Data
   // =============================================
@@ -1417,13 +1431,24 @@ function UjiBiodataPesertaView() {
       </PageHeader>
 
       {/* Dropdown Pelatihan + Tombol Ambil Data */}
-      <Card className="border-slate-200 shadow-sm">
+      <Card className={cn("border-slate-200 shadow-sm", locked && "border-[#86EFAC]")}>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="flex-1 space-y-1.5">
-              <Label className="text-xs text-slate-500">Pilih Pelatihan</Label>
-              <Select value={selectedPelatihan} onValueChange={(v) => { setSelectedPelatihan(v); setFetched(false); setData([]) }}>
-                <SelectTrigger className="h-10">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-slate-500">Pilih Pelatihan</Label>
+                {locked && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#195737] bg-[#86EFAC]/30 px-2 py-0.5 rounded-full">
+                    <Lock className="w-3 h-3" /> Terkunci
+                  </span>
+                )}
+              </div>
+              <Select
+                value={selectedPelatihan}
+                onValueChange={(v) => { if (!locked) { setSelectedPelatihan(v); setFetched(false); setData([]) } }}
+                disabled={locked}
+              >
+                <SelectTrigger className={cn("h-10", locked && "bg-slate-50 opacity-80")}>
                   <SelectValue placeholder={loadingOptions ? 'Memuat...' : 'Pilih pelatihan...'} />
                 </SelectTrigger>
                 <SelectContent>
@@ -1438,14 +1463,25 @@ function UjiBiodataPesertaView() {
                 </SelectContent>
               </Select>
             </div>
-            <Button
-              onClick={handleAmbilData}
-              disabled={!selectedPelatihan || loading}
-              className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
-            >
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}
-              Ambil Data Peserta
-            </Button>
+            {!locked ? (
+              <Button
+                onClick={handleAmbilData}
+                disabled={!selectedPelatihan || loading}
+                className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
+              >
+                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}
+                Ambil Data Peserta
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowUnlockDialog(true)}
+                className="h-10 text-amber-600 border-amber-300 hover:bg-amber-50"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Ganti Pelatihan
+              </Button>
+            )}
           </div>
           {selectedOption && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -1457,6 +1493,24 @@ function UjiBiodataPesertaView() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog konfirmasi ganti pelatihan */}
+      <AlertDialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ganti Pelatihan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Data peserta yang sudah diambil akan dihapus dan dropdown akan dibuka kembali. Apakah Anda yakin ingin mengganti pelatihan?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleUnlock} className="bg-amber-600 hover:bg-amber-700 text-white">
+              Ya, Ganti
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Search bar (setelah data diambil) */}
       {fetched && (
