@@ -896,7 +896,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 {attempted && !(fieldErrors.nama || fieldErrors.nip || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
-                {renderField('nama', 'Nama Lengkap', { placeholder: 'Masukkan nama lengkap sesuai KTP' })}
+                {renderField('nama', 'Nama Lengkap', { placeholder: 'Masukkan nama lengkap beserta gelar' })}
                 {renderField('nip', 'NIP', { placeholder: '18 digit NIP', maxLength: 18, extraCls: 'font-mono' })}
                 {renderField('pangkatGolongan', 'Pangkat/Golongan', { placeholder: 'Contoh: III/c' })}
                 {renderField('tempatLahir', 'Tempat Lahir', { placeholder: 'Kota/Kabupaten' })}
