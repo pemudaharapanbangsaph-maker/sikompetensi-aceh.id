@@ -1193,7 +1193,7 @@ function UjiBiodataPesertaView() {
     setLoading(true)
     setFetched(true)
     try {
-      const params = new URLSearchParams({ pelatihanId: selectedPelatihan })
+      const params = new URLSearchParams({ pelatihan: selectedPelatihan })
       if (search) params.set('search', search)
       const res = await fetch(`/api/uji-kompetensi/biodata-peserta?${params.toString()}`, { credentials: 'same-origin' })
       if (!res.ok) throw new Error('Gagal memuat data')
