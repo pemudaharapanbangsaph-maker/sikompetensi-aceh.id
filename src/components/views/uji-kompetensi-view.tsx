@@ -21,7 +21,7 @@ import {
 import {
   Pencil, Trash2, Plus, Save, X, Award, ClipboardCheck, BarChart3,
   CalendarDays, UserCheck, UserX, Percent, ArrowRight, Eye, Users, CheckCircle2,
-  Search, RotateCcw, FileUser, Link2, Unlink,
+  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -1090,7 +1090,11 @@ function UjiRekapView() {
 // SUBTAB 5: BIODATA PESERTA UJI KOMPETENSI
 // ===========================================================================
 
-interface BiodataPesertaRow {
+// ===========================================================================
+// BIODATA PESERTA - Ambil data dari portal pendaftar
+// ===========================================================================
+
+interface BiodataPesertaItem {
   id: string
   nama: string
   nip: string
@@ -1102,254 +1106,404 @@ interface BiodataPesertaRow {
   unitKerja: string
   instansi: string
   nomorHP: string
+  nomorRekening: string
+  npwp: string
+  pelatihan: string
+  pelatihanKategori: string
+  pelatihanMetode: string
+  pelatihanJP: number
+  pelatihanTahun: number
   status: string
+  catatanAdmin: string
+  jumlahDokumen: number
   createdAt: string
-  namaPelatihan: string
+  updatedAt: string
+}
+
+interface BiodataDetail extends BiodataPesertaItem {
+  dokumen: { id: string; tipe: string; label: string; namaFile: string; ukuran: string; terakhirDiupload: string }[]
+}
+
+interface PelatihanOption {
+  id: string
+  nama: string
   kategori: string
-  pesertaId: string | null
-  angkatanInfo: {
-    angkatanId: string
-    namaAngkatan: string
-    pelatihan: string
-    status: string
-    tanggalMulai: string
-    tanggalSelesai: string
-  } | null
-  jadwalUji: {
-    id: string
-    kode: string
-    tanggalUji: string
-    skemaSertifikasi: string
-    status: string
-  } | null
-  nilaiInfo: {
-    id: string
-    nilaiPreTest: number | null
-    nilaiPostTest: number | null
-    nilaiPraktik: number | null
-    nilaiTeori: number | null
-    nilaiAkhir: number | null
-    statusKelulusan: string
-  } | null
+  metode: string
+  jp: number
+  tahun: number
+  totalPendaftar: number
+}
+
+const TIPE_DOKUMEN_LABELS: Record<string, string> = {
+  KTP: 'KTP',
+  SURAT_TUGAS: 'Surat Tugas',
+  NPWP: 'NPWP',
+  REK_BANK: 'REK Bank Aceh',
+}
+
+const BIODATA_STATUS_ICON: Record<string, any> = {
+  MENUNGGU: Clock,
+  DITERIMA: CheckCircle2,
+  DITOLAK: XCircle,
+}
+
+const BIODATA_STATUS_STYLE: Record<string, string> = {
+  MENUNGGU: 'bg-amber-100 text-amber-700 border-amber-200',
+  DITERIMA: 'bg-green-100 text-[#195737] border-[#86EFAC]',
+  DITOLAK: 'bg-red-100 text-red-700 border-red-200',
 }
 
 function UjiBiodataPesertaView() {
   const { setActiveView } = useNavStore()
   const { toast } = useToast()
 
-  const [data, setData] = useState<BiodataPesertaRow[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pageSize] = useState(10)
-  const [loading, setLoading] = useState(true)
+  // Pelatihan dropdown
+  const [pelatihanOptions, setPelatihanOptions] = useState<PelatihanOption[]>([])
+  const [selectedPelatihan, setSelectedPelatihan] = useState('')
+  const [loadingOptions, setLoadingOptions] = useState(true)
+
+  // Data table
+  const [data, setData] = useState<BiodataPesertaItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
   const [search, setSearch] = useState('')
-  const [filterUjiId, setFilterUjiId] = useState('')
-  const [filterPelatihan, setFilterPelatihan] = useState('')
 
-  // Uji kompetensi list for filter dropdown
-  const [ujiList, setUjiList] = useState<{ id: string; kode: string; skemaSertifikasi: string; tanggalUji: string }[]>([])
-  const [pelatihanOptions, setPelatihanOptions] = useState<string[]>([])
+  // Detail
+  const [selectedId, setSelectedId] = useState('')
+  const [detail, setDetail] = useState<BiodataDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
 
-  // Detail dialog
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [selectedRow, setSelectedRow] = useState<BiodataPesertaRow | null>(null)
+  // Fetch pelatihan options on mount
+  useEffect(() => {
+    setLoadingOptions(true)
+    fetch('/api/uji-kompetensi/biodata-peserta?listPelatihan=1', { credentials: 'same-origin' })
+      .then((r) => r.json())
+      .then((json) => setPelatihanOptions(json.data || []))
+      .catch(() => toast({ title: 'Gagal', description: 'Gagal memuat daftar pelatihan', variant: 'destructive' }))
+      .finally(() => setLoadingOptions(false))
+  }, [])
 
-  const fetchData = useCallback(async () => {
+  // Ambil data peserta
+  const handleAmbilData = async () => {
+    if (!selectedPelatihan) {
+      toast({ title: 'Pilih Pelatihan', description: 'Silakan pilih pelatihan terlebih dahulu', variant: 'destructive' })
+      return
+    }
     setLoading(true)
+    setFetched(true)
     try {
-      const params = new URLSearchParams()
-      params.set('page', String(page))
-      params.set('pageSize', String(pageSize))
+      const params = new URLSearchParams({ pelatihanId: selectedPelatihan })
       if (search) params.set('search', search)
-      if (filterUjiId) params.set('ujiId', filterUjiId)
-      if (filterPelatihan) params.set('pelatihan', filterPelatihan)
-
-      const res = await fetch(`/api/uji-kompetensi/biodata-peserta?${params.toString()}`, {
-        credentials: 'same-origin',
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Gagal memuat data' }))
-        throw new Error(err.error || 'Gagal memuat data')
-      }
+      const res = await fetch(`/api/uji-kompetensi/biodata-peserta?${params.toString()}`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal memuat data')
       const json = await res.json()
-      setData(json.data)
-      setTotal(json.total)
+      setData(json.data || [])
     } catch (e) {
       toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search, filterUjiId, filterPelatihan, toast])
+  }
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  // Filter search (client-side)
+  const filteredData = search
+    ? data.filter((d) =>
+        d.nama.toLowerCase().includes(search.toLowerCase()) ||
+        d.nip.includes(search) ||
+        (d.instansi || '').toLowerCase().includes(search.toLowerCase())
+      )
+    : data
 
-  // Fetch uji kompetensi list for filter
-  useEffect(() => {
-    fetch('/api/uji-kompetensi?pageSize=100', { credentials: 'same-origin' })
-      .then((r) => r.json())
-      .then((json) => setUjiList((json.data || []).map((u: any) => ({ id: u.id, kode: u.kode, skemaSertifikasi: u.skemaSertifikasi, tanggalUji: u.tanggalUji }))))
-      .catch(() => {})
-  }, [])
-
-  // Extract unique pelatihan from data
-  useEffect(() => {
-    if (data.length > 0) {
-      const names = [...new Set(data.map((r) => r.namaPelatihan).filter(Boolean))].sort()
-      setPelatihanOptions(names)
+  // Fetch detail
+  const fetchDetail = useCallback(async (id: string) => {
+    setDetailLoading(true)
+    try {
+      const res = await fetch(`/api/pendaftaran/${id}`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const json = await res.json()
+      setDetail(json)
+    } catch (e) {
+      toast({ title: 'Gagal', description: 'Gagal memuat detail', variant: 'destructive' })
+    } finally {
+      setDetailLoading(false)
     }
-  }, [data])
+  }, [toast])
 
-  const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleUjiFilter = (v: string) => { setFilterUjiId(v === 'all' ? '' : v); setPage(1) }
-  const handlePelatihanFilter = (v: string) => { setFilterPelatihan(v === 'all' ? '' : v); setPage(1) }
-  const handleReset = () => {
-    setSearch('')
-    setFilterUjiId('')
-    setFilterPelatihan('')
-    setPage(1)
+  // Open detail
+  const handleRowClick = (item: BiodataPesertaItem) => {
+    setSelectedId(item.id)
+    setDetail(null)
+    fetchDetail(item.id)
   }
 
-  const openDetail = (row: BiodataPesertaRow) => {
-    setSelectedRow(row)
-    setDetailOpen(true)
+  // Download dokumen
+  const handleDownloadDokumen = async (id: string, tipe: string, label: string) => {
+    if (!id || !tipe) {
+      toast({ title: 'Gagal mengunduh', description: 'ID atau tipe dokumen tidak valid', variant: 'destructive' })
+      return
+    }
+    try {
+      const res = await fetch(`/api/pendaftaran/${id}/dokumen/${tipe}`, { credentials: 'same-origin' })
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`
+        try { const err = await res.json(); errMsg = err.error || errMsg } catch {}
+        throw new Error(errMsg)
+      }
+      const blob = await res.blob()
+      if (blob.size === 0) throw new Error('File kosong')
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${label.replace(/\s+/g, '_')}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      toast({ title: 'Gagal mengunduh', description: (e as Error).message, variant: 'destructive' })
+    }
   }
 
-  // Stats
-  const totalTerhubung = data.filter((r) => r.jadwalUji).length
-  const totalBelumTerhubung = data.filter((r) => !r.jadwalUji).length
+  // Detail mode
+  if (selectedId && (detail || detailLoading)) {
+    if (detailLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0F4C81]" />
+          <p className="text-sm text-slate-500">Memuat detail pendaftaran...</p>
+        </div>
+      )
+    }
+    if (!detail) return null
 
-  const KELULUSAN_MAP: Record<string, { label: string; cls: string }> = {
-    LULUS: { label: 'Lulus', cls: 'bg-green-100 text-[#195737] border-[#86EFAC]' },
-    TIDAK_LULUS: { label: 'Tidak Lulus', cls: 'bg-red-100 text-red-700 border-red-200' },
-    BELUM: { label: 'Belum', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
+    const StatusIcon = BIODATA_STATUS_ICON[detail.status] || AlertCircle
+    const detailSections = [
+      { title: 'Data Pribadi', fields: [
+        { label: 'Nama Lengkap', value: detail.nama },
+        { label: 'NIP', value: detail.nip },
+        { label: 'Jenis Kelamin', value: detail.jenisKelamin === 'L' ? 'Laki-laki' : detail.jenisKelamin === 'P' ? 'Perempuan' : '-' },
+        { label: 'Pangkat/Golongan', value: detail.pangkatGolongan },
+        { label: 'Tempat Lahir', value: detail.tempatLahir },
+        { label: 'Tanggal Lahir', value: detail.tanggalLahir },
+      ]},
+      { title: 'Jabatan & Instansi', fields: [
+        { label: 'Jabatan', value: detail.jabatan },
+        { label: 'Unit Kerja', value: detail.unitKerja },
+        { label: 'Instansi', value: detail.instansi },
+      ]},
+      { title: 'Kontak & Rekening', fields: [
+        { label: 'No. HP', value: detail.nomorHP },
+        { label: 'No. REK Bank Aceh', value: detail.nomorRekening },
+        { label: 'NPWP', value: detail.npwp },
+      ]},
+      { title: 'Pelatihan', fields: [
+        { label: 'Nama Pelatihan', value: detail.pelatihan },
+        { label: 'Kategori', value: detail.pelatihanKategori },
+        { label: 'Metode', value: detail.pelatihanMetode },
+        { label: 'Tanggal Daftar', value: formatTanggal(detail.createdAt) },
+      ]},
+    ]
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => { setSelectedId(''); setDetail(null) }}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Detail Pendaftaran</h2>
+              <p className="text-sm text-slate-500">Biodata & dokumen peserta uji kompetensi</p>
+            </div>
+          </div>
+          <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium', BIODATA_STATUS_STYLE[detail.status])}>
+            <StatusIcon className="w-4 h-4" />
+            {detail.status === 'MENUNGGU' ? 'Menunggu' : detail.status === 'DITERIMA' ? 'Diterima' : 'Ditolak'}
+          </span>
+        </div>
+
+        {/* Biodata cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {detailSections.map((section) => (
+            <Card key={section.title} className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold text-slate-900">{section.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2.5">
+                  {section.fields.map((f) => (
+                    <div key={f.label} className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-3">
+                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide sm:w-36 sm:flex-shrink-0">{f.label}</span>
+                      <span className="text-sm text-slate-700">{f.value || '-'}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Catatan Admin */}
+        {detail.catatanAdmin && (
+          <Card className="border-amber-200 bg-amber-50/50 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Catatan Admin</p>
+                  <p className="text-sm text-amber-800 mt-1">{detail.catatanAdmin}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dokumen */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-slate-900">
+              Dokumen Unggahan ({detail.dokumen?.length || 0}/4)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!detail.dokumen || detail.dokumen.length === 0 ? (
+              <div className="text-center py-10">
+                <FileText className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm text-slate-400">Belum ada dokumen yang diunggah</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {detail.dokumen.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-lg bg-[#195737]/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-4 h-4 text-[#195737]" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">{TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe}</p>
+                        <p className="text-xs text-slate-400">{doc.namaFile} • {doc.ukuran}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline" size="sm"
+                      onClick={() => handleDownloadDokumen(detail.id, doc.tipe, TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe)}
+                      className="flex-shrink-0 h-8 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline ml-1">Unduh</span>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
-  const PENDAFTARAN_MAP: Record<string, { label: string; cls: string }> = {
-    MENUNGGU: { label: 'Menunggu', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-    DITERIMA: { label: 'Diterima', cls: 'bg-green-100 text-[#195737] border-[#86EFAC]' },
-    DITOLAK: { label: 'Ditolak', cls: 'bg-red-100 text-red-700 border-red-200' },
-  }
+
+  // =============================================
+  // LIST MODE - Dropdown + Tombol Ambil Data
+  // =============================================
+  const selectedOption = pelatihanOptions.find((p) => p.id === selectedPelatihan)
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Biodata Peserta Uji Kompetensi" description="Data pendaftar portal yang disinkronkan dengan jadwal uji kompetensi">
+      <PageHeader title="Biodata Peserta Uji Kompetensi" description="Ambil data pendaftar portal berdasarkan pelatihan">
         <Button variant="outline" size="sm" onClick={() => setActiveView('uji-jadwal')} className="h-9">
           <ArrowRight className="w-4 h-4" /> Kembali ke Jadwal
         </Button>
       </PageHeader>
 
-      {/* Filter Bar */}
+      {/* Dropdown Pelatihan + Tombol Ambil Data */}
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">Cari Nama / NIP</Label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  className="pl-9 h-9 text-sm"
-                  placeholder="Ketik nama atau NIP..."
-                  value={search}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">Uji Kompetensi</Label>
-              <Select value={filterUjiId || 'all'} onValueChange={handleUjiFilter}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Semua jadwal..." /></SelectTrigger>
+          <div className="flex flex-col sm:flex-row gap-3 items-end">
+            <div className="flex-1 space-y-1.5">
+              <Label className="text-xs text-slate-500">Pilih Pelatihan</Label>
+              <Select value={selectedPelatihan} onValueChange={(v) => { setSelectedPelatihan(v); setFetched(false); setData([]) }}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder={loadingOptions ? 'Memuat...' : 'Pilih pelatihan...'} />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Semua Jadwal</SelectItem>
-                  {ujiList.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      <span className="font-mono text-xs">{u.kode}</span> — {u.skemaSertifikasi}
+                  {pelatihanOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate">{p.nama}</span>
+                        <span className="text-[10px] text-slate-400 ml-auto flex-shrink-0">({p.totalPendaftar} pendaftar)</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-slate-500">Pelatihan</Label>
-              <Select value={filterPelatihan || 'all'} onValueChange={handlePelatihanFilter}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Semua pelatihan..." /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Pelatihan</SelectItem>
-                  {pelatihanOptions.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Button variant="outline" size="sm" onClick={handleReset} className="h-9 w-full">
-                <RotateCcw className="w-4 h-4 mr-1" /> Reset Filter
-              </Button>
-            </div>
+            <Button
+              onClick={handleAmbilData}
+              disabled={!selectedPelatihan || loading}
+              className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
+            >
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}
+              Ambil Data Peserta
+            </Button>
           </div>
+          {selectedOption && (
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <span className="inline-flex items-center rounded-full bg-blue-50 text-[#0F4C81] px-2.5 py-1 font-medium">{selectedOption.kategori}</span>
+              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">{selectedOption.metode === 'TATAP_MUKA' ? 'Tatap Muka' : selectedOption.metode === 'DARING' ? 'Daring' : 'Blended'}</span>
+              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">{selectedOption.jp} JP</span>
+              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">Tahun {selectedOption.tahun}</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                <Users className="w-5 h-5 text-[#0F4C81]" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Total Pendaftar Diterima</p>
-                <p className="text-xl font-bold text-slate-900">{total}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                <Link2 className="w-5 h-5 text-[#195737]" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Terhubung Uji Kompetensi</p>
-                <p className="text-xl font-bold text-[#195737]">{totalTerhubung}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="border-slate-200 shadow-sm">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                <Unlink className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Belum Terhubung</p>
-                <p className="text-xl font-bold text-orange-600">{totalBelumTerhubung}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+      {/* Search bar (setelah data diambil) */}
+      {fetched && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            className="pl-9 h-9 text-sm"
+            placeholder="Cari nama, NIP, instansi..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      )}
 
-      {/* Data Table */}
-      {loading ? (
+      {/* Loading */}
+      {loading && (
         <Card className="border-slate-200 shadow-sm animate-pulse">
-          <CardContent className="p-5 h-72 bg-slate-100 rounded-xl" />
+          <CardContent className="p-5 h-48 bg-slate-100 rounded-xl" />
         </Card>
-      ) : data.length === 0 ? (
+      )}
+
+      {/* Empty state - belum ambil data */}
+      {!fetched && !loading && (
         <Card className="border-slate-200 shadow-sm">
-          <CardContent className="py-12 text-center text-slate-400">
-            <FileUser className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            Belum ada data pendaftar yang diterima
+          <CardContent className="py-16 text-center">
+            <FileUser className="w-12 h-12 mx-auto mb-3 text-slate-200" />
+            <p className="text-sm font-medium text-slate-500">Pilih pelatihan lalu klik "Ambil Data Peserta"</p>
+            <p className="text-xs text-slate-400 mt-1">Data pendaftar akan tampil sesuai pelatihan yang dipilih</p>
           </CardContent>
         </Card>
-      ) : (
+      )}
+
+      {/* Data kosong */}
+      {fetched && !loading && filteredData.length === 0 && (
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="py-16 text-center">
+            <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-200" />
+            <p className="text-sm font-medium text-slate-500">Belum ada pendaftar untuk pelatihan ini</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabel Data Pendaftar */}
+      {fetched && !loading && filteredData.length > 0 && (
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-2 border-b border-slate-100">
             <CardTitle className="text-base flex items-center gap-2">
-              <FileUser className="w-4 h-4 text-[#0F4C81]" /> Daftar Pendaftar ({data.length})
+              <FileUser className="w-4 h-4 text-[#0F4C81]" /> Data Pendaftar ({filteredData.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -1357,81 +1511,66 @@ function UjiBiodataPesertaView() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                   <tr>
-                    <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5 w-10">No</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Nama</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">NIP</th>
-                    <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5 w-12">L/P</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pangkat/Gol</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Jabatan</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Unit Kerja</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Pelatihan</th>
-                    <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5 w-24">Status</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Jadwal Uji</th>
-                    <th className="text-left text-xs font-semibold text-slate-600 uppercase px-3 py-2.5">Angkatan</th>
-                    <th className="text-center text-xs font-semibold text-slate-600 uppercase px-3 py-2.5 w-28">Kelulusan</th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">No</th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Nama / NIP</th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden lg:table-cell">Jabatan</th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden lg:table-cell">Unit Kerja</th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden xl:table-cell">Instansi</th>
+                    <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Dok</th>
+                    <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
+                    <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Tgl Daftar</th>
+                    <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase w-16">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {data.map((r, i) => {
-                    const kelulusanBadge = r.nilaiInfo?.statusKelulusan
-                      ? KELULUSAN_MAP[r.nilaiInfo.statusKelulusan] || { label: r.nilaiInfo.statusKelulusan, cls: 'bg-slate-100 text-slate-700 border-slate-200' }
-                      : null
-                    const pendaftaranBadge = PENDAFTARAN_MAP[r.status] || { label: r.status, cls: 'bg-slate-100 text-slate-700 border-slate-200' }
+                  {filteredData.map((item, idx) => {
+                    const Icon = BIODATA_STATUS_ICON[item.status] || AlertCircle
+                    const docComplete = item.jumlahDokumen >= 3
                     return (
                       <motion.tr
-                        key={r.id}
+                        key={item.id}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: i * 0.02 }}
+                        transition={{ delay: idx * 0.02 }}
                         className="hover:bg-slate-50/80 cursor-pointer"
-                        onClick={() => openDetail(r)}
+                        onClick={() => handleRowClick(item)}
                       >
-                        <td className="px-3 py-2.5 text-center text-xs text-slate-500">{(page - 1) * pageSize + i + 1}</td>
-                        <td className="px-3 py-2.5">
-                          <p className="font-medium text-slate-900 text-sm line-clamp-1">{r.nama}</p>
+                        <td className="py-2.5 px-3 text-slate-500 text-xs">{idx + 1}</td>
+                        <td className="py-2.5 px-3">
+                          <p className="font-medium text-slate-800 text-sm">{item.nama}</p>
+                          <p className="text-xs font-mono text-slate-400">{item.nip}</p>
                         </td>
-                        <td className="px-3 py-2.5">
-                          <span className="font-mono text-xs text-slate-600">{r.nip}</span>
+                        <td className="py-2.5 px-3 hidden lg:table-cell">
+                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">{item.jabatan || '-'}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-center">
-                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${
-                            r.jenisKelamin === 'L'
-                              ? 'bg-blue-50 text-blue-700'
-                              : r.jenisKelamin === 'P'
-                                ? 'bg-pink-50 text-pink-700'
-                                : 'bg-slate-100 text-slate-400'
-                          }`}>
-                            {r.jenisKelamin || '-'}
+                        <td className="py-2.5 px-3 hidden lg:table-cell">
+                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">{item.unitKerja || '-'}</span>
+                        </td>
+                        <td className="py-2.5 px-3 hidden xl:table-cell">
+                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">{item.instansi || '-'}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={cn(
+                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
+                            docComplete ? 'bg-green-50 text-[#195737]' : 'bg-amber-50 text-amber-600'
+                          )}>
+                            {docComplete ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                            {item.jumlahDokumen}/4
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 text-xs text-slate-600 line-clamp-1">{r.pangkatGolongan || '-'}</td>
-                        <td className="px-3 py-2.5 text-xs text-slate-600 line-clamp-1">{r.jabatan || '-'}</td>
-                        <td className="px-3 py-2.5 text-xs text-slate-600 line-clamp-1">{r.unitKerja || '-'}</td>
-                        <td className="px-3 py-2.5 text-xs text-slate-600 line-clamp-1">{r.namaPelatihan || '-'}</td>
-                        <td className="px-3 py-2.5 text-center">
-                          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${pendaftaranBadge.cls}`}>
-                            {pendaftaranBadge.label}
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium', BIODATA_STATUS_STYLE[item.status])}>
+                            <Icon className="w-3 h-3" />
+                            {item.status === 'MENUNGGU' ? 'Menunggu' : item.status === 'DITERIMA' ? 'Diterima' : 'Ditolak'}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5">
-                          {r.jadwalUji ? (
-                            <div>
-                              <p className="font-mono text-xs font-semibold text-[#0F4C81]">{r.jadwalUji.kode}</p>
-                              <p className="text-[10px] text-slate-400">{formatTanggalSingkat(r.jadwalUji.tanggalUji)}</p>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-300">-</span>
-                          )}
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="text-slate-500 text-xs whitespace-nowrap">{formatTanggalSingkat(item.createdAt)}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-xs text-slate-600 line-clamp-1">{r.angkatanInfo?.namaAngkatan || '-'}</td>
-                        <td className="px-3 py-2.5 text-center">
-                          {kelulusanBadge ? (
-                            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${kelulusanBadge.cls}`}>
-                              {kelulusanBadge.label}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-slate-300">-</span>
-                          )}
+                        <td className="py-2.5 px-3 text-center">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-500 hover:text-[#195737]" title="Lihat Detail">
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
                         </td>
                       </motion.tr>
                     )
@@ -1440,222 +1579,8 @@ function UjiBiodataPesertaView() {
               </table>
             </div>
           </CardContent>
-          {/* Pagination */}
-          <div className="px-4 py-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-            <span>Menampilkan {data.length} dari {total} data</span>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline" size="sm" className="h-7 px-2 text-xs"
-                disabled={page <= 1}
-                onClick={() => setPage(page - 1)}
-              >Sebelumnya</Button>
-              {Array.from({ length: Math.ceil(total / pageSize) }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === Math.ceil(total / pageSize) || Math.abs(p - page) <= 1)
-                .map((p, idx, arr) => (
-                  <span key={p} className="contents">
-                    {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-slate-300">...</span>}
-                    <Button
-                      variant={p === page ? 'default' : 'outline'}
-                      size="sm" className={`h-7 w-7 p-0 text-xs ${p === page ? 'bg-[#195737] hover:bg-[#0F4227] text-white' : ''}`}
-                      onClick={() => setPage(p)}
-                    >{p}</Button>
-                  </span>
-                ))}
-              <Button
-                variant="outline" size="sm" className="h-7 px-2 text-xs"
-                disabled={page >= Math.ceil(total / pageSize)}
-                onClick={() => setPage(page + 1)}
-              >Selanjutnya</Button>
-            </div>
-          </div>
         </Card>
       )}
-
-      {/* Detail Dialog */}
-      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileUser className="w-5 h-5 text-[#0F4C81]" />
-              Detail Biodata Peserta
-            </DialogTitle>
-          </DialogHeader>
-          {selectedRow && (
-            <div className="space-y-5">
-              {/* Biodata Section */}
-              <div>
-                <h4 className="text-sm font-semibold text-[#0F4C81] mb-3 flex items-center gap-2">
-                  <Users className="w-4 h-4" /> Biodata Pendaftar
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Nama</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.nama}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">NIP</span>
-                    <span className="font-mono font-medium text-slate-900">: {selectedRow.nip}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Jenis Kelamin</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.jenisKelamin === 'L' ? 'Laki-laki' : selectedRow.jenisKelamin === 'P' ? 'Perempuan' : '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Pangkat/Golongan</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.pangkatGolongan || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Tempat Lahir</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.tempatLahir || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Tanggal Lahir</span>
-                    <span className="font-medium text-slate-900">: {formatTanggal(selectedRow.tanggalLahir)}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Jabatan</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.jabatan || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Unit Kerja</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.unitKerja || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Instansi</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.instansi || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">No. HP</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.nomorHP || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Pelatihan</span>
-                    <span className="font-medium text-slate-900">: {selectedRow.namaPelatihan || '-'}</span>
-                  </div>
-                  <div className="flex justify-between sm:justify-start gap-2">
-                    <span className="text-slate-500 flex-shrink-0">Tgl Daftar</span>
-                    <span className="font-medium text-slate-900">: {formatTanggal(selectedRow.createdAt)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Angkatan Section */}
-              {selectedRow.angkatanInfo && (
-                <div>
-                  <h4 className="text-sm font-semibold text-[#195737] mb-3 flex items-center gap-2">
-                    <Link2 className="w-4 h-4" /> Info Angkatan
-                  </h4>
-                  <div className="bg-green-50/50 border border-[#86EFAC]/50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Angkatan</span>
-                        <span className="font-medium text-slate-900">: {selectedRow.angkatanInfo.namaAngkatan}</span>
-                      </div>
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Status</span>
-                        <span className="font-medium text-slate-900">: <StatusBadge status={selectedRow.angkatanInfo.status} /></span>
-                      </div>
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Pelatihan</span>
-                        <span className="font-medium text-slate-900">: {selectedRow.angkatanInfo.pelatihan || '-'}</span>
-                      </div>
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Periode</span>
-                        <span className="font-medium text-slate-900">: {formatTanggalSingkat(selectedRow.angkatanInfo.tanggalMulai)} — {formatTanggalSingkat(selectedRow.angkatanInfo.tanggalSelesai)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Uji Kompetensi Section */}
-              {selectedRow.jadwalUji && (
-                <div>
-                  <h4 className="text-sm font-semibold text-[#0F4C81] mb-3 flex items-center gap-2">
-                    <Award className="w-4 h-4" /> Jadwal Uji Kompetensi
-                  </h4>
-                  <div className="bg-blue-50/50 border border-blue-200/50 rounded-lg p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Kode Uji</span>
-                        <span className="font-mono font-semibold text-[#0F4C81]">: {selectedRow.jadwalUji.kode}</span>
-                      </div>
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Tanggal</span>
-                        <span className="font-medium text-slate-900">: {formatTanggal(selectedRow.jadwalUji.tanggalUji)}</span>
-                      </div>
-                      <div className="flex justify-between sm:justify-start gap-2 sm:col-span-2">
-                        <span className="text-slate-500 flex-shrink-0">Skema Sertifikasi</span>
-                        <span className="font-medium text-slate-900">: {selectedRow.jadwalUji.skemaSertifikasi}</span>
-                      </div>
-                      <div className="flex justify-between sm:justify-start gap-2">
-                        <span className="text-slate-500 flex-shrink-0">Status Uji</span>
-                        <span className="font-medium text-slate-900">: <StatusBadge status={selectedRow.jadwalUji.status} /></span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Nilai Section */}
-              {selectedRow.nilaiInfo && (
-                <div>
-                  <h4 className="text-sm font-semibold text-[#195737] mb-3 flex items-center gap-2">
-                    <ClipboardCheck className="w-4 h-4" /> Nilai / Kelulusan
-                  </h4>
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-400 mb-1">Pre Test</p>
-                        <p className="text-lg font-bold text-slate-700">{selectedRow.nilaiInfo.nilaiPreTest ?? '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-400 mb-1">Post Test</p>
-                        <p className="text-lg font-bold text-slate-700">{selectedRow.nilaiInfo.nilaiPostTest ?? '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-400 mb-1">Praktik</p>
-                        <p className="text-lg font-bold text-slate-700">{selectedRow.nilaiInfo.nilaiPraktik ?? '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-400 mb-1">Teori</p>
-                        <p className="text-lg font-bold text-slate-700">{selectedRow.nilaiInfo.nilaiTeori ?? '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase text-slate-400 mb-1">Nilai Akhir</p>
-                        <p className={`text-lg font-bold ${
-                          (selectedRow.nilaiInfo.nilaiAkhir ?? 0) >= 70 ? 'text-[#198754]' : 'text-red-600'
-                        }`}>
-                          {selectedRow.nilaiInfo.nilaiAkhir ?? '-'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-slate-200 flex justify-center">
-                      <StatusBadge status={selectedRow.nilaiInfo.statusKelulusan} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Not linked notice */}
-              {!selectedRow.angkatanInfo && !selectedRow.jadwalUji && (
-                <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
-                  <Unlink className="w-5 h-5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Belum Terhubung dengan Uji Kompetensi</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Peserta ini belum memiliki data angkatan atau jadwal uji kompetensi di sistem.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline" className="h-9">Tutup</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
