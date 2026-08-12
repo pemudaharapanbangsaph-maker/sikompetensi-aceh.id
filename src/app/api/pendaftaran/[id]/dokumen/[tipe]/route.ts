@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth'
 import * as fs from 'fs'
 import * as path from 'path'
 
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads', 'pendaftaran')
+const PERSISTENT_DIR = '/data/uploads/pendaftaran'
 
 export async function GET(
   _req: Request,
@@ -21,33 +21,29 @@ export async function GET(
     })
     if (!doc) return NextResponse.json({ error: 'Dokumen tidak ditemukan' }, { status: 404 })
 
-    // Bangun ulang path dari cwd sekarang (bukan dari path yang tersimpan di DB)
-    // Karena di Railway, cwd beda dengan saat upload di local
-    let resolvedPath = doc.filePath
-    if (!fs.existsSync(resolvedPath)) {
-      // Coba cari berdasarkan nama file yang sudah dikenal: {pendaftaranId}_{tipe}.pdf
-      const expectedName = `${id}_${tipe}.pdf`
-      resolvedPath = path.join(UPLOAD_DIR, expectedName)
-      if (!fs.existsSync(resolvedPath)) {
-        // Coba cari semua file yang cocok di folder upload
-        if (fs.existsSync(UPLOAD_DIR)) {
-          const files = fs.readdirSync(UPLOAD_DIR)
-          const match = files.find(f => f.startsWith(`${id}_${tipe}`))
-          if (match) resolvedPath = path.join(UPLOAD_DIR, match)
-        }
+    // Cek file di path tersimpan, lalu fallback ke persistent volume
+    let filePath = doc.filePath
+    if (!fs.existsSync(filePath)) {
+      const ext = path.extname(doc.namaFile) || '.pdf'
+      const fallbackPath = path.join(PERSISTENT_DIR, `${id}_${tipe}${ext}`)
+      if (fs.existsSync(fallbackPath)) {
+        filePath = fallbackPath
+        // Update path di DB supaya next time langsung ketemu
+        await db.dokumenPendaftaran.update({
+          where: { id: doc.id },
+          data: { filePath: fallbackPath },
+        })
       }
     }
 
-    if (!fs.existsSync(resolvedPath)) {
+    if (!fs.existsSync(filePath)) {
       return NextResponse.json({ error: 'File tidak ditemukan di server' }, { status: 404 })
     }
 
-    const fileBuffer = fs.readFileSync(resolvedPath)
-    const ext = path.extname(resolvedPath).toLowerCase()
-    const contentType = ext === '.pdf' ? 'application/pdf' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.png' ? 'image/png' : 'application/octet-stream'
+    const fileBuffer = fs.readFileSync(filePath)
     return new NextResponse(fileBuffer, {
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': 'application/pdf',
         'Content-Disposition': `inline; filename="${doc.namaFile}"`,
       },
     })
