@@ -678,12 +678,17 @@ function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, on
 // FULL-SCREEN: FORM PENDAFTARAN PELATIHAN
 // ==========================================================================
 
-const DOKUMEN_TYPES = [
+const DOKUMEN_WAJIB = [
   { tipe: 'KTP', label: 'KTP', desc: 'Kartu Tanda Penduduk' },
-  { tipe: 'SURAT_TUGAS', label: 'Surat Tugas', desc: 'Surat tugas dari instansi' },
   { tipe: 'NPWP', label: 'NPWP', desc: 'Kartu Nomor Pokok Wajib Pajak' },
   { tipe: 'REK_BANK', label: 'REK Bank Aceh', desc: 'Bukti rekening Bank Aceh' },
 ]
+
+const DOKUMEN_OPSIONAL = [
+  { tipe: 'SURAT_TUGAS', label: 'Surat Tugas', desc: 'Surat tugas dari instansi (opsional)' },
+]
+
+const ALL_DOKUMEN = [...DOKUMEN_WAJIB, ...DOKUMEN_OPSIONAL]
 
 interface PelatihanOption { id: string; nama: string; kode: string; kategori?: string; jp?: number; metode?: string; prioritas?: string; tahun?: number }
 
@@ -691,7 +696,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false)
   const [pelatihanList, setPelatihanList] = useState<PelatihanOption[]>([])
   const [form, setForm] = useState({
-    nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
+    nama: '', nip: '', jenisKelamin: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
     jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
   })
   const [files, setFiles] = useState<Record<string, File>>({})
@@ -719,6 +724,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
 
   const requiredFields: Record<string, string> = {
     nama: 'Nama lengkap wajib diisi',
+    jenisKelamin: 'Jenis Kelamin wajib dipilih',
     pangkatGolongan: 'Pangkat/Golongan wajib diisi',
     tempatLahir: 'Tempat lahir wajib diisi',
     tanggalLahir: 'Tanggal lahir wajib diisi',
@@ -748,11 +754,14 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   }
 
   const errorCount = Object.keys(fieldErrors).length
-  const docsMissing = DOKUMEN_TYPES.filter((d) => !files[d.tipe]).length
+  const docsMissing = DOKUMEN_WAJIB.filter((d) => !files[d.tipe]).length
 
   // Cek semua field form terisi (tanpa perlu touched)
-  const formComplete = Object.keys(requiredFields).every((k) => form[k as keyof typeof form].trim() !== '') && /^\d{18}$/.test(form.nip.trim())
-  const docsComplete = DOKUMEN_TYPES.every((d) => files[d.tipe])
+  const formComplete = Object.keys(requiredFields).every((k) => {
+    if (k === 'jenisKelamin') return !!form.jenisKelamin
+    return form[k as keyof typeof form].trim() !== ''
+  }) && /^\d{18}$/.test(form.nip.trim())
+  const docsComplete = DOKUMEN_WAJIB.every((d) => files[d.tipe])
   const canSubmit = formComplete && docsComplete
 
   const handleFileSelect = (tipe: string, file: File | undefined) => {
@@ -777,9 +786,11 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
         setStep('form'); setLoading(false); return
       }
       const regId = data.id
-      for (let i = 0; i < DOKUMEN_TYPES.length; i++) {
-        const d = DOKUMEN_TYPES[i]; const file = files[d.tipe]; if (!file) continue
-        setUploadProgress(`Mengupload ${d.label}... (${i + 1}/${DOKUMEN_TYPES.length})`)
+      // Upload dokumen wajib + opsional yang sudah dipilih
+      const docsToUpload = ALL_DOKUMEN.filter((d) => files[d.tipe])
+      for (let i = 0; i < docsToUpload.length; i++) {
+        const d = docsToUpload[i]; const file = files[d.tipe]; if (!file) continue
+        setUploadProgress(`Mengupload ${d.label}... (${i + 1}/${docsToUpload.length})`)
         const fd = new FormData(); fd.append('pendaftaranId', regId); fd.append('tipe', d.tipe); fd.append('file', file)
         const ures = await fetch('/api/portal/pendaftaran/upload-dokumen', { method: 'POST', body: fd })
         if (!ures.ok) { const udata = await ures.json().catch(() => ({})); setError(`Gagal upload ${d.label}: ${udata.error || 'unknown error'}`); setStep('form'); setLoading(false); return }
@@ -796,7 +807,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
     }`
 
   const req = <span className="text-red-500 font-bold"> *</span>
-  const filledCount = DOKUMEN_TYPES.filter((d) => files[d.tipe]).length
+  const filledCount = ALL_DOKUMEN.filter((d) => files[d.tipe]).length
 
   // Helper: render field with label, input, and error
   const renderField = (k: string, label: string, opts?: { type?: string; placeholder?: string; maxLength?: number; extraCls?: string; colSpan?: boolean }) => {
@@ -893,11 +904,35 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && (fieldErrors.nama || fieldErrors.nip || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><User className="w-4 h-4 text-[#195737]" /> Data Pribadi <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
-                {attempted && !(fieldErrors.nama || fieldErrors.nip || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {attempted && !(fieldErrors.nama || fieldErrors.nip || fieldErrors.jenisKelamin || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 {renderField('nama', 'Nama Lengkap', { placeholder: 'Masukkan nama lengkap beserta gelar' })}
                 {renderField('nip', 'NIP', { placeholder: '18 digit NIP', maxLength: 18, extraCls: 'font-mono' })}
+                <div className="space-y-1.5">
+                  <Label className={`text-xs font-semibold transition-colors ${showErr('jenisKelamin') && fieldErrors.jenisKelamin ? 'text-red-600' : 'text-slate-600'}`}>
+                    Jenis Kelamin{req}
+                  </Label>
+                  <select
+                    value={form.jenisKelamin}
+                    onChange={handleChange('jenisKelamin')}
+                    onBlur={handleBlur('jenisKelamin')}
+                    className={`w-full h-11 bg-white rounded-lg text-sm px-3 transition-colors ${
+                      showErr('jenisKelamin') && fieldErrors.jenisKelamin
+                        ? 'border-2 border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                        : 'border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20'
+                    } ${!form.jenisKelamin ? 'text-slate-400' : 'text-slate-900'}`}
+                  >
+                    <option value="">-- Pilih --</option>
+                    <option value="L">Laki-laki</option>
+                    <option value="P">Perempuan</option>
+                  </select>
+                  {showErr('jenisKelamin') && fieldErrors.jenisKelamin && (
+                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 flex-shrink-0" /> {fieldErrors.jenisKelamin}
+                    </motion.p>
+                  )}
+                </div>
                 {renderField('pangkatGolongan', 'Pangkat/Golongan', { placeholder: 'Contoh: III/c' })}
                 {renderField('tempatLahir', 'Tempat Lahir', { placeholder: 'Kota/Kabupaten' })}
                 {renderField('tanggalLahir', 'Tanggal Lahir', { type: 'date' })}
@@ -957,24 +992,25 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
               </div>
             </div>
 
-            {/* === SECTION 4: Upload Dokumen Wajib === */}
+            {/* === SECTION 4: Upload Dokumen === */}
             <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && docsMissing > 0 ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen Pendukung <span className="text-xs font-normal text-slate-400">(wajib upload semua)</span></h3>
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen <span className="text-xs font-normal text-slate-400">({DOKUMEN_WAJIB.length} wajib + {DOKUMEN_OPSIONAL.length} opsional)</span></h3>
                 {attempted && docsMissing === 0 && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-                <strong>Petunjuk:</strong> Upload semua dokumen dalam format <strong>PDF</strong> (maks. 5MB per file).
+                <strong>Petunjuk:</strong> Upload dokumen dalam format <strong>PDF</strong> (maks. 5MB per file). Dokumen bertanda <span className="text-red-500 font-bold">*</span> wajib diupload.
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {DOKUMEN_TYPES.map((d) => {
+              {/* Dokumen Wajib */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {DOKUMEN_WAJIB.map((d) => {
                   const hasFile = !!files[d.tipe]
                   const isMissing = attempted && !hasFile
                   return (
-                    <div key={d.tipe} className={`rounded-xl border-2 p-4 space-y-2 transition-all ${hasFile ? 'border-green-300 bg-green-50/50' : isMissing ? 'border-red-300 bg-red-50/50' : 'border-slate-200 bg-slate-50/50'}`}>
+                    <div key={d.tipe} className={`rounded-xl border-2 p-4 space-y-2 transition-all ${hasFile ? 'border-green-300 bg-green-50/50' : isMissing ? 'border-red-300 bg-red-50/50' : 'border-amber-200 bg-amber-50/30'}`}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className={`text-sm font-bold ${isMissing ? 'text-red-700' : 'text-slate-800'}`}>{d.label}{req}</h4>
+                          <h4 className={`text-sm font-bold ${isMissing ? 'text-red-700' : 'text-slate-800'}`}>{d.label}<span className="text-red-500 font-bold"> *</span></h4>
                           <p className="text-xs text-slate-500 mt-0.5">{d.desc}</p>
                         </div>
                         {hasFile ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : isMissing ? <AlertCircle className="w-5 h-5 text-red-400" /> : null}
@@ -989,7 +1025,32 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                   )
                 })}
               </div>
-              <p className={`text-xs text-center ${attempted && docsMissing > 0 ? 'text-red-500 font-semibold' : 'text-slate-400'}`}>Dokumen terupload: {filledCount}/{DOKUMEN_TYPES.length}</p>
+              {/* Dokumen Opsional */}
+              <div className="pt-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Dokumen Opsional</p>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {DOKUMEN_OPSIONAL.map((d) => {
+                    const hasFile = !!files[d.tipe]
+                    return (
+                      <div key={d.tipe} className={`rounded-xl border-2 p-4 space-y-2 transition-all ${hasFile ? 'border-green-300 bg-green-50/50' : 'border-slate-200 bg-slate-50/30'}`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-800">{d.label} <span className="text-slate-400 font-normal">(opsional)</span></h4>
+                            <p className="text-xs text-slate-500 mt-0.5">{d.desc}</p>
+                          </div>
+                          {hasFile && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                        </div>
+                        <label className={`flex items-center justify-center gap-2 w-full h-11 rounded-lg border-2 border-dashed text-sm font-medium cursor-pointer transition-colors ${hasFile ? 'border-green-400 text-green-700 bg-green-50 hover:bg-green-100' : 'border-slate-300 text-slate-500 hover:bg-slate-50 hover:border-slate-400'}`}>
+                          <UploadIcon className="w-4 h-4" />
+                          {hasFile ? files[d.tipe].name : 'Pilih File PDF (opsional)'}
+                          <input type="file" accept=".pdf" disabled={loading} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; handleFileSelect(d.tipe, f) }} />
+                        </label>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <p className={`text-xs text-center ${attempted && docsMissing > 0 ? 'text-red-500 font-semibold' : 'text-slate-400'}`}>Dokumen terupload: {filledCount}/{ALL_DOKUMEN.length} (wajib: {DOKUMEN_WAJIB.filter((d) => files[d.tipe]).length}/{DOKUMEN_WAJIB.length})</p>
             </div>
 
             {/* === TOMBOL DAFTAR === */}
@@ -1008,7 +1069,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 )}
               </button>
               {!canSubmit && !attempted && (
-                <p className="text-center text-xs text-slate-400 mt-3">Pastikan semua data form terisi dan {DOKUMEN_TYPES.length} dokumen PDF sudah diupload</p>
+                <p className="text-center text-xs text-slate-400 mt-3">Pastikan semua data form terisi dan {DOKUMEN_WAJIB.length} dokumen wajib PDF sudah diupload</p>
               )}
             </div>
           </form>
