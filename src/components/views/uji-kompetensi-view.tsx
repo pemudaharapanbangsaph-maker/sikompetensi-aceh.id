@@ -1154,27 +1154,72 @@ const BIODATA_STATUS_STYLE: Record<string, string> = {
   DITOLAK: 'bg-red-100 text-red-700 border-red-200',
 }
 
+const BIODATA_LS_KEY = 'sikompetensi_biodata_peserta_state'
+
+interface BiodataPesertaState {
+  selectedPelatihan: string
+  locked: boolean
+  fetched: boolean
+  data: BiodataPesertaItem[]
+  search: string
+}
+
+function loadBiodataState(): BiodataPesertaState | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(BIODATA_LS_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as BiodataPesertaState
+  } catch {
+    return null
+  }
+}
+
+function saveBiodataState(state: BiodataPesertaState) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(BIODATA_LS_KEY, JSON.stringify(state))
+  } catch {
+    // ignore quota errors
+  }
+}
+
+function clearBiodataState() {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(BIODATA_LS_KEY)
+}
+
 function UjiBiodataPesertaView() {
   const { setActiveView } = useNavStore()
   const { toast } = useToast()
 
+  // Restore persisted state from localStorage
+  const savedState = typeof window !== 'undefined' ? loadBiodataState() : null
+
   // Pelatihan dropdown
   const [pelatihanOptions, setPelatihanOptions] = useState<PelatihanOption[]>([])
-  const [selectedPelatihan, setSelectedPelatihan] = useState('')
+  const [selectedPelatihan, setSelectedPelatihan] = useState(savedState?.selectedPelatihan || '')
   const [loadingOptions, setLoadingOptions] = useState(true)
 
   // Data table
-  const [data, setData] = useState<BiodataPesertaItem[]>([])
+  const [data, setData] = useState<BiodataPesertaItem[]>(savedState?.data || [])
   const [loading, setLoading] = useState(false)
-  const [fetched, setFetched] = useState(false)
-  const [search, setSearch] = useState('')
-  const [locked, setLocked] = useState(false)
+  const [fetched, setFetched] = useState(savedState?.fetched || false)
+  const [search, setSearch] = useState(savedState?.search || '')
+  const [locked, setLocked] = useState(savedState?.locked || false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
 
   // Detail
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<BiodataDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+
+  // Persist state to localStorage whenever relevant state changes
+  useEffect(() => {
+    if (locked && fetched && selectedPelatihan) {
+      saveBiodataState({ selectedPelatihan, locked, fetched, data, search })
+    }
+  }, [locked, fetched, selectedPelatihan, data, search])
 
   // Fetch pelatihan options on mount
   useEffect(() => {
@@ -1415,6 +1460,7 @@ function UjiBiodataPesertaView() {
     setSearch('')
     setLocked(false)
     setShowUnlockDialog(false)
+    clearBiodataState()
   }
 
   // =============================================
