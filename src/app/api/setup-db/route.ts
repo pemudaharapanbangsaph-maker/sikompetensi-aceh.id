@@ -35,7 +35,7 @@ export async function GET() {
       try { db.pragma('wal_checkpoint(TRUNCATE)') } catch { /* ignore */ }
       db.pragma('journal_mode = DELETE')
     }
-}
+  }
 
     // ========== MIGRATIONS ==========
 
