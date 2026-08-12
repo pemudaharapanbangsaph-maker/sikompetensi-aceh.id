@@ -91,7 +91,7 @@ export type ViewKey =
   | 'dashboard'
   | 'analisis' | 'analisis-input' | 'analisis-prioritas' | 'analisis-rekap'
   | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-angkatan' | 'pelatihan-kehadiran' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip'
-  | 'uji-jadwal' | 'uji-asesor' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
+  | 'uji-jadwal' | 'uji-asesor' | 'uji-biodata' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
   | 'peserta' | 'peserta-riwayat'
   | 'pendaftaran-list' | 'pendaftaran-dokumen'
   | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-kuesioner' | 'monitoring-rekap'
@@ -99,7 +99,6 @@ export type ViewKey =
   | 'user-data' | 'user-hak-akses' | 'user-log'
   | 'backup' | 'backup-restore' | 'backup-riwayat'
   | 'settings-profil' | 'settings-logo' | 'settings-login' | 'settings-audit'
-  | 'account-profil' | 'account-keamanan'
 
 interface NavigationState {
   activeView: ViewKey
