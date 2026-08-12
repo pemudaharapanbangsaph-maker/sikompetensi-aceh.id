@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     console.error('angkatan list error:', e)
     return NextResponse.json({ error: 'Gagal memuat data angkatan' }, { status: 500 })
   }
-
+}
 
 export async function POST(req: Request) {
   try {
