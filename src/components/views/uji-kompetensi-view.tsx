@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { cn } from '@/lib/utils'
 
 // ===========================================================================
 // CONSTANTS
