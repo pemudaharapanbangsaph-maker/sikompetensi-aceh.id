@@ -28,12 +28,7 @@ export async function GET() {
     }
 
     const db = new Database(dbPath)
-
-// FIX: Gunakan DELETE mode bukan WAL
-const currentMode = db.pragma('journal_mode') as string[]
-if (currentMode[0]?.journal_mode !== 'delete') {
-  try { db.pragma('wal_checkpoint(TRUNCATE)') } catch { /* ignore */ }
-  db.pragma('journal_mode = DELETE')
+    db.pragma('journal_mode = WAL')
 }
 
     // ========== MIGRATIONS ==========
