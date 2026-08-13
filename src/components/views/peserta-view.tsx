@@ -521,9 +521,9 @@ function PesertaRiwayatView() {
     )
   }, [pesertaList, searchTerm])
 
-  // Stats
-  const totalPelatihan = riwayat?.angkatan.length || 0
-  const totalUji = riwayat?.nilai.length || 0
+  // Stats — angkatan yang punya ujiKompetensi dihitung sebagai Uji Kompetensi, sisanya Pelatihan biasa
+  const totalPelatihan = (riwayat?.angkatan.filter((a) => !a.ujiKompetensi || a.ujiKompetensi.length === 0).length) || 0
+  const totalUji = (riwayat?.angkatan.filter((a) => a.ujiKompetensi && a.ujiKompetensi.length > 0).length) || 0
   const totalLulus = riwayat?.nilai.filter((n) => n.statusKelulusan === 'LULUS').length || 0
 
   return (
