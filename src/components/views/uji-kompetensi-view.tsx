@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -21,7 +24,7 @@ import {
 import {
   Pencil, Trash2, Plus, Save, X, Award, ClipboardCheck, BarChart3,
   CalendarDays, UserCheck, UserX, Percent, ArrowRight, Eye, Users, CheckCircle2,
-  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft, Lock,
+  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft, Lock, ChevronDown,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -93,6 +96,8 @@ function UjiJadwalDataTable() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [angkatanList, setAngkatanList] = useState<Angkatan[]>([])
+  const [asesorList, setAsesorList] = useState<Asesor[]>([])
+  const [selectedAsesorIds, setSelectedAsesorIds] = useState<string[]>([])
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -127,6 +132,7 @@ function UjiJadwalDataTable() {
 
   useEffect(() => {
     api.angkatan.listAll().then(setAngkatanList).catch(() => {})
+    api.asesor.listAll().then(setAsesorList).catch(() => {})
   }, [])
 
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
@@ -138,10 +144,11 @@ function UjiJadwalDataTable() {
   const openCreate = () => {
     setEditing(null)
     setForm({ ...EMPTY_FORM, tanggalUji: new Date().toISOString().slice(0, 10) })
+    setSelectedAsesorIds([])
     setDialogOpen(true)
   }
 
-  const openEdit = (item: UjiKompetensi) => {
+  const openEdit = async (item: UjiKompetensi) => {
     setEditing(item)
     setForm({
       kode: item.kode,
@@ -153,6 +160,13 @@ function UjiJadwalDataTable() {
       status: item.status,
       catatan: item.catatan || '',
     })
+    // Load asesor terkait dari detail API
+    try {
+      const detail = await api.ujiKompetensi.get(item.id)
+      setSelectedAsesorIds((detail as any).asesor ? (detail as any).asesor.map((a: Asesor) => a.id) : [])
+    } catch {
+      setSelectedAsesorIds(item.asesor?.map(a => a.id) || [])
+    }
     setDialogOpen(true)
   }
 
@@ -163,11 +177,12 @@ function UjiJadwalDataTable() {
     }
     setSaving(true)
     try {
-      const payload: Partial<UjiKompetensi> = {
+      const payload: Record<string, any> = {
         ...form,
         tanggalUji: form.tanggalUji ? new Date(form.tanggalUji).toISOString() : new Date().toISOString(),
         jumlahPeserta: Number(form.jumlahPeserta) || 0,
         angkatanId: form.angkatanId === 'none' || !form.angkatanId ? null : form.angkatanId,
+        asesorIds: selectedAsesorIds,
       }
       if (editing) {
         await api.ujiKompetensi.update(editing.id, payload)
@@ -219,7 +234,20 @@ function UjiJadwalDataTable() {
     { key: 'jumlahPeserta', header: 'Peserta', render: (r) => <span className="font-medium text-sm">{r.jumlahPeserta}</span> },
     {
       key: 'asesor', header: 'Asesor', render: (r) => (
-        <span className="text-xs text-slate-600">{r.asesor?.length || 0} orang</span>
+        <div className="min-w-[160px]">
+          {r.asesor && r.asesor.length > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              {r.asesor.map((a) => (
+                <span key={a.id} className="text-xs text-slate-700 flex items-center gap-1">
+                  <Award className="w-3 h-3 text-[#0F4C81] shrink-0" />
+                  {a.nama}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-xs text-slate-400 italic">Belum ada asesor</span>
+          )}
+        </div>
       ),
     },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
@@ -322,6 +350,75 @@ function UjiJadwalDataTable() {
                   {STATUS_UJI.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="sm:col-span-2 space-y-1.5">
+              <Label>Asesor</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    className="w-full h-auto min-h-[42px] justify-between font-normal"
+                  >
+                    <div className="flex flex-wrap gap-1 flex-1">
+                      {selectedAsesorIds.length > 0 ? (
+                        selectedAsesorIds.map((id) => {
+                          const a = asesorList.find((x) => x.id === id)
+                          return a ? (
+                            <Badge key={id} variant="secondary" className="text-xs bg-[#0F4C81]/10 text-[#0F4C81] border-[#0F4C81]/20">
+                              {a.nama}
+                              <button
+                                type="button"
+                                className="ml-1 hover:text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setSelectedAsesorIds((prev) => prev.filter((x) => x !== id))
+                                }}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </Badge>
+                          ) : null
+                        })
+                      ) : (
+                        <span className="text-slate-400">Pilih asesor...</span>
+                      )}
+                    </div>
+                    <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-2 max-h-60 overflow-y-auto" align="start">
+                  {asesorList.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-3">Belum ada data asesor</p>
+                  ) : (
+                    asesorList.filter((a) => a.status === 'AKTIF').map((a) => {
+                      const isSelected = selectedAsesorIds.includes(a.id)
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          className={cn(
+                            'w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm cursor-pointer hover:bg-slate-100 transition-colors text-left',
+                            isSelected && 'bg-[#0F4C81]/5'
+                          )}
+                          onClick={() => {
+                            setSelectedAsesorIds((prev) =>
+                              isSelected ? prev.filter((x) => x !== a.id) : [...prev, a.id]
+                            )
+                          }}
+                        >
+                          <Checkbox checked={isSelected} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-slate-800 truncate">{a.nama}</p>
+                            <p className="text-xs text-slate-400 truncate">{a.nip} · {a.bidangKeahlian}</p>
+                          </div>
+                        </button>
+                      )
+                    })
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="sm:col-span-2 space-y-1.5">
               <Label>Catatan</Label>
