@@ -21,7 +21,7 @@ import {
 import {
   Pencil, Trash2, Plus, Save, X, Award, ClipboardCheck, BarChart3,
   CalendarDays, UserCheck, UserX, Percent, ArrowRight, Eye, Users, CheckCircle2,
-  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft, Lock, RotateCcw,
+  Search, FileUser, FileText, Download, Clock, XCircle, AlertCircle, Loader2, ArrowLeft, Lock,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -1207,7 +1207,6 @@ function UjiBiodataPesertaView() {
   const [fetched, setFetched] = useState(savedState?.fetched || false)
   const [search, setSearch] = useState(savedState?.search || '')
   const [locked, setLocked] = useState(savedState?.locked || false)
-  const [showUnlockDialog, setShowUnlockDialog] = useState(false)
 
   // Detail
   const [selectedId, setSelectedId] = useState('')
@@ -1247,7 +1246,7 @@ function UjiBiodataPesertaView() {
       const json = await res.json()
       setData(json.data || [])
       setLocked(true)
-      toast({ title: 'Berhasil', description: `${(json.data || []).length} peserta ditemukan. Pelatihan terkunci.`, })
+      toast({ title: 'Berhasil', description: `${(json.data || []).length} peserta ditemukan.`, })
     } catch (e) {
       toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
     } finally {
@@ -1452,17 +1451,6 @@ function UjiBiodataPesertaView() {
     )
   }
 
-  // Reset / ganti pelatihan
-  const handleUnlock = () => {
-    setSelectedPelatihan('')
-    setData([])
-    setFetched(false)
-    setSearch('')
-    setLocked(false)
-    setShowUnlockDialog(false)
-    clearBiodataState()
-  }
-
   // =============================================
   // LIST MODE - Dropdown + Tombol Ambil Data
   // =============================================
@@ -1509,25 +1497,14 @@ function UjiBiodataPesertaView() {
                 </SelectContent>
               </Select>
             </div>
-            {!locked ? (
-              <Button
-                onClick={handleAmbilData}
-                disabled={!selectedPelatihan || loading}
-                className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
-              >
-                {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}
-                Ambil Data Peserta
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                onClick={() => setShowUnlockDialog(true)}
-                className="h-10 text-amber-600 border-amber-300 hover:bg-amber-50"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Ganti Pelatihan
-              </Button>
-            )}
+            <Button
+              onClick={handleAmbilData}
+              disabled={!selectedPelatihan || loading}
+              className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
+            >
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}
+              Ambil Data Peserta
+            </Button>
           </div>
           {selectedOption && (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -1539,24 +1516,6 @@ function UjiBiodataPesertaView() {
           )}
         </CardContent>
       </Card>
-
-      {/* Dialog konfirmasi ganti pelatihan */}
-      <AlertDialog open={showUnlockDialog} onOpenChange={setShowUnlockDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ganti Pelatihan?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Data peserta yang sudah diambil akan dihapus dan dropdown akan dibuka kembali. Apakah Anda yakin ingin mengganti pelatihan?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleUnlock} className="bg-amber-600 hover:bg-amber-700 text-white">
-              Ya, Ganti
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Search bar (setelah data diambil) */}
       {fetched && (
