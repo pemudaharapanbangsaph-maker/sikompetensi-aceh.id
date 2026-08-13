@@ -522,8 +522,10 @@ function PesertaRiwayatView() {
   }, [pesertaList, searchTerm])
 
   // Stats — angkatan yang punya ujiKompetensi dihitung sebagai Uji Kompetensi, sisanya Pelatihan biasa
-  const totalPelatihan = (riwayat?.angkatan.filter((a) => !a.ujiKompetensi || a.ujiKompetensi.length === 0).length) || 0
-  const totalUji = (riwayat?.angkatan.filter((a) => a.ujiKompetensi && a.ujiKompetensi.length > 0).length) || 0
+  const pelatihanBiasa = riwayat?.angkatan.filter((a) => !a.ujiKompetensi || a.ujiKompetensi.length === 0) || []
+  const angkatanUji = riwayat?.angkatan.filter((a) => a.ujiKompetensi && a.ujiKompetensi.length > 0) || []
+  const totalPelatihan = pelatihanBiasa.length
+  const totalUji = angkatanUji.length
   const totalLulus = riwayat?.nilai.filter((n) => n.statusKelulusan === 'LULUS').length || 0
 
   return (
@@ -671,7 +673,7 @@ function PesertaRiwayatView() {
           </Card>
 
           <div className="grid lg:grid-cols-2 gap-4">
-            {/* Riwayat Pelatihan */}
+            {/* Riwayat Pelatihan (hanya angkatan biasa, tanpa uji kompetensi) */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="pb-2 border-b border-slate-100">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -679,7 +681,7 @@ function PesertaRiwayatView() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {riwayat.angkatan.length === 0 ? (
+                {pelatihanBiasa.length === 0 ? (
                   <div className="py-10 text-center text-sm text-slate-400">
                     <GraduationCap className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                     Belum ada riwayat pelatihan
@@ -696,7 +698,7 @@ function PesertaRiwayatView() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {riwayat.angkatan.map((a, i) => (
+                        {pelatihanBiasa.map((a, i) => (
                           <motion.tr
                             key={a.id}
                             initial={{ opacity: 0, x: -6 }}
@@ -713,8 +715,8 @@ function PesertaRiwayatView() {
                               <p className="text-slate-400">s/d {formatTanggalSingkat(a.tanggalSelesai)}</p>
                             </td>
                             <td className="px-4 py-2.5 text-right">
-                              {a.peserta?.[0]?.nilaiAkhir != null ? (
-                                <span className="font-semibold text-[#0F4C81]">{a.peserta[0].nilaiAkhir}</span>
+                              {a.nilaiAkhir != null ? (
+                                <span className="font-semibold text-[#0F4C81]">{a.nilaiAkhir}</span>
                               ) : (
                                 <span className="text-slate-300">-</span>
                               )}
@@ -731,7 +733,7 @@ function PesertaRiwayatView() {
               </CardContent>
             </Card>
 
-            {/* Riwayat Uji Kompetensi */}
+            {/* Riwayat Uji Kompetensi (angkatan yang punya ujiKompetensi + nilai penilaian) */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="pb-2 border-b border-slate-100">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -739,7 +741,7 @@ function PesertaRiwayatView() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {riwayat.nilai.length === 0 ? (
+                {angkatanUji.length === 0 && riwayat.nilai.length === 0 ? (
                   <div className="py-10 text-center text-sm text-slate-400">
                     <Award className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                     Belum ada riwayat uji kompetensi
@@ -749,27 +751,59 @@ function PesertaRiwayatView() {
                     <table className="w-full text-sm">
                       <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
                         <tr>
-                          <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Kode Uji</th>
-                          <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Skema / Tanggal</th>
+                          <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Uji / Skema</th>
+                          <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Tanggal / Angkatan</th>
                           <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Nilai</th>
                           <th className="text-center text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
+                        {angkatanUji.map((a, i) => {
+                          const uji = a.ujiKompetensi?.[0]
+                          return (
+                            <motion.tr
+                              key={a.id}
+                              initial={{ opacity: 0, x: 6 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.2, delay: i * 0.03 }}
+                              className="hover:bg-slate-50/50"
+                            >
+                              <td className="px-4 py-2.5">
+                                <span className="font-mono text-xs font-semibold text-[#0F4C81]">{uji?.kode || a.pelatihan?.kode || '-'}</span>
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{uji?.skemaSertifikasi || a.pelatihan?.nama || '-'}</p>
+                              </td>
+                              <td className="px-4 py-2.5 text-xs text-slate-600">
+                                <p>{uji ? formatTanggalSingkat(uji.tanggalUji) : '-'}</p>
+                                <p className="text-slate-400">{a.namaAngkatan}</p>
+                              </td>
+                              <td className="px-4 py-2.5 text-right">
+                                {a.nilaiAkhir != null ? (
+                                  <span className="font-semibold text-[#0F4C81]">{a.nilaiAkhir}</span>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-2.5 text-center">
+                                <StatusBadge status={a.status} />
+                              </td>
+                            </motion.tr>
+                          )
+                        })}
                         {riwayat.nilai.map((n, i) => (
                           <motion.tr
                             key={n.id}
                             initial={{ opacity: 0, x: 6 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2, delay: i * 0.03 }}
+                            transition={{ duration: 0.2, delay: (angkatanUji.length + i) * 0.03 }}
                             className="hover:bg-slate-50/50"
                           >
                             <td className="px-4 py-2.5">
                               <span className="font-mono text-xs font-semibold text-[#0F4C81]">{n.ujiKompetensi?.kode || '-'}</span>
+                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{n.ujiKompetensi?.skemaSertifikasi || '-'}</p>
                             </td>
                             <td className="px-4 py-2.5 text-xs text-slate-600">
-                              <p className="line-clamp-1 text-slate-700">{n.ujiKompetensi?.skemaSertifikasi || '-'}</p>
-                              <p className="text-slate-400">{n.ujiKompetensi ? formatTanggalSingkat(n.ujiKompetensi.tanggalUji) : '-'}</p>
+                              <p>{n.ujiKompetensi ? formatTanggalSingkat(n.ujiKompetensi.tanggalUji) : '-'}</p>
+                              <p className="text-slate-400">Penilaian</p>
                             </td>
                             <td className="px-4 py-2.5 text-right">
                               {n.nilaiAkhir != null ? (
