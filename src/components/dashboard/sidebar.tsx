@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -32,12 +32,12 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'pelatihan-jadwal', label: 'Jadwal Pelatihan', view: 'pelatihan-jadwal', permission: 'pelatihan' },
       { key: 'pelatihan-data', label: 'Data Pelatihan', view: 'pelatihan', permission: 'pelatihan' },
-      { key: 'pelatihan-angkatan', label: 'Data Angkatan', view: 'pelatihan-angkatan', permission: 'pelatihan' },
       { key: 'pelatihan-peserta-kegiatan', label: 'Peserta Per Kegiatan', view: 'pelatihan-peserta-kegiatan', permission: 'pelatihan' },
       { key: 'pelatihan-arsip', label: 'Arsip Pelatihan', view: 'pelatihan-arsip', permission: 'pelatihan' },
     ],
   },
   { key: 'kehadiran', label: 'Kehadiran Peserta', icon: ClipboardCheck, view: 'kehadiran', permission: 'pelatihan' },
+  { key: 'angkatan', label: 'Data Angkatan', icon: UsersRound, view: 'angkatan', permission: 'pelatihan' },
   {
     key: 'uji', label: 'Uji Kompetensi', icon: Award, permission: 'uji_kompetensi',
     children: [
