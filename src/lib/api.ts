@@ -7,18 +7,10 @@ import type {
 const BASE = '/api'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  // Build headers: start with JSON default, merge any custom headers from options
-  const customHeaders = options?.headers || {}
-  const isFormData = options?.body instanceof FormData
-  const headers: Record<string, string> = isFormData
-    ? { ...(customHeaders as Record<string, string>) }
-    : { 'Content-Type': 'application/json', ...(customHeaders as Record<string, string>) }
-
-  const { headers: _ignored, ...restOptions } = options || {}
   const res = await fetch(`${BASE}${url}`, {
     credentials: 'same-origin',
-    ...restOptions,
-    headers,
+    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
+    ...options,
   })
   if (!res.ok) {
     let msg = `HTTP ${res.status}`
@@ -72,7 +64,7 @@ export const api = {
     create: (data: Partial<Peserta>) => request<Peserta>('/peserta', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: Partial<Peserta>) => request<Peserta>(`/peserta/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/peserta/${id}`, { method: 'DELETE' }),
-    riwayat: (id: string) => request<{ angkatan: (Angkatan & { pelatihan?: Pelatihan | null })[]; nilai: (Nilai & { ujiKompetensi?: UjiKompetensi | null })[] }>(`/peserta/${id}/riwayat`),
+    riwayat: (id: string) => request<{ angkatan: (Angkatan & { pelatihan?: Pelatihan | null; ujiKompetensi?: UjiKompetensi[] })[]; nilai: (Nilai & { ujiKompetensi?: UjiKompetensi | null })[] }>(`/peserta/${id}/riwayat`),
   },
 
   pelatihan: {
