@@ -90,7 +90,7 @@ export const useUIStore = create<UIState>((set) => ({
 export type ViewKey =
   | 'dashboard'
   | 'analisis' | 'analisis-input' | 'analisis-prioritas' | 'analisis-rekap'
-  | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-angkatan' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip' | 'kehadiran'
+  | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip' | 'kehadiran' | 'angkatan'
   | 'uji-jadwal' | 'uji-asesor' | 'uji-biodata' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
   | 'peserta' | 'peserta-riwayat'
   | 'pendaftaran-list' | 'pendaftaran-dokumen'
