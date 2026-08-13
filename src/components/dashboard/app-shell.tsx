@@ -45,7 +45,7 @@ function renderView(view: string): React.ReactNode {
     case 'pelatihan-arsip':
       return <PelatihanView />
     case 'pelatihan-angkatan':
-    case 'pelatihan-kehadiran':
+    case 'kehadiran':
     case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
     case 'uji-biodata':
