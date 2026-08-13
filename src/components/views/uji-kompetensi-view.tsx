@@ -160,7 +160,6 @@ function UjiJadwalDataTable() {
       status: item.status,
       catatan: item.catatan || '',
     })
-    // Load asesor terkait dari detail API
     try {
       const detail = await api.ujiKompetensi.get(item.id)
       setSelectedAsesorIds((detail as any).asesor ? (detail as any).asesor.map((a: Asesor) => a.id) : [])
@@ -535,7 +534,34 @@ function UjiPenilaianView() {
       try {
         const u = await api.ujiKompetensi.get(selectedId)
         if (cancelled) return
-        const mapped = (u.nilai || []).map(mapNilaiToRow)
+        // Build rows from angkatan peserta (not just from nilai)
+        const angkatanPeserta = (u.angkatan as any)?.peserta || []
+        const nilaiList = u.nilai || []
+        let mapped: NilaiRow[]
+        if (angkatanPeserta.length > 0) {
+          mapped = angkatanPeserta.map((ap: any, idx: number) => {
+            const existing = nilaiList.find((n: any) => n.pesertaId === ap.pesertaId)
+            if (existing) {
+              return mapNilaiToRow(existing)
+            }
+            // Peserta belum ada nilai — buat row baru
+            return {
+              id: `new_${ap.pesertaId}`,
+              pesertaId: ap.pesertaId,
+              pesertaNama: ap.peserta?.nama || '-',
+              pesertaNip: ap.peserta?.nip || '-',
+              nilaiPreTest: 0,
+              nilaiPostTest: 0,
+              nilaiPraktik: 0,
+              nilaiTeori: 0,
+              nilaiAkhir: null,
+              statusKelulusan: 'BELUM',
+            }
+          })
+        } else {
+          // Fallback: jika tidak ada angkatan, pakai nilai saja
+          mapped = nilaiList.map((n: any) => mapNilaiToRow(n))
+        }
         setRows(mapped)
         setOriginalRows(mapped)
       } catch (e) {
@@ -583,7 +609,7 @@ function UjiPenilaianView() {
     if (!row) return
     setSavingRow(id)
     try {
-      await api.ujiKompetensi.setNilai(selectedId, {
+      const saved = await api.ujiKompetensi.setNilai(selectedId, {
         pesertaId: row.pesertaId,
         nilaiPreTest: row.nilaiPreTest,
         nilaiPostTest: row.nilaiPostTest,
@@ -591,7 +617,11 @@ function UjiPenilaianView() {
         nilaiTeori: row.nilaiTeori,
         statusKelulusan: row.statusKelulusan,
       })
-      setOriginalRows((prev) => prev.map((r) => r.id === id ? { ...row } : r))
+      // Update row id ke id asli dari API (untuk row baru)
+      const realId = (saved as any).id || id
+      const updatedRow = { ...row, id: realId }
+      setRows((prev) => prev.map((r) => r.id === id ? updatedRow : r))
+      setOriginalRows((prev) => prev.map((r) => r.id === id ? updatedRow : r))
       toast({ title: 'Tersimpan', description: `Nilai ${row.pesertaNama} diperbarui`, duration: 1500 } as any)
     } catch (e) {
       toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
@@ -849,7 +879,34 @@ function UjiHasilView() {
       setLoading(true)
       try {
         const u = await api.ujiKompetensi.get(selectedId)
-        if (!cancelled) setRows((u.nilai || []).map(mapNilaiToRow))
+        if (cancelled) return
+        // Build rows from angkatan peserta (not just from nilai)
+        const angkatanPeserta = (u.angkatan as any)?.peserta || []
+        const nilaiList = u.nilai || []
+        let mapped: NilaiRow[]
+        if (angkatanPeserta.length > 0) {
+          mapped = angkatanPeserta.map((ap: any) => {
+            const existing = nilaiList.find((n: any) => n.pesertaId === ap.pesertaId)
+            if (existing) {
+              return mapNilaiToRow(existing)
+            }
+            return {
+              id: `new_${ap.pesertaId}`,
+              pesertaId: ap.pesertaId,
+              pesertaNama: ap.peserta?.nama || '-',
+              pesertaNip: ap.peserta?.nip || '-',
+              nilaiPreTest: 0,
+              nilaiPostTest: 0,
+              nilaiPraktik: 0,
+              nilaiTeori: 0,
+              nilaiAkhir: null,
+              statusKelulusan: 'BELUM',
+            }
+          })
+        } else {
+          mapped = nilaiList.map((n: any) => mapNilaiToRow(n))
+        }
+        if (!cancelled) setRows(mapped)
       } catch (e) {
         if (!cancelled) toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
       } finally {
