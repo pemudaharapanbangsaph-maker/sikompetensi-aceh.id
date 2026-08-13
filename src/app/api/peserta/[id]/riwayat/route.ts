@@ -17,7 +17,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const [angkatan, nilai] = await Promise.all([
       db.pesertaAngkatan.findMany({
         where: { pesertaId: id },
-        include: { angkatan: { include: { pelatihan: true } } },
+        include: { angkatan: { include: { pelatihan: true, ujiKompetensi: true } } },
         orderBy: { createdAt: 'desc' },
       }),
       db.nilai.findMany({
@@ -31,6 +31,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       angkatan: angkatan.map((pa) => ({
         ...pa.angkatan,
         pelatihan: pa.angkatan.pelatihan,
+        ujiKompetensi: pa.angkatan.ujiKompetensi,
         statusPeserta: pa.status,
         nilaiAkhir: pa.nilaiAkhir,
       })),
