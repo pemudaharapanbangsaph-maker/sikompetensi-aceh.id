@@ -95,7 +95,7 @@ const EMPTY_FORM: Partial<Angkatan> = {
 
 export function AngkatanView() {
   const { activeView } = useNavStore()
-  if (activeView === 'pelatihan-kehadiran') return <KehadiranView />
+  if (activeView === 'pelatihan-kehadiran' || activeView === 'kehadiran') return <KehadiranView />
   if (activeView === 'pelatihan-peserta-kegiatan') return <PesertaPerKegiatanView />
   return <AngkatanDataTable />
 }
@@ -284,7 +284,7 @@ function AngkatanDataTable() {
   return (
     <div className="space-y-4">
       <PageHeader title="Angkatan Pelatihan" description="Kelola angkatan pelatihan beserta peserta, jadwal, dan lokasi">
-        <Button variant="outline" size="sm" onClick={() => setActiveView('pelatihan-kehadiran')} className="h-9">
+        <Button variant="outline" size="sm" onClick={() => setActiveView('kehadiran')} className="h-9">
           <CalendarCheck className="w-4 h-4" /> Kehadiran
         </Button>
         <Button variant="outline" size="sm" onClick={() => setActiveView('pelatihan-peserta-kegiatan')} className="h-9">
