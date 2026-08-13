@@ -66,7 +66,7 @@ export async function GET() {
 
     // Jadwal terdekat (angkatan & uji kompetensi yang akan datang)
     const upcomingAngkatan = await db.angkatan.findMany({
-      where: { tanggalMulai: { gte: now }, status: { in: ['PERENCANAAN', 'BERJALAN'] } },
+      where: { tanggalMulai: { gte: now }, status: { in: ['PERENCANAAN', 'BERJALAN'] }, ujiKompetensi: { none: {} } },
       include: { pelatihan: true },
       orderBy: { tanggalMulai: 'asc' },
       take: 5,
