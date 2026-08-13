@@ -10,7 +10,15 @@ export async function GET() {
     }
 
     const [totalPelatihan, totalAngkatan, totalPeserta, totalUjiKompetensi, totalAsesor, totalAnalisis] = await Promise.all([
-      db.pelatihan.count(),
+      db.pelatihan.count({
+        where: {
+          angkatan: {
+            none: {
+              ujiKompetensi: { some: {} },
+            },
+          },
+        },
+      }),
       db.angkatan.count(),
       db.peserta.count(),
       db.ujiKompetensi.count(),
