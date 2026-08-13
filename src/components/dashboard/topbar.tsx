@@ -24,7 +24,7 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'pelatihan': { title: 'Data Pelatihan', subtitle: 'Kelola data pelatihan' },
   'pelatihan-jadwal': { title: 'Jadwal Pelatihan', subtitle: 'Jadwal pelatihan terjadwal' },
   'pelatihan-angkatan': { title: 'Data Angkatan', subtitle: 'Kelola angkatan pelatihan' },
-  'pelatihan-kehadiran': { title: 'Kehadiran Peserta', subtitle: 'Rekap kehadiran peserta pelatihan' },
+  'kehadiran': { title: 'Kehadiran Peserta', subtitle: 'Rekap kehadiran peserta pelatihan' },
   'pelatihan-peserta-kegiatan': { title: 'Peserta Per Kegiatan', subtitle: 'Data peserta per kegiatan pelatihan' },
   'pelatihan-arsip': { title: 'Arsip Pelatihan', subtitle: 'Arsip pelatihan yang telah selesai' },
   'uji-jadwal': { title: 'Jadwal Uji Kompetensi', subtitle: 'Jadwal uji kompetensi terjadwal' },
