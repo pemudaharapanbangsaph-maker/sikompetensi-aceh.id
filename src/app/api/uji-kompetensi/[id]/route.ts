@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const item = await db.ujiKompetensi.findUnique({
       where: { id },
       include: {
-        angkatan: { include: { pelatihan: true } },
+        angkatan: { include: { pelatihan: true, peserta: { include: { peserta: true }, orderBy: { createdAt: 'asc' } } } },
         asesor: { include: { asesor: true } },
         nilai: { include: { peserta: true } },
       },
