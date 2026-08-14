@@ -68,7 +68,6 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'monitoring-pretest', label: 'Pre-Test', view: 'monitoring-pretest', permission: 'monitoring' },
       { key: 'monitoring-posttest', label: 'Post-Test', view: 'monitoring-posttest', permission: 'monitoring' },
-      { key: 'monitoring-kuesioner', label: 'Kuesioner', view: 'monitoring-kuesioner', permission: 'monitoring' },
       { key: 'monitoring-rekap', label: 'Rekap Evaluasi', view: 'monitoring-rekap', permission: 'monitoring' },
     ],
   },
@@ -162,7 +161,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
       {/* Footer */}
       {!sidebarCollapsed && (
         <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
-          <p className="text-[10px] text-blue-200 text-center">Team_IT_PKSTI@2026</p>
+          <p className="text-[10px] text-blue-200 text-center">v1.0.0 — Internal Use Only</p>
         </div>
       )}
     </aside>
