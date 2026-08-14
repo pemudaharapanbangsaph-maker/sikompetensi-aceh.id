@@ -72,6 +72,7 @@ function LaporanPelatihanView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [selectedAngkatan, setSelectedAngkatan] = useState('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -95,9 +96,10 @@ function LaporanPelatihanView() {
     fetchData()
   }, [fetchData])
 
-  // Apply client-side filters for tahun + kategori (since API doesn't filter by them)
+  // Apply client-side filters for tahun + kategori + angkatan (since API doesn't filter by them)
   const filtered = useMemo(() => {
     return data.filter((a) => {
+      if (selectedAngkatan && a.id !== selectedAngkatan) return false
       if (filters.tahun) {
         const y = new Date(a.tanggalMulai).getFullYear().toString()
         if (y !== filters.tahun) return false
@@ -107,7 +109,7 @@ function LaporanPelatihanView() {
       }
       return true
     })
-  }, [data, filters.tahun, filters.kategori])
+  }, [data, filters.tahun, filters.kategori, selectedAngkatan])
 
   const tahunOptions = useMemo(() => {
     const set = new Set<string>()
@@ -136,14 +138,18 @@ function LaporanPelatihanView() {
   }
 
   const handleExportPDF = () => {
-    toast({ title: 'Export PDF', description: 'Mengunduh file laporan-pelatihan.pdf...' })
-    api.laporan.exportPelatihanPdf()
+    toast({ title: 'Export PDF', description: selectedAngkatan ? `Mengunduh laporan angkatan terpilih...` : 'Mengunduh file laporan-pelatihan.pdf...' })
+    api.laporan.exportPelatihanPdf(selectedAngkatan || undefined)
   }
 
   const handleExportExcel = () => {
     toast({ title: 'Export Excel', description: 'Mengunduh file laporan-pelatihan.xlsx...' })
     api.laporan.exportPelatihanXls()
   }
+
+  const angkatanOptions = useMemo(() => {
+    return data.map((a) => ({ value: a.id, label: `${a.namaAngkatan} — ${a.pelatihan?.nama || ''}` }))
+  }, [data])
 
   const filterOptions: FilterOption[] = [
     { key: 'tahun', label: 'Tahun', options: tahunOptions },
@@ -176,12 +182,25 @@ function LaporanPelatihanView() {
   return (
     <div className="space-y-4">
       <PageHeader title="Laporan Pelatihan" description="Rekapitulasi seluruh angkatan pelatihan yang diselenggarakan">
-        <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-9 no-print">
-          <Printer className="w-4 h-4" /> Export PDF
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-9 no-print">
-          <FileSpreadsheet className="w-4 h-4" /> Export Excel
-        </Button>
+        <div className='flex items-center gap-2 no-print'>
+          <Select value={selectedAngkatan} onValueChange={(v) => { setSelectedAngkatan(v === '__all__' ? '' : v); setPage(1) }}>
+            <SelectTrigger className='w-[280px] h-9 text-sm'>
+              <SelectValue placeholder='Pilih Angkatan...' />
+            </SelectTrigger>
+            <SelectContent className='max-h-60'>
+              <SelectItem value='__all__'>Semua Angkatan</SelectItem>
+              {angkatanOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant='outline' size='sm' onClick={handleExportPDF} className='h-9'>
+            <Printer className='w-4 h-4' /> Export PDF
+          </Button>
+          <Button variant='outline' size='sm' onClick={handleExportExcel} className='h-9'>
+            <FileSpreadsheet className='w-4 h-4' /> Export Excel
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
