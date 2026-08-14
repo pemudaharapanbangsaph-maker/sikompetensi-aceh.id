@@ -67,7 +67,7 @@ export async function GET(req: Request) {
       y += 6
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text('Sistem Informasi Kompetensi Teknis Inti-BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      doc.text('Sistem Informasi Kompetensi Teknis Inti - BPSDM Aceh', pageW / 2, y, { align: 'center' })
       y += 10
 
       // SUMMARY BOX
@@ -102,19 +102,27 @@ export async function GET(req: Request) {
         'No.', 'KODE UJI', 'SKEMA SERTIFIKASI', 'PELATIHAN', 'ANGKATAN',
         'TANGGAL UJI', 'TEMPAT', 'PESERTA', 'NILAI', 'ASESOR', 'STATUS'
       ]]
-      const bodyRows = ujiList.map((u, i) => [
-        String(i + 1),
-        u.kode,
-        u.skemaSertifikasi.length > 35 ? u.skemaSertifikasi.slice(0, 34) + '…' : u.skemaSertifikasi,
-        u.angkatan?.pelatihan?.nama || '-',
-        u.angkatan?.namaAngkatan || '-',
-        fmtTanggalShort(u.tanggalUji),
-        u.tempat || '-',
-        String(u.jumlahPeserta || 0),
-        String(u.nilai?.filter(n => n.nilaiAkhir !== null && n.nilaiAkhir !== undefined).length || 0),
-        u.asesor.map((a) => a.asesor.nama).join(', ') || '-',
-        STATUS_LABEL[u.status] || u.status,
-      ])
+      const bodyRows = ujiList.map((u, i) => {
+        const filledNilai = u.nilai?.filter(n => n.nilaiAkhir !== null && n.nilaiAkhir !== undefined) || []
+        let nilaiStr = '-'
+        if (filledNilai.length > 0) {
+          const avg = filledNilai.reduce((s, n) => s + (n.nilaiAkhir || 0), 0) / filledNilai.length
+          nilaiStr = avg.toFixed(1)
+        }
+        return [
+          String(i + 1),
+          u.kode,
+          u.skemaSertifikasi.length > 35 ? u.skemaSertifikasi.slice(0, 34) + '…' : u.skemaSertifikasi,
+          u.angkatan?.pelatihan?.nama || '-',
+          u.angkatan?.namaAngkatan || '-',
+          fmtTanggalShort(u.tanggalUji),
+          u.tempat || '-',
+          String(u.jumlahPeserta || 0),
+          nilaiStr,
+          u.asesor.map((a) => a.asesor.nama).join(', ') || '-',
+          STATUS_LABEL[u.status] || u.status,
+        ]
+      })
 
       autoTable(doc, {
         startY: y,
@@ -138,7 +146,7 @@ export async function GET(req: Request) {
         },
         columnStyles: {
           0: { cellWidth: 10, halign: 'center', valign: 'middle' },
-          1: { cellWidth: 18 },
+          1: { cellWidth: 20 },
           2: { cellWidth: 40 },
           3: { cellWidth: 35 },
           4: { cellWidth: 24 },
@@ -212,19 +220,27 @@ export async function GET(req: Request) {
     })
 
     // === Sheet 2: Detail Uji Kompetensi ===
-    const detailRows = ujiList.map((u, idx) => ({
-      No: idx + 1,
-      'Kode Uji': u.kode,
-      'Skema Sertifikasi': u.skemaSertifikasi,
-      'Pelatihan': u.angkatan?.pelatihan?.nama || '-',
-      'Angkatan': u.angkatan?.namaAngkatan || '-',
-      'Tanggal Uji': fmtTanggal(u.tanggalUji),
-      'Tempat': u.tempat || '-',
-      'Jumlah Peserta': u.jumlahPeserta,
-      'Jumlah Nilai Terisi': u.nilai?.filter(n => n.nilaiAkhir !== null && n.nilaiAkhir !== undefined).length || 0,
-      'Asesor': u.asesor.map((a) => a.asesor.nama).join(', ') || '-',
-      'Status': STATUS_LABEL[u.status] || u.status,
-    }))
+    const detailRows = ujiList.map((u, idx) => {
+      const filledNilai = u.nilai?.filter(n => n.nilaiAkhir !== null && n.nilaiAkhir !== undefined) || []
+      let rataNilai = '-' as string | number
+      if (filledNilai.length > 0) {
+        const avg = filledNilai.reduce((s, n) => s + (n.nilaiAkhir || 0), 0) / filledNilai.length
+        rataNilai = parseFloat(avg.toFixed(1))
+      }
+      return {
+        No: idx + 1,
+        'Kode Uji': u.kode,
+        'Skema Sertifikasi': u.skemaSertifikasi,
+        'Pelatihan': u.angkatan?.pelatihan?.nama || '-',
+        'Angkatan': u.angkatan?.namaAngkatan || '-',
+        'Tanggal Uji': fmtTanggal(u.tanggalUji),
+        'Tempat': u.tempat || '-',
+        'Jumlah Peserta': u.jumlahPeserta,
+        'Rata-rata Nilai': rataNilai,
+        'Asesor': u.asesor.map((a) => a.asesor.nama).join(', ') || '-',
+        'Status': STATUS_LABEL[u.status] || u.status,
+      }
+    })
 
     // === Sheet 3: Ringkasan ===
     const ringkasanRows = [
