@@ -27,16 +27,43 @@ export async function GET(req: Request) {
     // Ambil semua peserta
     const peserta = await db.peserta.findMany({
       orderBy: { nama: 'asc' },
+      include: {
+        angkatan: {
+          include: {
+            angkatan: {
+              include: {
+                pelatihan: true,
+                ujiKompetensi: true,
+              },
+            },
+          },
+        },
+      },
     })
+
+    const buildKegiatanStr = (p: typeof peserta[0]): string => {
+      const items: string[] = []
+      for (const pa of p.angkatan) {
+        const ang = pa.angkatan
+        if (ang.ujiKompetensi && ang.ujiKompetensi.length > 0) {
+          for (const uk of ang.ujiKompetensi) {
+            items.push(`UK: ${uk.skemaSertifikasi}`)
+          }
+        } else if (ang.pelatihan) {
+          items.push(`P: ${ang.pelatihan.nama}`)
+        }
+      }
+      return items.length > 0 ? items.join('; ') : '-'
+    }
 
     // === FORMAT PDF ===
     if (format === 'pdf') {
       const { jsPDF } = await import('jspdf')
       const autoTable = (await import('jspdf-autotable')).default
 
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [330, 210] })
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [330, 215] })
       const pageW = 330
-      const pageH = 210
+      const pageH = 215
       const marginL = 12
       const marginR = 12
 
@@ -82,7 +109,7 @@ export async function GET(req: Request) {
       // TABLE
       const headerRow = [[
         'No.', 'NAMA', 'NIP', 'JENIS KELAMIN', 'TEMPAT/ TGL LAHIR', 'JABATAN',
-        'PANGKAT/ GOLONGAN', 'UNIT KERJA', 'INSTANSI', 'PENDIDIKAN', 'NO. TELP', 'STATUS'
+        'PANGKAT/ GOLONGAN', 'UNIT KERJA', 'INSTANSI', 'PELATIHAN/ UJI KOMPETENSI', 'NO. TELP', 'STATUS'
       ]]
       const bodyRows = peserta.map((p, i) => [
         String(i + 1),
@@ -94,7 +121,7 @@ export async function GET(req: Request) {
         p.pangkatGolongan || '-',
         p.unitKerja || '-',
         p.instansi || '-',
-        p.pendidikan || '-',
+        buildKegiatanStr(p),
         p.noTelp || '-',
         STATUS_LABEL[p.status] || p.status,
       ])
@@ -174,7 +201,7 @@ export async function GET(req: Request) {
       'Pangkat/Golongan': p.pangkatGolongan || '-',
       'Unit Kerja': p.unitKerja || '-',
       'Instansi': p.instansi || '-',
-      'Pendidikan': p.pendidikan || '-',
+      'Pelatihan/Uji Kompetensi': buildKegiatanStr(p),
       'No. Telp': p.noTelp || '-',
       'Email': p.email || '-',
       'Status': STATUS_LABEL[p.status] || p.status,
