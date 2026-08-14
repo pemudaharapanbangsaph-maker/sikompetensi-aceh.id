@@ -185,6 +185,11 @@ export const api = {
   },
 
   laporan: {
+    exportPelatihanPdf: (angkatanId?: string) => {
+      const params = new URLSearchParams({ format: 'pdf' })
+      if (angkatanId) params.set('angkatanId', angkatanId)
+      window.location.href = `${BASE}/laporan/pelatihan/export?${params.toString()}`
+    },
     exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
     exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
   },
