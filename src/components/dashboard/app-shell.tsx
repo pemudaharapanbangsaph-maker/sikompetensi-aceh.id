@@ -64,7 +64,6 @@ function renderView(view: string): React.ReactNode {
       return <PendaftaranView />
     case 'monitoring-pretest':
     case 'monitoring-posttest':
-    case 'monitoring-kuesioner':
     case 'monitoring-rekap':
       return <MonitoringView />
     case 'laporan-pelatihan':
