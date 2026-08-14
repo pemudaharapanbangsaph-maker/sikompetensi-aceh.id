@@ -21,11 +21,145 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(req.url)
+    const format = searchParams.get('format') || 'xlsx'
+
     // Ambil semua peserta
     const peserta = await db.peserta.findMany({
       orderBy: { nama: 'asc' },
     })
 
+    // === FORMAT PDF ===
+    if (format === 'pdf') {
+      const { jsPDF } = await import('jspdf')
+      const autoTable = (await import('jspdf-autotable')).default
+
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [330, 210] })
+      const pageW = 330
+      const pageH = 210
+      const marginL = 12
+      const marginR = 12
+
+      // HEADER
+      let y = 12
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.text('LAPORAN DATA PESERTA', pageW / 2, y, { align: 'center' })
+      y += 6
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.text('Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      y += 10
+
+      // SUMMARY BOX
+      const aktif = peserta.filter(p => p.status === 'AKTIF').length
+      const nonaktif = peserta.filter(p => p.status === 'NONAKTIF').length
+      const instansiSet = new Set(peserta.map(p => p.instansi).filter(Boolean))
+      const summaryItems = [
+        ['Total Peserta', String(peserta.length)],
+        ['Aktif', String(aktif)],
+        ['Nonaktif', String(nonaktif)],
+        ['Instansi', String(instansiSet.size)],
+      ]
+      doc.setFillColor(241, 245, 249)
+      const boxW = pageW - marginL - marginR
+      doc.roundedRect(marginL, y, boxW, 16, 2, 2, 'F')
+      let sx = marginL + 12
+      const sy = y + 7
+      doc.setFontSize(9)
+      summaryItems.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(100, 116, 139)
+        doc.text(`${label}:`, sx, sy)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(15, 23, 42)
+        doc.text(value, sx + doc.getTextWidth(`${label}: `), sy)
+        sx += 55
+      })
+      doc.setTextColor(0, 0, 0)
+      y += 24
+
+      // TABLE
+      const headerRow = [[
+        'No.', 'NAMA', 'NIP', 'JENIS KELAMIN', 'TEMPAT/ TGL LAHIR', 'JABATAN',
+        'PANGKAT/ GOLONGAN', 'UNIT KERJA', 'INSTANSI', 'PENDIDIKAN', 'NO. TELP', 'STATUS'
+      ]]
+      const bodyRows = peserta.map((p, i) => [
+        String(i + 1),
+        p.nama,
+        p.nip,
+        JENIS_KELAMIN_LABEL[p.jenisKelamin] || p.jenisKelamin || '-',
+        p.tempatLahir ? `${p.tempatLahir}, ${p.tanggalLahir ? new Date(p.tanggalLahir).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}` : '-',
+        p.jabatan || '-',
+        p.pangkatGolongan || '-',
+        p.unitKerja || '-',
+        p.instansi || '-',
+        p.pendidikan || '-',
+        p.noTelp || '-',
+        STATUS_LABEL[p.status] || p.status,
+      ])
+
+      autoTable(doc, {
+        startY: y,
+        head: headerRow,
+        body: bodyRows,
+        headStyles: {
+          fillColor: [15, 76, 129],
+          textColor: [255, 255, 255],
+          fontSize: 7.5,
+          fontStyle: 'bold',
+          cellPadding: { top: 3, bottom: 3, left: 2, right: 2 },
+          halign: 'center',
+          valign: 'middle',
+        },
+        bodyStyles: {
+          fontSize: 7,
+          cellPadding: { top: 2, bottom: 2, left: 2, right: 2 },
+          textColor: [0, 0, 0],
+          lineColor: [0, 0, 0],
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 7, halign: 'center', valign: 'middle' },
+          1: { cellWidth: 35 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 16, halign: 'center' },
+          4: { cellWidth: 32 },
+          5: { cellWidth: 28 },
+          6: { cellWidth: 22 },
+          7: { cellWidth: 30 },
+          8: { cellWidth: 30 },
+          9: { cellWidth: 16, halign: 'center' },
+          10: { cellWidth: 18 },
+          11: { cellWidth: 16, halign: 'center' },
+        },
+        margin: { left: marginL, right: marginR },
+        rowPageBreak: 'avoid',
+        theme: 'grid',
+      })
+
+      // Page numbers
+      const pageCount = doc.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(7)
+        doc.setTextColor(148, 163, 184)
+        doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, pageH - 8, { align: 'center' })
+        doc.setTextColor(0, 0, 0)
+      }
+
+      await auditLog(session, 'EXPORT', 'LAPORAN_PESERTA', `Export laporan peserta (${peserta.length} peserta) ke PDF`, req)
+
+      const pdfBuf = Buffer.from(doc.output('arraybuffer'))
+      return new NextResponse(pdfBuf, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="laporan-peserta.pdf"',
+        },
+      })
+    }
+
+    // === FORMAT XLSX (default) ===
     // === Sheet 1: Data Peserta ===
     const dataRows = peserta.map((p, idx) => ({
       No: idx + 1,
