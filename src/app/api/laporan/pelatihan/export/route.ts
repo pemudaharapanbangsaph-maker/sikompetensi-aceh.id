@@ -112,7 +112,7 @@ export async function GET(req: Request) {
 
       // TABLE
       const headerRow = [[
-        'No.', 'NAMA PELATIHAN', 'KODE', 'KATEGORI', 'NAMA ANKATAN',
+        'No.', 'NAMA PELATIHAN', 'KODE', 'KATEGORI', 'NAMA ANGKATAN',
         'PERIODE', 'LOKASI', 'METODE', 'PESERTA', 'STATUS'
       ]]
       const bodyRows = angkatan.map((a, i) => [
@@ -149,7 +149,7 @@ export async function GET(req: Request) {
           lineWidth: 0.1,
         },
         columnStyles: {
-          0: { cellWidth: 8, halign: 'center', valign: 'middle' },
+          0: { cellWidth: 10, halign: 'center', valign: 'middle' },
           1: { cellWidth: 60 },
           2: { cellWidth: 22 },
           3: { cellWidth: 24, halign: 'center' },
@@ -157,7 +157,7 @@ export async function GET(req: Request) {
           5: { cellWidth: 42 },
           6: { cellWidth: 28 },
           7: { cellWidth: 22, halign: 'center' },
-          8: { cellWidth: 16, halign: 'center' },
+          8: { cellWidth: 18, halign: 'center' },
           9: { cellWidth: 22, halign: 'center' },
         },
         margin: { left: marginL, right: marginR },
