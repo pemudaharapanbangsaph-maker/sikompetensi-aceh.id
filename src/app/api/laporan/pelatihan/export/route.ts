@@ -65,9 +65,9 @@ export async function GET(req: Request) {
       const { jsPDF } = await import('jspdf')
       const autoTable = (await import('jspdf-autotable')).default
 
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [330, 210] })
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [330, 215] })
       const pageW = 330
-      const pageH = 210
+      const pageH = 215
       const marginL = 15
       const marginR = 15
 
@@ -171,7 +171,7 @@ export async function GET(req: Request) {
         doc.setPage(i)
         doc.setFontSize(7)
         doc.setTextColor(148, 163, 184)
-        doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, 198, { align: 'center' })
+        doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, pageH - 12, { align: 'center' })
         doc.setTextColor(0, 0, 0)
       }
 
