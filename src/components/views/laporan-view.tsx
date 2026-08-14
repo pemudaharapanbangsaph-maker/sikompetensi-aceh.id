@@ -38,13 +38,6 @@ const STATUS_UJI = [
   { value: 'DIBATALKAN', label: 'Dibatalkan' },
 ]
 
-const PENDIDIKAN_OPTS = [
-  { value: 'D3', label: 'Diploma III' },
-  { value: 'S1', label: 'Sarjana (S1)' },
-  { value: 'S2', label: 'Magister (S2)' },
-  { value: 'S3', label: 'Doktor (S3)' },
-]
-
 const PIE_COLORS = ['#0F4C81', '#198754', '#d97706', '#dc2626', '#7c3aed', '#0891b2']
 
 // ===========================================================================
@@ -446,6 +439,11 @@ function LaporanPesertaView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
+  const [kegiatanMap, setKegiatanMap] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    api.peserta.kegiatanMap().then(setKegiatanMap).catch(() => {})
+  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -453,7 +451,6 @@ function LaporanPesertaView() {
       const params: Record<string, string | number | undefined> = {
         page, pageSize, search,
         instansi: filters.instansi || undefined,
-        pendidikan: filters.pendidikan || undefined,
       }
       const res = await api.peserta.list(params)
       setData(res.data)
@@ -478,9 +475,9 @@ function LaporanPesertaView() {
   const stats = useMemo(() => {
     const totalPeserta = total
     const instansiCount = new Set(data.map((p) => p.instansi).filter(Boolean)).size
-    const pendidikanCount = new Set(data.map((p) => p.pendidikan).filter(Boolean)).size
-    return { totalPeserta, instansiCount, pendidikanCount }
-  }, [data, total])
+    const kegiatanCount = Object.keys(kegiatanMap).length
+    return { totalPeserta, instansiCount, kegiatanCount }
+  }, [data, total, kegiatanMap])
 
   const chartData = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -512,7 +509,6 @@ function LaporanPesertaView() {
 
   const filterOptions: FilterOption[] = [
     { key: 'instansi', label: 'Instansi', options: instansiOptions },
-    { key: 'pendidikan', label: 'Pendidikan', options: PENDIDIKAN_OPTS },
   ]
 
   const columns: Column<Peserta>[] = [
@@ -527,7 +523,7 @@ function LaporanPesertaView() {
     { key: 'nip', header: 'NIP', render: (r) => <span className="font-mono text-xs text-slate-600">{r.nip}</span> },
     { key: 'unitKerja', header: 'Unit Kerja', render: (r) => <span className="text-slate-700 text-xs">{r.unitKerja || '-'}</span> },
     { key: 'instansi', header: 'Instansi', render: (r) => <span className="text-slate-600 text-xs">{r.instansi || '-'}</span> },
-    { key: 'pendidikan', header: 'Pendidikan', render: (r) => <span className="text-slate-600 text-xs">{r.pendidikan || '-'}</span> },
+    { key: 'kegiatan', header: 'Pelatihan/Uji Kompetensi', render: (r) => <span className="text-slate-600 text-xs line-clamp-2 max-w-[250px]">{kegiatanMap[r.id] || '-'}</span> },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
   ]
 
@@ -545,7 +541,7 @@ function LaporanPesertaView() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
         <StatCard title="Total Peserta" value={stats.totalPeserta} icon={Users} color="blue" />
         <StatCard title="Jumlah Instansi" value={stats.instansiCount} icon={Building2} color="green" />
-        <StatCard title="Variasi Pendidikan" value={stats.pendidikanCount} icon={GraduationCap} color="amber" />
+        <StatCard title="Peserta Berkegiatan" value={stats.kegiatanCount} icon={GraduationCap} color="amber" />
       </div>
 
       <Card className="border-slate-200 shadow-sm">
