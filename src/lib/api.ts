@@ -191,7 +191,10 @@ export const api = {
       window.location.href = `${BASE}/laporan/pelatihan/export?${params.toString()}`
     },
     exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
+    exportUjiKompetensiPdf: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export?format=pdf`,
     exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
+    exportPesertaPdf: () => window.location.href = `${BASE}/laporan/peserta/export?format=pdf`,
+    exportPesertaXls: () => window.location.href = `${BASE}/laporan/peserta/export`,
   },
 
   settings: {
