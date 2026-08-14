@@ -36,7 +36,7 @@ export async function GET(req: Request) {
       include: {
         angkatan: { include: { pelatihan: true } },
         asesor: { include: { asesor: true } },
-        _count: { select: { nilai: true } },
+        nilai: { select: { id: true, nilaiAkhir: true } },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -111,7 +111,7 @@ export async function GET(req: Request) {
         fmtTanggalShort(u.tanggalUji),
         u.tempat || '-',
         String(u.jumlahPeserta || 0),
-        String(u._count?.nilai || 0),
+        String(u.nilai?.filter(n => n.nilaiAkhir !== null && n.nilaiAkhir !== undefined).length || 0),
         u.asesor.map((a) => a.asesor.nama).join(', ') || '-',
         STATUS_LABEL[u.status] || u.status,
       ])
@@ -137,14 +137,14 @@ export async function GET(req: Request) {
           lineWidth: 0.1,
         },
         columnStyles: {
-          0: { cellWidth: 10, halign: 'center', valign: 'middle' },
+          0: { cellWidth: 7, halign: 'center', valign: 'middle' },
           1: { cellWidth: 18 },
           2: { cellWidth: 40 },
           3: { cellWidth: 35 },
           4: { cellWidth: 24 },
-          5: { cellWidth: 24, halign: 'center' },
+          5: { cellWidth: 22, halign: 'center' },
           6: { cellWidth: 22 },
-          7: { cellWidth: 18, halign: 'center' },
+          7: { cellWidth: 14, halign: 'center' },
           8: { cellWidth: 12, halign: 'center' },
           9: { cellWidth: 38 },
           10: { cellWidth: 20, halign: 'center' },
@@ -221,7 +221,7 @@ export async function GET(req: Request) {
       'Tanggal Uji': fmtTanggal(u.tanggalUji),
       'Tempat': u.tempat || '-',
       'Jumlah Peserta': u.jumlahPeserta,
-      'Jumlah Nilai Terisi': u._count?.nilai || 0,
+      'Jumlah Nilai Terisi': u.nilai?.filter(n => n.nilaiAkhir !== null && n.nilaiAkhir !== undefined).length || 0,
       'Asesor': u.asesor.map((a) => a.asesor.nama).join(', ') || '-',
       'Status': STATUS_LABEL[u.status] || u.status,
     }))
