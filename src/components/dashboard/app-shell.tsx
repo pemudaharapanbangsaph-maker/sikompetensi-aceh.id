@@ -119,7 +119,7 @@ export function AppShell() {
         <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
             <span className="font-semibold">Sistem Informasi Kompetensi Teknis</span>
-            <span className="text-blue-200">— BPSDM Provinsi Aceh</span>
+            <span className="text-blue-200">— BPSDM Aceh</span>
           </div>
           <div className="text-blue-200">
             © {new Date().getFullYear()} Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
