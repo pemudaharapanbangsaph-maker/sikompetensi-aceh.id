@@ -67,7 +67,7 @@ export async function GET(req: Request) {
       y += 6
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text('Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      doc.text('Sistem Informasi Kompetensi Teknis Inti-BPSDM Aceh', pageW / 2, y, { align: 'center' })
       y += 10
 
       // SUMMARY BOX
@@ -137,14 +137,14 @@ export async function GET(req: Request) {
           lineWidth: 0.1,
         },
         columnStyles: {
-          0: { cellWidth: 7, halign: 'center', valign: 'middle' },
+          0: { cellWidth: 10, halign: 'center', valign: 'middle' },
           1: { cellWidth: 18 },
           2: { cellWidth: 40 },
           3: { cellWidth: 35 },
           4: { cellWidth: 24 },
-          5: { cellWidth: 22, halign: 'center' },
+          5: { cellWidth: 24, halign: 'center' },
           6: { cellWidth: 22 },
-          7: { cellWidth: 14, halign: 'center' },
+          7: { cellWidth: 18, halign: 'center' },
           8: { cellWidth: 12, halign: 'center' },
           9: { cellWidth: 38 },
           10: { cellWidth: 20, halign: 'center' },
