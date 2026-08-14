@@ -43,8 +43,10 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const format = searchParams.get('format') || 'xlsx'
+    const angkatanId = searchParams.get('angkatanId') || undefined
 
     const angkatan = await db.angkatan.findMany({
+      where: angkatanId ? { id: angkatanId } : undefined,
       include: {
         pelatihan: true,
         _count: { select: { peserta: true } },
@@ -70,13 +72,14 @@ export async function GET(req: Request) {
 
       // HEADER
       let y = 12
+      const selectedAngkatan = angkatan.length === 1 ? angkatan[0] : null
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text('LAPORAN PELATIHAN', pageW / 2, y, { align: 'center' })
+      doc.text(selectedAngkatan ? `LAPORAN PELATIHAN - ${selectedAngkatan.namaAngkatan}` : 'LAPORAN PELATIHAN', pageW / 2, y, { align: 'center' })
       y += 6
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text('Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      doc.text(selectedAngkatan ? `${selectedAngkatan.pelatihan?.nama || ''} — Sistem Informasi Kompetensi Teknis BPSDM Aceh` : 'Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
       y += 10
 
       // SUMMARY BOX
