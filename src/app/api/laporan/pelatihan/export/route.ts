@@ -65,8 +65,9 @@ export async function GET(req: Request) {
       const { jsPDF } = await import('jspdf')
       const autoTable = (await import('jspdf-autotable')).default
 
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-      const pageW = 297
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [330, 210] })
+      const pageW = 330
+      const pageH = 210
       const marginL = 15
       const marginR = 15
 
