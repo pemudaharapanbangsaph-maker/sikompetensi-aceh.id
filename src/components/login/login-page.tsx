@@ -193,9 +193,10 @@ export function LoginPage() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative z-10 px-6 pb-6">
                   <div className="bg-white/[0.06] rounded-lg p-3.5">
                     <p className="text-[10px] text-white/50 leading-relaxed text-center">
-                      Sistem internal Pemerintah Aceh untuk aparatur sipil negara.
+                      Sistem internal Pemerintah Aceh untuk aparatur sipil negara
+                      Bidang Pengembangan dan Sertifikasi Teknis Inti
                       Akses tidak sah dilarang. Butuh bantuan? Hubungi{' '}
-                      <span className="font-semibold text-white/80">BPSDM Aceh</span>.
+                      <span className="font-semibold text-white/80">Admin Bidang PSKTI-BPSDMA</span>.
                     </p>
                   </div>
                 </motion.div>
