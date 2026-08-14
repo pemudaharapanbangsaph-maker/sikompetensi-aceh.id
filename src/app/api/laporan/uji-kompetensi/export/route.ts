@@ -151,7 +151,7 @@ export async function GET(req: Request) {
           3: { cellWidth: 35 },
           4: { cellWidth: 28 },
           5: { cellWidth: 24, halign: 'center' },
-          6: { cellWidth: 22 },
+          6: { cellWidth: 23 },
           7: { cellWidth: 18, halign: 'center' },
           8: { cellWidth: 12, halign: 'center' },
           9: { cellWidth: 38 },
