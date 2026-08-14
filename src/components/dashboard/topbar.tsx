@@ -38,7 +38,6 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'pendaftaran-dokumen': { title: 'Dokumen Peserta', subtitle: 'Dokumen & verifikasi pendaftaran' },
   'monitoring-pretest': { title: 'Pre-Test', subtitle: 'Data nilai pre-test peserta' },
   'monitoring-posttest': { title: 'Post-Test', subtitle: 'Data nilai post-test peserta' },
-  'monitoring-kuesioner': { title: 'Kuesioner', subtitle: 'Data kuesioner evaluasi' },
   'monitoring-rekap': { title: 'Rekap Evaluasi', subtitle: 'Rekapitulasi evaluasi pelatihan' },
   'laporan-pelatihan': { title: 'Laporan Pelatihan', subtitle: 'Laporan kegiatan pelatihan' },
   'laporan-uji': { title: 'Laporan Uji Kompetensi', subtitle: 'Laporan uji kompetensi' },
