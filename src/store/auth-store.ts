@@ -94,7 +94,7 @@ export type ViewKey =
   | 'uji-jadwal' | 'uji-asesor' | 'uji-biodata' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
   | 'peserta' | 'peserta-riwayat'
   | 'pendaftaran-list' | 'pendaftaran-dokumen'
-  | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-kuesioner' | 'monitoring-rekap'
+  | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-rekap'
   | 'laporan-pelatihan' | 'laporan-uji' | 'laporan-peserta'
   | 'user-data' | 'user-hak-akses' | 'user-log'
   | 'backup' | 'backup-restore' | 'backup-riwayat'
