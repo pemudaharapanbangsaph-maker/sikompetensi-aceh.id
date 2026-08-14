@@ -53,7 +53,6 @@ export function MonitoringView() {
   const { activeView } = useNavStore()
 
   if (activeView === 'monitoring-posttest') return <EvaluasiDataTable jenisEvaluasi="POST_TEST" />
-  if (activeView === 'monitoring-kuesioner') return <EvaluasiDataTable jenisEvaluasi="KUESIONER" showAspek />
   if (activeView === 'monitoring-rekap') return <MonitoringRekapView />
   return <EvaluasiDataTable jenisEvaluasi="PRE_TEST" />
 }
