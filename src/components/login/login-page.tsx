@@ -195,7 +195,7 @@ export function LoginPage() {
                     <p className="text-[10px] text-white/50 leading-relaxed text-center">
                       Sistem internal Pemerintah Aceh untuk aparatur sipil negara.
                       Akses tidak sah dilarang. Butuh bantuan? Hubungi{' '}
-                      <span className="font-semibold text-white/80">Admin Bidang PSKTI-BPSDMA</span>.
+                      <span className="font-semibold text-white/80">BPSDM Aceh</span>.
                     </p>
                   </div>
                 </motion.div>
