@@ -73,6 +73,15 @@ function LaporanPelatihanView() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [selectedAngkatan, setSelectedAngkatan] = useState('')
+  const [ujiAngkatanIds, setUjiAngkatanIds] = useState<Set<string>>(new Set())
+
+  // Fetch uji kompetensi angkatan IDs once (to exclude from laporan pelatihan)
+  useEffect(() => {
+    api.ujiKompetensi.listAll().then((list) => {
+      const ids = new Set(list.map((u) => u.angkatanId).filter(Boolean) as string[])
+      setUjiAngkatanIds(ids)
+    }).catch(() => {})
+  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -96,9 +105,10 @@ function LaporanPelatihanView() {
     fetchData()
   }, [fetchData])
 
-  // Apply client-side filters for tahun + kategori + angkatan (since API doesn't filter by them)
+  // Exclude angkatan yang sudah punya uji kompetensi, then apply client-side filters
   const filtered = useMemo(() => {
     return data.filter((a) => {
+      if (ujiAngkatanIds.has(a.id)) return false
       if (selectedAngkatan && a.id !== selectedAngkatan) return false
       if (filters.tahun) {
         const y = new Date(a.tanggalMulai).getFullYear().toString()
@@ -109,7 +119,7 @@ function LaporanPelatihanView() {
       }
       return true
     })
-  }, [data, filters.tahun, filters.kategori, selectedAngkatan])
+  }, [data, filters.tahun, filters.kategori, selectedAngkatan, ujiAngkatanIds])
 
   const tahunOptions = useMemo(() => {
     const set = new Set<string>()
@@ -148,8 +158,8 @@ function LaporanPelatihanView() {
   }
 
   const angkatanOptions = useMemo(() => {
-    return data.map((a) => ({ value: a.id, label: `${a.namaAngkatan} — ${a.pelatihan?.nama || ''}` }))
-  }, [data])
+    return data.filter((a) => !ujiAngkatanIds.has(a.id)).map((a) => ({ value: a.id, label: `${a.namaAngkatan} — ${a.pelatihan?.nama || ''}` }))
+  }, [data, ujiAngkatanIds])
 
   const filterOptions: FilterOption[] = [
     { key: 'tahun', label: 'Tahun', options: tahunOptions },
