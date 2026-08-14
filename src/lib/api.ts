@@ -65,6 +65,7 @@ export const api = {
     update: (id: string, data: Partial<Peserta>) => request<Peserta>(`/peserta/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/peserta/${id}`, { method: 'DELETE' }),
     riwayat: (id: string) => request<{ angkatan: (Angkatan & { pelatihan?: Pelatihan | null; ujiKompetensi?: UjiKompetensi[] })[]; nilai: (Nilai & { ujiKompetensi?: UjiKompetensi | null })[] }>(`/peserta/${id}/riwayat`),
+    kegiatanMap: () => request<Record<string, string>>('/peserta/kegiatan-map'),
   },
 
   pelatihan: {
