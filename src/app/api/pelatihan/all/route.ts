@@ -9,7 +9,7 @@ export async function GET() {
     if (!hasPermission(session.user.role, 'pelatihan:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    const data = await db.pelatihan.findMany({ orderBy: { nama: 'asc' } })
+    const data = await db.pelatihan.findMany({ where: { deleted: false }, orderBy: { nama: 'asc' } })
     return NextResponse.json(data)
   } catch (e) {
     console.error('pelatihan all error:', e)
