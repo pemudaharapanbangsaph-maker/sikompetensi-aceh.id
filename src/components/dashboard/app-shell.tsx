@@ -73,6 +73,7 @@ function renderView(view: string): React.ReactNode {
       return <LaporanView />
     case 'arsip-pelatihan':
     case 'arsip-uji':
+    case 'arsip-peserta':
       return <ArsipView />
     case 'user-data':
     case 'user-hak-akses':
