@@ -23,6 +23,7 @@ const BackupView = lazy(() => import('@/components/views/backup-view').then(m =>
 const SettingsView = lazy(() => import('@/components/views/settings-view').then(m => ({ default: m.SettingsView })))
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
 const ArsipView = lazy(() => import('@/components/views/arsip-view').then(m => ({ default: m.ArsipView })))
+const AccountView = lazy(() => import('@/components/views/account-view').then(m => ({ default: m.AccountView })))
 
 function ViewLoader() {
   return (
@@ -88,6 +89,9 @@ function renderView(view: string): React.ReactNode {
     case 'settings-login':
     case 'settings-audit':
       return <SettingsView />
+    case 'account-profil':
+    case 'account-keamanan':
+      return <AccountView />
     default: return <DashboardView />
   }
 }
