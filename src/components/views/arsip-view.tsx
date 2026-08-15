@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { api } from '@/lib/api'
-import type { Pelatihan, UjiKompetensi } from '@/lib/types'
+import type { Pelatihan, UjiKompetensi, Peserta } from '@/lib/types'
 import { useNavStore } from '@/store/auth-store'
 import { DataTable, StatCard, PageHeader, type Column } from '@/components/shared/data-table'
-import { StatusBadge, formatTanggal, formatTanggalSingkat, kategoriLabel } from '@/components/shared/ui-helpers'
+import { StatusBadge, formatTanggal, kategoriLabel } from '@/components/shared/ui-helpers'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Archive, FileText, FileSpreadsheet, Printer, BookOpen, Award, Eye, X, RotateCcw } from 'lucide-react'
+import { Archive, FileText, FileSpreadsheet, Printer, BookOpen, Award, Eye, X, RotateCcw, Trash2 } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -22,6 +22,7 @@ import {
 export function ArsipView() {
   const { activeView } = useNavStore()
   if (activeView === 'arsip-uji') return <ArsipUjiView />
+  if (activeView === 'arsip-peserta') return <ArsipPesertaView />
   return <ArsipPelatihanView />
 }
 
@@ -40,15 +41,14 @@ function ArsipPelatihanView() {
 
   const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<(typeof data)[0] | null>(null)
   const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, string | number | undefined> = {
-        page, pageSize, search,
-      }
-      const res = await api.arsip.pelatihan(params)
+      const res = await api.arsip.pelatihan({ page, pageSize, search })
       setData(res.data)
       setTotal(res.total)
     } catch (e) {
@@ -59,143 +59,72 @@ function ArsipPelatihanView() {
   }, [page, pageSize, search, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
-
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
 
   const handleRestore = async () => {
     if (!restoreTarget) return
     setRestoring(true)
     try {
-      const res = await fetch(`/api/arsip/pelatihan/${restoreTarget.id}/restore`, {
-        method: 'POST', credentials: 'same-origin',
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Gagal memulihkan')
-      }
+      const res = await fetch(`/api/arsip/pelatihan/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal memulihkan') }
       toast({ title: 'Berhasil', description: 'Pelatihan dipulihkan dari arsip' })
-      setRestoreTarget(null)
-      fetchData()
+      setRestoreTarget(null); fetchData()
     } catch (e) {
       toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setRestoring(false)
-    }
+    } finally { setRestoring(false) }
   }
 
-  const handleExportPDF = () => {
-    toast({ title: 'Export PDF', description: 'Mengunduh arsip-pelatihan.pdf...' })
-    api.arsip.exportPelatihanPdf()
-  }
-
-  const handleExportExcel = () => {
-    toast({ title: 'Export Excel', description: 'Mengunduh arsip-pelatihan.xlsx...' })
-    api.arsip.exportPelatihanXls()
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/pelatihan/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal menghapus permanen') }
+      toast({ title: 'Dihapus Permanen', description: 'Data pelatihan telah dihapus permanen dari database' })
+      setDeleteTarget(null); fetchData()
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally { setDeleting(false) }
   }
 
   const columns: Column<(typeof data)[0]>[] = [
     { key: 'kode', header: 'Kode', render: (r) => <span className="font-mono text-xs font-semibold text-[#0F4C81]">{r.kode}</span> },
-    {
-      key: 'nama', header: 'Nama Pelatihan', render: (r) => (
-        <div className="min-w-[200px]">
-          <p className="font-medium text-slate-900 line-clamp-1">{r.nama}</p>
-          {r.deskripsi && <p className="text-xs text-slate-400 line-clamp-1">{r.deskripsi}</p>}
-        </div>
-      ),
-    },
+    { key: 'nama', header: 'Nama Pelatihan', render: (r) => (
+      <div className="min-w-[200px]">
+        <p className="font-medium text-slate-900 line-clamp-1">{r.nama}</p>
+        {r.deskripsi && <p className="text-xs text-slate-400 line-clamp-1">{r.deskripsi}</p>}
+      </div>
+    )},
     { key: 'kategori', header: 'Kategori', render: (r) => <span className="text-slate-600">{kategoriLabel(r.kategori)}</span> },
     { key: 'durasiHari', header: 'Durasi', render: (r) => <span className="text-slate-600">{r.durasiHari} hari</span> },
     { key: 'jp', header: 'JP', render: (r) => <span className="font-medium">{r.jp} JP</span> },
     { key: 'angkatan', header: 'Angkatan', render: (r) => <span className="font-medium text-[#0F4C81]">{r._count?.angkatan || 0}</span> },
-    {
-      key: 'deletedAt', header: 'Diarsipkan', render: (r) => (
-        <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span>
-      ),
-    },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
   ]
 
   return (
     <div className="space-y-4">
       <PageHeader title="Arsip Pelatihan" description="Data pelatihan yang telah dihapus (soft delete) dan dipindahkan ke arsip">
-        <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-9">
-          <Printer className="w-4 h-4" /> Export PDF
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-9">
-          <FileSpreadsheet className="w-4 h-4" /> Export Excel
-        </Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-pelatihan.pdf...' }); api.arsip.exportPelatihanPdf() }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-pelatihan.xlsx...' }); api.arsip.exportPelatihanXls() }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
       </PageHeader>
-
       <StatCard title="Total Arsip Pelatihan" value={total} icon={Archive} color="purple" subtitle="Data yang diarsipkan" />
-
       <DataTable
-        data={data}
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        loading={loading}
-        columns={columns}
-        searchPlaceholder="Cari kode / nama pelatihan..."
-        searchValue={search}
-        onSearchChange={handleSearch}
-        onPageChange={setPage}
-        onRefresh={fetchData}
-        rowKey={(r) => r.id}
+        data={data} total={total} page={page} pageSize={pageSize} loading={loading} columns={columns}
+        searchPlaceholder="Cari kode / nama pelatihan..." searchValue={search} onSearchChange={handleSearch}
+        onPageChange={setPage} onRefresh={fetchData} rowKey={(r) => r.id}
         emptyMessage="Belum ada data arsip pelatihan"
         actions={(row) => (
           <>
-            <Button size="sm" variant="ghost" className="h-8 px-2 text-[#0F4C81]" onClick={() => setDetailTarget(row)} title="Lihat Detail">
-              <Eye className="w-4 h-4" /> Detail
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan">
-              <RotateCcw className="w-4 h-4" /> Pulihkan
-            </Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-[#0F4C81]" onClick={() => setDetailTarget(row)} title="Lihat Detail"><Eye className="w-4 h-4" /> Detail</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
           </>
         )}
       />
-
-      {/* Detail Dialog */}
-      <Dialog open={!!detailTarget} onOpenChange={(o) => !o && setDetailTarget(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Detail Arsip Pelatihan</DialogTitle>
-          </DialogHeader>
-          {detailTarget && (
-            <div className="space-y-3 py-2">
-              <DetailRow label="Kode" value={detailTarget.kode} />
-              <DetailRow label="Nama" value={detailTarget.nama} />
-              <DetailRow label="Kategori" value={kategoriLabel(detailTarget.kategori)} />
-              <DetailRow label="Durasi" value={`${detailTarget.durasiHari} hari (${detailTarget.jp} JP)`} />
-              <DetailRow label="Jumlah Angkatan" value={String(detailTarget._count?.angkatan || 0)} />
-              <DetailRow label="Status" value={<StatusBadge status={detailTarget.status} />} />
-              {detailTarget.deskripsi && <DetailRow label="Deskripsi" value={detailTarget.deskripsi} />}
-              <DetailRow label="Diarsipkan pada" value={detailTarget.deletedAt ? formatTanggal(detailTarget.deletedAt) : '-'} />
-            </div>
-          )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline"><X className="w-4 h-4" /> Tutup</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Restore Confirmation */}
-      <AlertDialog open={!!restoreTarget} onOpenChange={(o) => !o && setRestoreTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Pulihkan dari Arsip?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Yakin ingin memulihkan pelatihan <span className="font-semibold">{restoreTarget?.nama}</span> dari arsip? Data akan kembali aktif di Data Pelatihan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={restoring}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestore} disabled={restoring} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              {restoring ? 'Memulihkan...' : 'Pulihkan'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DetailDialogPelatihan target={detailTarget} onClose={() => setDetailTarget(null)} />
+      <RestoreDialog title="Pulihkan Pelatihan dari Arsip?" description={<>Yakin ingin memulihkan pelatihan <span className="font-semibold">{restoreTarget?.nama}</span> dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog title="Hapus Permanen Pelatihan?" description={<>Data <span className="font-semibold">{deleteTarget?.nama}</span> akan dihapus <strong>permanen</strong> dari database beserta semua angkatan terkait. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
     </div>
   )
 }
@@ -215,177 +144,164 @@ function ArsipUjiView() {
 
   const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<(typeof data)[0] | null>(null)
   const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: Record<string, string | number | undefined> = {
-        page, pageSize, search,
-      }
-      const res = await api.arsip.ujiKompetensi(params)
-      setData(res.data)
-      setTotal(res.total)
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
+      const res = await api.arsip.ujiKompetensi({ page, pageSize, search })
+      setData(res.data); setTotal(res.total)
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setLoading(false) }
   }, [page, pageSize, search, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
-
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
 
   const handleRestore = async () => {
-    if (!restoreTarget) return
-    setRestoring(true)
+    if (!restoreTarget) return; setRestoring(true)
     try {
-      const res = await fetch(`/api/arsip/uji-kompetensi/${restoreTarget.id}/restore`, {
-        method: 'POST', credentials: 'same-origin',
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Gagal memulihkan')
-      }
-      toast({ title: 'Berhasil', description: 'Uji Kompetensi dipulihkan dari arsip' })
-      setRestoreTarget(null)
-      fetchData()
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setRestoring(false)
-    }
+      const res = await fetch(`/api/arsip/uji-kompetensi/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal memulihkan') }
+      toast({ title: 'Berhasil', description: 'Uji Kompetensi dipulihkan dari arsip' }); setRestoreTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setRestoring(false) }
   }
 
-  const handleExportPDF = () => {
-    toast({ title: 'Export PDF', description: 'Mengunduh arsip-uji-kompetensi.pdf...' })
-    api.arsip.exportUjiKompetensiPdf()
-  }
-
-  const handleExportExcel = () => {
-    toast({ title: 'Export Excel', description: 'Mengunduh arsip-uji-kompetensi.xlsx...' })
-    api.arsip.exportUjiKompetensiXls()
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return; setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/uji-kompetensi/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal menghapus permanen') }
+      toast({ title: 'Dihapus Permanen', description: 'Data uji kompetensi telah dihapus permanen' }); setDeleteTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
   }
 
   const columns: Column<(typeof data)[0]>[] = [
     { key: 'kode', header: 'Kode', render: (r) => <span className="font-mono text-xs font-semibold text-slate-900">{r.kode}</span> },
-    {
-      key: 'skemaSertifikasi', header: 'Skema Sertifikasi', render: (r) => (
-        <span className="text-slate-700 line-clamp-1 max-w-[200px] inline-block">{r.skemaSertifikasi}</span>
-      ),
-    },
+    { key: 'skemaSertifikasi', header: 'Skema Sertifikasi', render: (r) => <span className="text-slate-700 line-clamp-1 max-w-[200px] inline-block">{r.skemaSertifikasi}</span> },
     { key: 'tanggalUji', header: 'Tanggal Uji', render: (r) => <span className="text-xs text-slate-600">{formatTanggal(r.tanggalUji)}</span> },
     { key: 'tempat', header: 'Tempat', render: (r) => <span className="text-slate-600 text-xs">{r.tempat}</span> },
     { key: 'jumlahPeserta', header: 'Peserta', render: (r) => <span className="font-medium">{r.jumlahPeserta}</span> },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
-    {
-      key: 'asesor', header: 'Asesor', render: (r) => (
-        <span className="text-xs text-slate-600">
-          {r.asesor && r.asesor.length > 0
-            ? r.asesor.map((a: any) => a.nama).join(', ')
-            : '-'}
-        </span>
-      ),
-    },
-    {
-      key: 'deletedAt', header: 'Diarsipkan', render: (r) => (
-        <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span>
-      ),
-    },
+    { key: 'asesor', header: 'Asesor', render: (r) => <span className="text-xs text-slate-600">{r.asesor && r.asesor.length > 0 ? r.asesor.map((a: any) => a.nama).join(', ') : '-'}</span> },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
   ]
 
   return (
     <div className="space-y-4">
       <PageHeader title="Arsip Uji Kompetensi" description="Data uji kompetensi yang telah dihapus (soft delete) dan dipindahkan ke arsip">
-        <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-9">
-          <Printer className="w-4 h-4" /> Export PDF
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-9">
-          <FileSpreadsheet className="w-4 h-4" /> Export Excel
-        </Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-uji-kompetensi.pdf...' }); api.arsip.exportUjiKompetensiPdf() }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-uji-kompetensi.xlsx...' }); api.arsip.exportUjiKompetensiXls() }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
       </PageHeader>
-
       <StatCard title="Total Arsip Uji Kompetensi" value={total} icon={Archive} color="purple" subtitle="Data yang diarsipkan" />
-
       <DataTable
-        data={data}
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        loading={loading}
-        columns={columns}
-        searchPlaceholder="Cari kode / skema / tempat..."
-        searchValue={search}
-        onSearchChange={handleSearch}
-        onPageChange={setPage}
-        onRefresh={fetchData}
-        rowKey={(r) => r.id}
+        data={data} total={total} page={page} pageSize={pageSize} loading={loading} columns={columns}
+        searchPlaceholder="Cari kode / skema / tempat..." searchValue={search} onSearchChange={handleSearch}
+        onPageChange={setPage} onRefresh={fetchData} rowKey={(r) => r.id}
         emptyMessage="Belum ada data arsip uji kompetensi"
         actions={(row) => (
           <>
-            <Button size="sm" variant="ghost" className="h-8 px-2 text-[#0F4C81]" onClick={() => setDetailTarget(row)} title="Lihat Detail">
-              <Eye className="w-4 h-4" /> Detail
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan">
-              <RotateCcw className="w-4 h-4" /> Pulihkan
-            </Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-[#0F4C81]" onClick={() => setDetailTarget(row)} title="Lihat Detail"><Eye className="w-4 h-4" /> Detail</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
           </>
         )}
       />
-
-      {/* Detail Dialog */}
-      <Dialog open={!!detailTarget} onOpenChange={(o) => !o && setDetailTarget(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Detail Arsip Uji Kompetensi</DialogTitle>
-          </DialogHeader>
-          {detailTarget && (
-            <div className="space-y-3 py-2">
-              <DetailRow label="Kode" value={detailTarget.kode} />
-              <DetailRow label="Skema Sertifikasi" value={detailTarget.skemaSertifikasi} />
-              <DetailRow label="Tanggal Uji" value={formatTanggal(detailTarget.tanggalUji)} />
-              <DetailRow label="Tempat" value={detailTarget.tempat} />
-              <DetailRow label="Jumlah Peserta" value={String(detailTarget.jumlahPeserta)} />
-              <DetailRow label="Angkatan" value={detailTarget.angkatan ? `${detailTarget.angkatan.namaAngkatan} — ${detailTarget.angkatan.pelatihan?.nama || ''}` : '-'} />
-              <DetailRow label="Asesor" value={detailTarget.asesor && detailTarget.asesor.length > 0 ? detailTarget.asesor.map((a: any) => a.nama).join(', ') : '-'} />
-              <DetailRow label="Nilai Terinput" value={String(detailTarget._count?.nilai || 0)} />
-              <DetailRow label="Status" value={<StatusBadge status={detailTarget.status} />} />
-              {detailTarget.catatan && <DetailRow label="Catatan" value={detailTarget.catatan} />}
-              <DetailRow label="Diarsipkan pada" value={detailTarget.deletedAt ? formatTanggal(detailTarget.deletedAt) : '-'} />
-            </div>
-          )}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline"><X className="w-4 h-4" /> Tutup</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Restore Confirmation */}
-      <AlertDialog open={!!restoreTarget} onOpenChange={(o) => !o && setRestoreTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Pulihkan dari Arsip?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Yakin ingin memulihkan uji kompetensi <span className="font-semibold">{restoreTarget?.kode}</span> dari arsip? Data akan kembali aktif di Uji Kompetensi.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={restoring}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestore} disabled={restoring} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-              {restoring ? 'Memulihkan...' : 'Pulihkan'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DetailDialogUji target={detailTarget} onClose={() => setDetailTarget(null)} />
+      <RestoreDialog title="Pulihkan Uji Kompetensi dari Arsip?" description={<>Yakin ingin memulihkan uji kompetensi <span className="font-semibold">{restoreTarget?.kode}</span> dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog title="Hapus Permanen Uji Kompetensi?" description={<>Data uji kompetensi <span className="font-semibold">{deleteTarget?.kode}</span> akan dihapus <strong>permanen</strong> dari database. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
     </div>
   )
 }
 
 // ===========================================================================
-// SHARED
+// ARSIP PESERTA
+// ===========================================================================
+
+function ArsipPesertaView() {
+  const { toast } = useToast()
+  const [data, setData] = useState<(Peserta & { _count?: { angkatan: number; nilai: number }; deletedAt?: string | null })[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+
+  const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
+  const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<(typeof data)[0] | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await api.arsip.peserta({ page, pageSize, search })
+      setData(res.data); setTotal(res.total)
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setLoading(false) }
+  }, [page, pageSize, search, toast])
+
+  useEffect(() => { fetchData() }, [fetchData])
+  const handleSearch = (v: string) => { setSearch(v); setPage(1) }
+
+  const handleRestore = async () => {
+    if (!restoreTarget) return; setRestoring(true)
+    try {
+      const res = await fetch(`/api/arsip/peserta/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal memulihkan') }
+      toast({ title: 'Berhasil', description: 'Peserta dipulihkan dari arsip' }); setRestoreTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setRestoring(false) }
+  }
+
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return; setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/peserta/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal menghapus permanen') }
+      toast({ title: 'Dihapus Permanen', description: 'Data peserta telah dihapus permanen' }); setDeleteTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
+  }
+
+  const columns: Column<(typeof data)[0]>[] = [
+    { key: 'nip', header: 'NIP', render: (r) => <span className="font-mono text-xs text-slate-700">{r.nip}</span> },
+    { key: 'nama', header: 'Nama Peserta', render: (r) => <span className="font-medium text-slate-900">{r.nama}</span> },
+    { key: 'jenisKelamin', header: 'JK', render: (r) => <span className="text-slate-600 text-xs">{r.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</span> },
+    { key: 'jabatan', header: 'Jabatan', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[120px] inline-block">{r.jabatan || '-'}</span> },
+    { key: 'unitKerja', header: 'Unit Kerja', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[120px] inline-block">{r.unitKerja || '-'}</span> },
+    { key: 'angkatan', header: 'Angkatan', render: (r) => <span className="font-medium text-[#0F4C81]">{r._count?.angkatan || 0}</span> },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Arsip Peserta" description="Data peserta yang telah dihapus (soft delete) dan dipindahkan ke arsip">
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-peserta.pdf...' }); api.arsip.exportPesertaPdf() }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-peserta.xlsx...' }); api.arsip.exportPesertaXls() }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
+      </PageHeader>
+      <StatCard title="Total Arsip Peserta" value={total} icon={Archive} color="purple" subtitle="Data yang diarsipkan" />
+      <DataTable
+        data={data} total={total} page={page} pageSize={pageSize} loading={loading} columns={columns}
+        searchPlaceholder="Cari NIP / nama / unit kerja..." searchValue={search} onSearchChange={handleSearch}
+        onPageChange={setPage} onRefresh={fetchData} rowKey={(r) => r.id}
+        emptyMessage="Belum ada data arsip peserta"
+        actions={(row) => (
+          <>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-[#0F4C81]" onClick={() => setDetailTarget(row)} title="Lihat Detail"><Eye className="w-4 h-4" /> Detail</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
+          </>
+        )}
+      />
+      <DetailDialogPeserta target={detailTarget} onClose={() => setDetailTarget(null)} />
+      <RestoreDialog title="Pulihkan Peserta dari Arsip?" description={<>Yakin ingin memulihkan peserta <span className="font-semibold">{restoreTarget?.nama}</span> ({restoreTarget?.nip}) dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog title="Hapus Permanen Peserta?" description={<>Data peserta <span className="font-semibold">{deleteTarget?.nama}</span> ({deleteTarget?.nip}) akan dihapus <strong>permanen</strong> dari database. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  )
+}
+
+// ===========================================================================
+// SHARED DIALOGS
 // ===========================================================================
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -394,5 +310,116 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
       <p className="text-slate-500">{label}</p>
       <p className="col-span-2 text-slate-900 font-medium">{value}</p>
     </div>
+  )
+}
+
+function RestoreDialog({ title, description, loading, onConfirm, onCancel }: { title: string; description: React.ReactNode; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <AlertDialog open onOpenChange={(o) => !o && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader><AlertDialogTitle>{title}</AlertDialogTitle><AlertDialogDescription>{description}</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>Batal</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white">{loading ? 'Memulihkan...' : 'Pulihkan'}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+function DeletePermanentDialog({ title, description, loading, onConfirm, onCancel }: { title: string; description: React.ReactNode; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <AlertDialog open onOpenChange={(o) => !o && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader><AlertDialogTitle className="text-red-600">{title}</AlertDialogTitle><AlertDialogDescription>{description}</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={loading}>Batal</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} disabled={loading} className="bg-red-600 hover:bg-red-700 text-white">{loading ? 'Menghapus...' : 'Hapus Permanen'}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
+
+// ===========================================================================
+// DETAIL DIALOGS
+// ===========================================================================
+
+function DetailDialogPelatihan({ target, onClose }: { target: (Pelatihan & { _count?: { angkatan: number }; deletedAt?: string | null }) | null; onClose: () => void }) {
+  return (
+    <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Detail Arsip Pelatihan</DialogTitle></DialogHeader>
+        {target && (
+          <div className="space-y-3 py-2">
+            <DetailRow label="Kode" value={target.kode} />
+            <DetailRow label="Nama" value={target.nama} />
+            <DetailRow label="Kategori" value={kategoriLabel(target.kategori)} />
+            <DetailRow label="Durasi" value={`${target.durasiHari} hari (${target.jp} JP)`} />
+            <DetailRow label="Jumlah Angkatan" value={String(target._count?.angkatan || 0)} />
+            <DetailRow label="Status" value={<StatusBadge status={target.status} />} />
+            {target.deskripsi && <DetailRow label="Deskripsi" value={target.deskripsi} />}
+            <DetailRow label="Diarsipkan pada" value={target.deletedAt ? formatTanggal(target.deletedAt) : '-'} />
+          </div>
+        )}
+        <DialogFooter><DialogClose asChild><Button variant="outline"><X className="w-4 h-4" /> Tutup</Button></DialogClose></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function DetailDialogUji({ target, onClose }: { target: (UjiKompetensi & { angkatan?: any; asesor?: any[]; _count?: { nilai: number }; deletedAt?: string | null }) | null; onClose: () => void }) {
+  return (
+    <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Detail Arsip Uji Kompetensi</DialogTitle></DialogHeader>
+        {target && (
+          <div className="space-y-3 py-2">
+            <DetailRow label="Kode" value={target.kode} />
+            <DetailRow label="Skema Sertifikasi" value={target.skemaSertifikasi} />
+            <DetailRow label="Tanggal Uji" value={formatTanggal(target.tanggalUji)} />
+            <DetailRow label="Tempat" value={target.tempat} />
+            <DetailRow label="Jumlah Peserta" value={String(target.jumlahPeserta)} />
+            <DetailRow label="Angkatan" value={target.angkatan ? `${target.angkatan.namaAngkatan} — ${target.angkatan.pelatihan?.nama || ''}` : '-'} />
+            <DetailRow label="Asesor" value={target.asesor && target.asesor.length > 0 ? target.asesor.map((a: any) => a.nama).join(', ') : '-'} />
+            <DetailRow label="Nilai Terinput" value={String(target._count?.nilai || 0)} />
+            <DetailRow label="Status" value={<StatusBadge status={target.status} />} />
+            {target.catatan && <DetailRow label="Catatan" value={target.catatan} />}
+            <DetailRow label="Diarsipkan pada" value={target.deletedAt ? formatTanggal(target.deletedAt) : '-'} />
+          </div>
+        )}
+        <DialogFooter><DialogClose asChild><Button variant="outline"><X className="w-4 h-4" /> Tutup</Button></DialogClose></DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function DetailDialogPeserta({ target, onClose }: { target: (Peserta & { _count?: { angkatan: number; nilai: number }; deletedAt?: string | null }) | null; onClose: () => void }) {
+  return (
+    <Dialog open={!!target} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader><DialogTitle>Detail Arsip Peserta</DialogTitle></DialogHeader>
+        {target && (
+          <div className="space-y-3 py-2">
+            <DetailRow label="NIP" value={target.nip} />
+            <DetailRow label="Nama" value={target.nama} />
+            <DetailRow label="Jenis Kelamin" value={target.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'} />
+            <DetailRow label="Tempat/Tgl Lahir" value={`${target.tempatLahir || '-'}, ${target.tanggalLahir ? formatTanggal(target.tanggalLahir) : '-'}`} />
+            <DetailRow label="Jabatan" value={target.jabatan || '-'} />
+            <DetailRow label="Pangkat/Gol." value={target.pangkatGolongan || '-'} />
+            <DetailRow label="Unit Kerja" value={target.unitKerja || '-'} />
+            <DetailRow label="Instansi" value={target.instansi || '-'} />
+            <DetailRow label="Pendidikan" value={target.pendidikan || '-'} />
+            <DetailRow label="No. Telp" value={target.noTelp || '-'} />
+            <DetailRow label="Email" value={target.email || '-'} />
+            <DetailRow label="Angkatan" value={String(target._count?.angkatan || 0)} />
+            <DetailRow label="Nilai" value={String(target._count?.nilai || 0)} />
+            <DetailRow label="Status" value={<StatusBadge status={target.status} />} />
+            <DetailRow label="Diarsipkan pada" value={target.deletedAt ? formatTanggal(target.deletedAt) : '-'} />
+          </div>
+        )}
+        <DialogFooter><DialogClose asChild><Button variant="outline"><X className="w-4 h-4" /> Tutup</Button></DialogClose></DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
