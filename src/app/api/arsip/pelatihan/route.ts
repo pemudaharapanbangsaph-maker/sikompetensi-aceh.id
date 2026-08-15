@@ -18,8 +18,8 @@ export async function GET(req: Request) {
     }
     const where = buildWhere(search as string, ['nama', 'kode'], filters)
     where.deleted = true
-    // Kecualikan data yang namanya mengandung "uji kompetensi" (masuk ke arsip uji kompetensi)
-    where.nama = { ...(where.nama as Record<string, unknown> || {}), not: { contains: 'uji kompetensi' } }
+    // Kecualikan data yang namanya mengandung "uji kom" (masuk ke arsip uji kompetensi)
+    where.nama = { ...(where.nama as Record<string, unknown> || {}), not: { contains: 'uji kom' } }
     const [data, total] = await Promise.all([
       db.pelatihan.findMany({
         where,
