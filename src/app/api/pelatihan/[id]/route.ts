@@ -34,8 +34,32 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const data: Record<string, unknown> = { ...body }
     if (body.durasiHari !== undefined) data.durasiHari = Number(body.durasiHari)
     if (body.jp !== undefined) data.jp = Number(body.jp)
+
     const item = await db.pelatihan.update({ where: { id }, data: data as any })
-    await auditLog(session, 'UPDATE', 'PELATIHAN', `Ubah pelatihan: ${item.nama}`, req)
+
+    // ==========================================================
+    // AUTO-ARCHIVE: Jika status diubah ke SELESAI, otomatis arsipkan
+    // pelatihan beserta semua angkatannya
+    // ==========================================================
+    if (body.status === 'SELESAI' && !item.deleted) {
+      const now = new Date()
+      await db.$transaction([
+        // 1. Archive pelatihan
+        db.pelatihan.update({
+          where: { id },
+          data: { deleted: true, deletedAt: now },
+        }),
+        // 2. Archive semua angkatan terkait
+        db.angkatan.updateMany({
+          where: { pelatihanId: id },
+          data: { deleted: true, deletedAt: now },
+        }),
+      ])
+      await auditLog(session, 'DELETE', 'PELATIHAN', `Auto-arsip pelatihan (SELESAI): ${item.nama}`, req)
+    } else {
+      await auditLog(session, 'UPDATE', 'PELATIHAN', `Ubah pelatihan: ${item.nama}`, req)
+    }
+
     return NextResponse.json(item)
   } catch (e) {
     console.error('pelatihan update error:', e)
@@ -51,8 +75,19 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const { id } = await params
-    const item = await db.pelatihan.update({ where: { id }, data: { deleted: true, deletedAt: new Date() } })
-    await auditLog(session, 'DELETE', 'PELATIHAN', `Arsip pelatihan: ${item.nama}`, req)
+    const now = new Date()
+    // Soft delete pelatihan + semua angkatan terkait
+    await db.$transaction([
+      db.pelatihan.update({
+        where: { id },
+        data: { deleted: true, deletedAt: now },
+      }),
+      db.angkatan.updateMany({
+        where: { pelatihanId: id },
+        data: { deleted: true, deletedAt: now },
+      }),
+    ])
+    await auditLog(session, 'DELETE', 'PELATIHAN', `Arsip pelatihan: ${id}`, req)
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('pelatihan delete error:', e)
