@@ -198,6 +198,26 @@ export const api = {
     exportPesertaXls: () => window.location.href = `${BASE}/laporan/peserta/export`,
   },
 
+  // ===== Arsip =====
+  arsip: {
+    pelatihan: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<Pelatihan>>(`/arsip/pelatihan${qs}`)
+    },
+    ujiKompetensi: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<UjiKompetensi>>(`/arsip/uji-kompetensi${qs}`)
+    },
+    exportPelatihanPdf: () => window.location.href = `${BASE}/arsip/pelatihan/export?format=pdf`,
+    exportPelatihanXls: () => window.location.href = `${BASE}/arsip/pelatihan/export`,
+    exportUjiKompetensiPdf: () => window.location.href = `${BASE}/arsip/uji-kompetensi/export?format=pdf`,
+    exportUjiKompetensiXls: () => window.location.href = `${BASE}/arsip/uji-kompetensi/export`,
+  },
+
   settings: {
     get: () => request<Record<string, string>>('/settings'),
     update: (data: Record<string, string>) => request<void>('/settings', { method: 'PUT', body: JSON.stringify(data) }),
