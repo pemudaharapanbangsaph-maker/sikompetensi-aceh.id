@@ -80,11 +80,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const { id } = await params
-    const item = await db.ujiKompetensi.delete({ where: { id } })
-    await auditLog(session, 'DELETE', 'UJI_KOMPETENSI', `Hapus uji kompetensi: ${item.kode}`, req)
+    const item = await db.ujiKompetensi.update({ where: { id }, data: { deleted: true, deletedAt: new Date() } })
+    await auditLog(session, 'DELETE', 'UJI_KOMPETENSI', `Arsip uji kompetensi: ${item.kode}`, req)
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('uji-kompetensi delete error:', e)
-    return NextResponse.json({ error: 'Gagal menghapus uji kompetensi' }, { status: 500 })
+    return NextResponse.json({ error: 'Gagal mengarsipkan uji kompetensi' }, { status: 500 })
   }
 }
