@@ -26,6 +26,7 @@ export async function GET(req: Request) {
 
     // Ambil semua peserta
     const peserta = await db.peserta.findMany({
+      where: { deleted: false },
       orderBy: { nama: 'asc' },
       include: {
         angkatan: {
