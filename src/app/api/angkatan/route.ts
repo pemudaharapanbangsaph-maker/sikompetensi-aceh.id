@@ -17,6 +17,8 @@ export async function GET(req: Request) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
     const where = buildWhere(search as string, ['namaAngkatan', 'lokasi'], filters)
+    where.pelatihan = { deleted: false }
+    where.deleted = false
     const [data, total] = await Promise.all([
       db.angkatan.findMany({
         where,
