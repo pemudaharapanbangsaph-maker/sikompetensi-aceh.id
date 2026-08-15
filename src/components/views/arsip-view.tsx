@@ -123,8 +123,8 @@ function ArsipPelatihanView() {
         )}
       />
       <DetailDialogPelatihan target={detailTarget} onClose={() => setDetailTarget(null)} />
-      <RestoreDialog title="Pulihkan Pelatihan dari Arsip?" description={<>Yakin ingin memulihkan pelatihan <span className="font-semibold">{restoreTarget?.nama}</span> dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
-      <DeletePermanentDialog title="Hapus Permanen Pelatihan?" description={<>Data <span className="font-semibold">{deleteTarget?.nama}</span> akan dihapus <strong>permanen</strong> dari database beserta semua angkatan terkait. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Pelatihan dari Arsip?" description={<>Yakin ingin memulihkan pelatihan <span className="font-semibold">{restoreTarget?.nama}</span> dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Pelatihan?" description={<>Data <span className="font-semibold">{deleteTarget?.nama}</span> akan dihapus <strong>permanen</strong> dari database beserta semua angkatan terkait. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
     </div>
   )
 }
@@ -209,8 +209,8 @@ function ArsipUjiView() {
         )}
       />
       <DetailDialogUji target={detailTarget} onClose={() => setDetailTarget(null)} />
-      <RestoreDialog title="Pulihkan Uji Kompetensi dari Arsip?" description={<>Yakin ingin memulihkan uji kompetensi <span className="font-semibold">{restoreTarget?.kode}</span> dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
-      <DeletePermanentDialog title="Hapus Permanen Uji Kompetensi?" description={<>Data uji kompetensi <span className="font-semibold">{deleteTarget?.kode}</span> akan dihapus <strong>permanen</strong> dari database. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Uji Kompetensi dari Arsip?" description={<>Yakin ingin memulihkan uji kompetensi <span className="font-semibold">{restoreTarget?.kode}</span> dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Uji Kompetensi?" description={<>Data uji kompetensi <span className="font-semibold">{deleteTarget?.kode}</span> akan dihapus <strong>permanen</strong> dari database. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
     </div>
   )
 }
@@ -294,8 +294,8 @@ function ArsipPesertaView() {
         )}
       />
       <DetailDialogPeserta target={detailTarget} onClose={() => setDetailTarget(null)} />
-      <RestoreDialog title="Pulihkan Peserta dari Arsip?" description={<>Yakin ingin memulihkan peserta <span className="font-semibold">{restoreTarget?.nama}</span> ({restoreTarget?.nip}) dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
-      <DeletePermanentDialog title="Hapus Permanen Peserta?" description={<>Data peserta <span className="font-semibold">{deleteTarget?.nama}</span> ({deleteTarget?.nip}) akan dihapus <strong>permanen</strong> dari database. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Peserta dari Arsip?" description={<>Yakin ingin memulihkan peserta <span className="font-semibold">{restoreTarget?.nama}</span> ({restoreTarget?.nip}) dari arsip?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Peserta?" description={<>Data peserta <span className="font-semibold">{deleteTarget?.nama}</span> ({deleteTarget?.nip}) akan dihapus <strong>permanen</strong> dari database. Tindakan ini <strong>tidak bisa dibatalkan</strong>!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
     </div>
   )
 }
@@ -313,9 +313,9 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   )
 }
 
-function RestoreDialog({ title, description, loading, onConfirm, onCancel }: { title: string; description: React.ReactNode; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
+function RestoreDialog({ title, description, loading, open, onConfirm, onCancel }: { title: string; description: React.ReactNode; loading: boolean; open: boolean; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <AlertDialog open onOpenChange={(o) => !o && onCancel()}>
+    <AlertDialog open={open} onOpenChange={(o) => !o && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader><AlertDialogTitle>{title}</AlertDialogTitle><AlertDialogDescription>{description}</AlertDialogDescription></AlertDialogHeader>
         <AlertDialogFooter>
@@ -327,9 +327,9 @@ function RestoreDialog({ title, description, loading, onConfirm, onCancel }: { t
   )
 }
 
-function DeletePermanentDialog({ title, description, loading, onConfirm, onCancel }: { title: string; description: React.ReactNode; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
+function DeletePermanentDialog({ title, description, loading, open, onConfirm, onCancel }: { title: string; description: React.ReactNode; loading: boolean; open: boolean; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <AlertDialog open onOpenChange={(o) => !o && onCancel()}>
+    <AlertDialog open={open} onOpenChange={(o) => !o && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader><AlertDialogTitle className="text-red-600">{title}</AlertDialogTitle><AlertDialogDescription>{description}</AlertDialogDescription></AlertDialogHeader>
         <AlertDialogFooter>
