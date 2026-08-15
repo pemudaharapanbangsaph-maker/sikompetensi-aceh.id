@@ -71,6 +71,8 @@ model Peserta {
   alamat       String?
   fotoUrl      String?
   status       String   @default("AKTIF")
+  deleted      Boolean  @default(false)
+  deletedAt    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -91,6 +93,8 @@ model Pelatihan {
   createdBy    String?
   user         User?    @relation(fields: [createdBy], references: [id], onDelete: SetNull)
   status       String   @default("AKTIF") // AKTIF | NONAKTIF
+  deleted      Boolean  @default(false)
+  deletedAt    DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -263,6 +267,8 @@ model UjiKompetensi {
   jumlahPeserta   Int      @default(0)
   status          String   @default("DIJADWALKAN") // DIJADWALKAN | BERLANGSUNG | SELESAI | DIBATALKAN
   catatan         String?
+  deleted          Boolean  @default(false)
+  deletedAt        DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
