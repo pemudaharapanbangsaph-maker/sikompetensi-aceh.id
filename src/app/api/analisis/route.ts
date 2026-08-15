@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     const [data, total] = await Promise.all([
       db.analisisKebutuhan.findMany({
         where,
-        include: { pelatihan: true, user: true },
+        include: { pelatihan: { where: { deleted: false } }, user: true },
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
         orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
