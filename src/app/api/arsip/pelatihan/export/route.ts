@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     const format = searchParams.get('format') || 'xlsx'
     const search = searchParams.get('search') || undefined
 
-    const where: Record<string, unknown> = { deleted: true }
+    const where: Record<string, unknown> = { deleted: true, nama: { not: { contains: 'uji kompetensi', mode: 'insensitive' } } }
     if (search) {
       where.OR = [
         { nama: { contains: search } },
