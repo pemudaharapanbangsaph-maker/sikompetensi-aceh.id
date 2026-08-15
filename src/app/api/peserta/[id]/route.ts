@@ -48,11 +48,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const { id } = await params
-    const item = await db.peserta.delete({ where: { id } })
-    await auditLog(session, 'DELETE', 'PESERTA', `Hapus peserta: ${item.nama}`, req)
+    const item = await db.peserta.update({ where: { id }, data: { deleted: true, deletedAt: new Date() } })
+    await auditLog(session, 'DELETE', 'PESERTA', `Arsip peserta: ${item.nama}`, req)
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('peserta delete error:', e)
-    return NextResponse.json({ error: 'Gagal menghapus peserta' }, { status: 500 })
+    return NextResponse.json({ error: 'Gagal mengarsipkan peserta' }, { status: 500 })
   }
 }
