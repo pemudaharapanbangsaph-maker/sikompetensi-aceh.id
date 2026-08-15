@@ -17,6 +17,7 @@ export async function GET(req: Request) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
     const where = buildWhere(search as string, ['nama', 'kode'], filters)
+    where.deleted = false
     const [data, total] = await Promise.all([
       db.pelatihan.findMany({
         where,
