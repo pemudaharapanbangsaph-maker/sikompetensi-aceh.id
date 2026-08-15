@@ -10,6 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const data = await db.ujiKompetensi.findMany({
+      where: { deleted: false },
       include: {
         angkatan: { include: { pelatihan: true } },
         asesor: { include: { asesor: true } },
