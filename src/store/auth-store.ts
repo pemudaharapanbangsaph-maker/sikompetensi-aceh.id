@@ -100,6 +100,7 @@ export type ViewKey =
   | 'user-data' | 'user-hak-akses' | 'user-log'
   | 'backup' | 'backup-restore' | 'backup-riwayat'
   | 'settings-profil' | 'settings-logo' | 'settings-login' | 'settings-audit'
+  | 'account-profil' | 'account-keamanan'
 
 interface NavigationState {
   activeView: ViewKey
