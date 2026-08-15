@@ -8,7 +8,7 @@ export async function GET() {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const angkatan = await db.angkatan.findMany({
-      where: { status: { in: ['BERJALAN', 'SELESAI', 'PERENCANAAN'] } },
+      where: { status: { in: ['BERJALAN', 'SELESAI', 'PERENCANAAN'] }, deleted: false, pelatihan: { deleted: false } },
       include: {
         pelatihan: { select: { nama: true, kategori: true } },
         _count: { select: { peserta: true } },
