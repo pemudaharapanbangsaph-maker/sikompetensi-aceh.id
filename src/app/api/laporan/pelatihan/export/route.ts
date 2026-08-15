@@ -45,8 +45,10 @@ export async function GET(req: Request) {
     const format = searchParams.get('format') || 'xlsx'
     const angkatanId = searchParams.get('angkatanId') || undefined
 
+    const whereClause: any = angkatanId ? { id: angkatanId } : {}
+    if (!angkatanId) whereClause.pelatihan = { deleted: false }
     const angkatan = await db.angkatan.findMany({
-      where: angkatanId ? { id: angkatanId } : undefined,
+      where: whereClause,
       include: {
         pelatihan: true,
         _count: { select: { peserta: true } },
