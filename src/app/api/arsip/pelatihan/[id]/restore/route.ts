@@ -14,11 +14,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!item || !item.deleted) {
       return NextResponse.json({ error: 'Data tidak ditemukan di arsip' }, { status: 404 })
     }
-    const restored = await db.pelatihan.update({
-      where: { id },
-      data: { deleted: false, deletedAt: null },
-    })
-    await auditLog(session, 'UPDATE', 'PELATIHAN', `Pulihkan pelatihan dari arsip: ${restored.nama}`, req)
+    // Restore pelatihan + semua angkatan terkait
+    await db.$transaction([
+      db.pelatihan.update({
+        where: { id },
+        data: { deleted: false, deletedAt: null },
+      }),
+      db.angkatan.updateMany({
+        where: { pelatihanId: id },
+        data: { deleted: false, deletedAt: null },
+      }),
+    ])
+    await auditLog(session, 'UPDATE', 'PELATIHAN', `Pulihkan pelatihan dari arsip: ${item.nama}`, req)
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('arsip pelatihan restore error:', e)
