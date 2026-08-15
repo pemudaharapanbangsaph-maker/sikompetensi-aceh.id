@@ -216,6 +216,14 @@ export const api = {
     exportPelatihanXls: () => window.location.href = `${BASE}/arsip/pelatihan/export`,
     exportUjiKompetensiPdf: () => window.location.href = `${BASE}/arsip/uji-kompetensi/export?format=pdf`,
     exportUjiKompetensiXls: () => window.location.href = `${BASE}/arsip/uji-kompetensi/export`,
+    peserta: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<Peserta>>(`/arsip/peserta${qs}`)
+    },
+    exportPesertaPdf: () => window.location.href = `${BASE}/arsip/peserta/export?format=pdf`,
+    exportPesertaXls: () => window.location.href = `${BASE}/arsip/peserta/export`,
   },
 
   settings: {
