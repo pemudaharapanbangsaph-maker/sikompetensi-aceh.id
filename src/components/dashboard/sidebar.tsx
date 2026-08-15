@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -33,7 +33,6 @@ const menuItems: MenuItem[] = [
       { key: 'pelatihan-jadwal', label: 'Jadwal Pelatihan', view: 'pelatihan-jadwal', permission: 'pelatihan' },
       { key: 'pelatihan-data', label: 'Data Pelatihan', view: 'pelatihan', permission: 'pelatihan' },
       { key: 'pelatihan-peserta-kegiatan', label: 'Peserta Per Kegiatan', view: 'pelatihan-peserta-kegiatan', permission: 'pelatihan' },
-      { key: 'pelatihan-arsip', label: 'Arsip Pelatihan', view: 'pelatihan-arsip', permission: 'pelatihan' },
     ],
   },
   { key: 'kehadiran', label: 'Kehadiran Peserta', icon: ClipboardCheck, view: 'kehadiran', permission: 'pelatihan' },
@@ -47,6 +46,13 @@ const menuItems: MenuItem[] = [
       { key: 'uji-penilaian', label: 'Penilaian', view: 'uji-penilaian', permission: 'uji_kompetensi' },
       { key: 'uji-hasil', label: 'Hasil Uji', view: 'uji-hasil', permission: 'uji_kompetensi' },
       { key: 'uji-rekap', label: 'Rekap Nilai', view: 'uji-rekap', permission: 'uji_kompetensi' },
+    ],
+  },
+  {
+    key: 'arsip', label: 'Arsip', icon: Archive, permission: 'laporan',
+    children: [
+      { key: 'arsip-pelatihan', label: 'Arsip Pelatihan', view: 'arsip-pelatihan', permission: 'laporan' },
+      { key: 'arsip-uji', label: 'Arsip Uji Kompetensi', view: 'arsip-uji', permission: 'laporan' },
     ],
   },
   {
