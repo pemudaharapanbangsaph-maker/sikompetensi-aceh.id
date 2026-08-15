@@ -10,6 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const data = await db.angkatan.findMany({
+      where: { pelatihan: { deleted: false }, deleted: false },
       include: { pelatihan: true, _count: { select: { peserta: true } } },
       orderBy: { createdAt: 'desc' },
     })
