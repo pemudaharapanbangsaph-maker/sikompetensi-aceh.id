@@ -30,7 +30,7 @@ export async function GET(
     const settings: Record<string, string> = {}
     for (const r of settingsRows) settings[r.key] = r.value
 
-    const instansiNama = settings.instansi_nama || 'Badan Pengembangan Sumber Daya Manusia Daerah Provinsi Aceh'
+    const instansiNama = settings.instansi_nama || 'Badan Pengembangan Sumber Daya Manusia Daerah Aceh'
     const instansiSingkat = settings.instansi_singkat || 'BPSDM Aceh'
     const instansiAlamat = settings.instansi_alamat || 'Jl. Syech Abdurauf No. 7, Banda Aceh'
 
@@ -91,7 +91,7 @@ export async function GET(
     doc.text(instansiNama.toUpperCase(), pw / 2, y + 8, { align: 'center' })
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
-    doc.text('BIDANG PENGELOLAAN DAN SERTIFIKASI KOMPETENSI TEKNIS INTI', pw / 2, y + 13, { align: 'center' })
+    doc.text('BIDANG PENGEMBANGAN DAN SERTIFIKASI KOMPETENSI TEKNIS INTI', pw / 2, y + 13, { align: 'center' })
     doc.text(instansiAlamat, pw / 2, y + 17.5, { align: 'center' })
 
     y += 22
