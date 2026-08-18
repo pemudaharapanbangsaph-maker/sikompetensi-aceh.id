@@ -175,12 +175,12 @@ export async function GET(
     doc.setFont('helvetica', 'bold')
     doc.text('JP / Hari', rcol, ry)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 25, ry)
+    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 28, ry)
     ry += 6
     doc.setFont('helvetica', 'bold')
     doc.text('Tahun Pelaksanaan', rcol, ry)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanTahun}`, rcol + 25, ry)
+    doc.text(`: ${pelatihanTahun}`, rcol + 45, ry)
 
     y += 38
 
