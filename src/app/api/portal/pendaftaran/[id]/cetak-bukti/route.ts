@@ -27,7 +27,7 @@ export async function GET(
 
     const instansiNama = settings.instansi_nama || 'Badan Pengembangan Sumber Daya Manusia Aceh'
     const instansiSingkat = settings.instansi_singkat || 'BPSDM Aceh'
-    const instansiAlamat = settings.instansi_alamat || 'Jl. T Nyak Makam, Lampineung No. 8, Banda Aceh'
+    const instansiAlamat = settings.instansi_alamat || 'Jl.T.Panglima Nyak Makam No 8 Lampineng, Kota Banda Aceh, 24415 Email: bpsdm@acehprov.go.id'
 
     const KATEGORI_LABEL: Record<string, string> = {
       TEKNIS: 'Teknis',
