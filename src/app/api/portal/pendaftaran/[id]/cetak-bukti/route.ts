@@ -287,7 +287,7 @@ export async function GET(
     doc.text(`Banda Aceh, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, pw - mr - 30, y)
     y += 3
     doc.setFont('helvetica', 'bold')
-    doc.text('Admin Pendaftaran', pw - mr - 20, y)
+    doc.text('Admin Pendaftaran', pw - mr - 30, y)
 
     y += 15
     doc.setDrawColor(30, 41, 59)
