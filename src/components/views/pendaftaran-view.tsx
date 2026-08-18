@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast'
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
 import {
   ArrowLeft, Download, Loader2, FileText, CheckCircle2, XCircle, Clock, AlertCircle,
-  Pencil, FileSpreadsheet, FileDown, Eye, Trash2,
+  Pencil, FileSpreadsheet, FileDown, Eye, Trash2, Printer,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -317,6 +317,9 @@ function PendaftaranListView() {
         emptyMessage="Belum ada data pendaftaran dari portal"
         actions={(row) => (
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={(e) => { e.stopPropagation(); window.open(`/api/pendaftaran/${row.id}/cetak-bukti`, '_blank') }} title="Cetak Bukti Pendaftaran">
+              <Printer className="w-3.5 h-3.5" />
+            </Button>
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-500 hover:text-[#195737]" onClick={(e) => { e.stopPropagation(); _selectedPendaftaranId = row.id; setActiveView('pendaftaran-dokumen') }} title="Lihat Detail">
               <Eye className="w-3.5 h-3.5" />
             </Button>
@@ -763,6 +766,10 @@ function PendaftaranDokumenView() {
             <StatusIcon className="w-4 h-4" />
             {STATUS_OPTIONS.find((o) => o.value === data.status)?.label || data.status}
           </span>
+          <Button size="sm" variant="outline" onClick={() => window.open(`/api/pendaftaran/${data.id}/cetak-bukti`, '_blank')} className="h-9 text-[#0F4C81] border-[#0F4C81]/30 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81]">
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline ml-1.5">Cetak Bukti</span>
+          </Button>
           <Button size="sm" variant="outline" onClick={openEditDialog} className="h-9 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white hover:border-[#195737]">
             <Pencil className="w-4 h-4" />
             <span className="hidden sm:inline ml-1.5">Edit Biodata</span>
