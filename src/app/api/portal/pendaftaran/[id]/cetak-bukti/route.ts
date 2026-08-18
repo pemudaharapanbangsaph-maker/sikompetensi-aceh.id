@@ -73,7 +73,7 @@ export async function GET(
     try {
       const logoBuf = await readFile(logoPath)
       const logoBase64 = 'data:image/png;base64,' + logoBuf.toString('base64')
-      doc.addImage(logoBase64, 'PNG', ml, y - 2, 14, 14)
+      doc.addImage(logoBase64, 'PNG', ml, y + 5, 14, 14)
       logoAdded = true
     } catch { /* fallback ke placeholder jika logo tidak ada */ }
     if (!logoAdded) {
