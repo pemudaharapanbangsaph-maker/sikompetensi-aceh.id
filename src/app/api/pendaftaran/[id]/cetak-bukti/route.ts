@@ -296,7 +296,7 @@ export async function GET(
     doc.setFont('helvetica', 'bold')
     doc.text('Admin Pendaftaran', pw - mr - 20, y)
 
-    y += 25
+    y += 15
     doc.setDrawColor(30, 41, 59)
     doc.setLineWidth(0.5)
     doc.line(pw - mr - 35, y, pw - mr + 5, y)
