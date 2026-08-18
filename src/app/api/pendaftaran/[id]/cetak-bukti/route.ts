@@ -30,9 +30,9 @@ export async function GET(
     const settings: Record<string, string> = {}
     for (const r of settingsRows) settings[r.key] = r.value
 
-    const instansiNama = settings.instansi_nama || 'Badan Pengembangan Sumber Daya Manusia Daerah Aceh'
+    const instansiNama = settings.instansi_nama || 'Badan Pengembangan Sumber Daya Manusia Aceh'
     const instansiSingkat = settings.instansi_singkat || 'BPSDM Aceh'
-    const instansiAlamat = settings.instansi_alamat || 'Jl. Syech Abdurauf No. 7, Banda Aceh'
+    const instansiAlamat = settings.instansi_alamat || 'Jl. T Nyak Makam Lampineung No 8, Banda Aceh'
 
     const KATEGORI_LABEL: Record<string, string> = {
       TEKNIS: 'Teknis',
