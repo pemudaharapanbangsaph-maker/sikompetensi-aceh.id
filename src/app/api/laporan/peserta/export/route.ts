@@ -76,7 +76,7 @@ export async function GET(req: Request) {
       y += 6
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text('Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      doc.text('Sistem Informasi Kompetensi Teknis Inti BPSDM Aceh', pageW / 2, y, { align: 'center' })
       y += 10
 
       // SUMMARY BOX
