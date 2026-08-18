@@ -5,11 +5,11 @@ import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound, Printer } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
-type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran'
+type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran' | 'cek-status'
 
 interface Program {
   id: string
@@ -701,7 +701,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   })
   const [files, setFiles] = useState<Record<string, File>>({})
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState<{ nama: string } | null>(null)
+  const [success, setSuccess] = useState<{ nama: string; id?: string } | null>(null)
   const [step, setStep] = useState<'form' | 'uploading' | 'done'>('form')
   const [uploadProgress, setUploadProgress] = useState('')
 
@@ -795,7 +795,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
         const ures = await fetch('/api/portal/pendaftaran/upload-dokumen', { method: 'POST', body: fd })
         if (!ures.ok) { const udata = await ures.json().catch(() => ({})); setError(`Gagal upload ${d.label}: ${udata.error || 'unknown error'}`); setStep('form'); setLoading(false); return }
       }
-      setStep('done'); setSuccess({ nama: data.nama })
+      setStep('done'); setSuccess({ nama: data.nama, id: regId })
     } catch { setError('Terjadi kesalahan jaringan'); setStep('form') } finally { setLoading(false) }
   }
 
@@ -855,7 +855,22 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }} className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto"><CheckCircle2 className="w-10 h-10 text-green-600" /></motion.div>
             <h3 className="text-2xl font-bold text-slate-900">Pendaftaran Berhasil! 🎉</h3>
             <p className="text-sm text-slate-600">Terima kasih <strong>{success.nama}</strong>, data dan dokumen Anda telah tersimpan. Admin akan memverifikasi pendaftaran Anda.</p>
-            <button onClick={onBack} className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-bold text-base rounded-xl transition-colors"><ArrowLeft className="w-5 h-5" /> Kembali ke Beranda</button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {success.id && (
+                <a
+                  href={`/api/portal/pendaftaran/${success.id}/cetak-bukti`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#0F4C81] hover:bg-[#0d3d6b] text-white font-bold text-base rounded-xl transition-colors"
+                >
+                  <Printer className="w-5 h-5" /> Cetak Bukti Pendaftaran
+                </a>
+              )}
+              <button onClick={onBack} className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-bold text-base rounded-xl transition-colors"><ArrowLeft className="w-5 h-5" /> Kembali ke Beranda</button>
+            </div>
+            {success.id && (
+              <p className="text-xs text-slate-400 mt-1">Klik tombol <strong>Cetak Bukti</strong> untuk membuka/mencetak PDF bukti pendaftaran Anda</p>
+            )}
           </div>
         </div>
       ) : (
