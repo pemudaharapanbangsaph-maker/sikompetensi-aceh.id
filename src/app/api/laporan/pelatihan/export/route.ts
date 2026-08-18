@@ -82,7 +82,7 @@ export async function GET(req: Request) {
       y += 6
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
-      doc.text(selectedAngkatan ? `${selectedAngkatan.pelatihan?.nama || ''} — Sistem Informasi Kompetensi Teknis BPSDM Aceh` : 'Sistem Informasi Kompetensi Teknis BPSDM Aceh', pageW / 2, y, { align: 'center' })
+      doc.text(selectedAngkatan ? `${selectedAngkatan.pelatihan?.nama || ''} — Sistem Informasi Kompetensi Teknis Inti BPSDM Aceh` : 'Sistem Informasi Kompetensi Teknis Inti BPSDM Aceh', pageW / 2, y, { align: 'center' })
       y += 10
 
       // SUMMARY BOX
