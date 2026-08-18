@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { readFile } from 'fs/promises'
+import path from 'path'
 
 export async function GET(
   req: Request,
@@ -65,15 +67,25 @@ export async function GET(
     doc.setFillColor(15, 76, 129) // #0F4C81
     doc.rect(0, 0, pw, 8, 'F')
 
-    // Logo placeholder (circle)
-    doc.setFillColor(15, 76, 129)
-    doc.circle(ml + 7, y + 5, 7, 'F')
-    doc.setFontSize(7)
-    doc.setTextColor(255, 255, 255)
-    doc.setFont('helvetica', 'bold')
-    doc.text('BPSDM', ml + 7, y + 5.5, { align: 'center' })
-    doc.setFontSize(5)
-    doc.text('ACEH', ml + 7, y + 8, { align: 'center' })
+    // Logo Panca Cita dari file
+    const logoPath = path.join(process.cwd(), 'public', 'logo-pancacita.png')
+    let logoAdded = false
+    try {
+      const logoBuf = await readFile(logoPath)
+      const logoBase64 = 'data:image/png;base64,' + logoBuf.toString('base64')
+      doc.addImage(logoBase64, 'PNG', ml, y - 2, 14, 14)
+      logoAdded = true
+    } catch { /* fallback ke placeholder jika logo tidak ada */ }
+    if (!logoAdded) {
+      doc.setFillColor(15, 76, 129)
+      doc.circle(ml + 7, y + 5, 7, 'F')
+      doc.setFontSize(7)
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.text('BPSDM', ml + 7, y + 5.5, { align: 'center' })
+      doc.setFontSize(5)
+      doc.text('ACEH', ml + 7, y + 8, { align: 'center' })
+    }
 
     // Nama instansi
     doc.setTextColor(15, 76, 129)
