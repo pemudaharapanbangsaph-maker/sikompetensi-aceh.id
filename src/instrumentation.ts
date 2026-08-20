@@ -15,6 +15,7 @@ export async function register() {
           "targetOutput" TEXT NOT NULL DEFAULT '',
           "prioritas" TEXT NOT NULL DEFAULT 'SEDANG',
           "tahunPelaksanaan" INTEGER NOT NULL DEFAULT 2025,
+          "tanggalPelaksanaan" DATETIME,
           "dibuatOleh" TEXT,
           "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
