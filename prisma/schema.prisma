@@ -231,6 +231,7 @@ model AnalisisDiklatItem {
   targetOutput          String   @default("")
   prioritas             String   @default("SEDANG") // TINGGI | SEDANG | RENDAH
   tahunPelaksanaan      Int      @default(2025)
+  tanggalPelaksanaan     DateTime?
   status                String   @default("AKTIF") // AKTIF | NONAKTIF
   dibuatOleh            String?
   createdAt             DateTime @default(now())
