@@ -14,7 +14,7 @@ export async function GET(
     const p = await db.pendaftaranPortal.findUnique({
       where: { id },
       include: {
-        analisisDiklatItem: { select: { namaPelatihan: true, kategori: true, metodePembelajaran: true, durasiJP: true, durasiHari: true, tahunPelaksanaan: true } },
+        analisisDiklatItem: { select: { namaPelatihan: true, kategori: true, metodePembelajaran: true, durasiJP: true, durasiHari: true, tahunPelaksanaan: true, tanggalPelaksanaan: true } },
         dokumen: { select: { tipe: true, namaFile: true } },
       },
     })
@@ -128,7 +128,7 @@ export async function GET(
 
     // ========== INFORMASI PELATIHAN ==========
     doc.setFillColor(248, 250, 252)
-    doc.roundedRect(ml, y, cw, 32, 2, 2, 'F')
+    doc.roundedRect(ml, y, cw, 38, 2, 2, 'F')
 
     doc.setTextColor(15, 76, 129)
     doc.setFontSize(9)
@@ -144,6 +144,9 @@ export async function GET(
     const pelatihanJP = p.analisisDiklatItem?.durasiJP || 0
     const pelatihanHari = p.analisisDiklatItem?.durasiHari || 0
     const pelatihanTahun = p.analisisDiklatItem?.tahunPelaksanaan || '-'
+    const tanggalPelaksanaan = p.analisisDiklatItem?.tanggalPelaksanaan
+      ? new Date(p.analisisDiklatItem.tanggalPelaksanaan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '-'
 
     // Left column
     let ly = y + 13
@@ -171,11 +174,16 @@ export async function GET(
     doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 30, ry)
     ry += 6
     doc.setFont('helvetica', 'bold')
-    doc.text('Tahun Pelaksanaan', rcol, ry)
+    doc.text('Tgl Pelaksanaan', rcol, ry)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${tanggalPelaksanaan}`, rcol + 30, ry)
+    ry += 6
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tahun', rcol, ry)
     doc.setFont('helvetica', 'normal')
     doc.text(`: ${pelatihanTahun}`, rcol + 30, ry)
 
-    y += 38
+    y += 44
 
     // ========== DATA PESERTA ==========
     doc.setTextColor(15, 76, 129)
