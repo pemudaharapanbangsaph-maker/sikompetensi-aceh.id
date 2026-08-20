@@ -623,6 +623,16 @@ function AnalisisDiklatTable() {
               />
             </div>
             <div className="space-y-1.5">
+              <Label>Tanggal Pelaksanaan</Label>
+              <Input
+                type="date"
+                value={form.tanggalPelaksanaan ? new Date(form.tanggalPelaksanaan).toISOString().slice(0, 10) : ''}
+                onChange={(e) => setForm({ ...form, tanggalPelaksanaan: e.target.value ? new Date(e.target.value) : null })}
+                placeholder="Pilih tanggal"
+              />
+              <p className="text-xs text-slate-400 mt-1">Tanggal pelaksanaan akan tampil di bukti pendaftaran.</p>
+            </div>
+            <div className="space-y-1.5">
               <Label>Status Publikasi</Label>
               <Select value={form.status || 'AKTIF'} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
