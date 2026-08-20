@@ -61,6 +61,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         durasiJP: body.durasiJP !== undefined ? Number(body.durasiJP) : undefined,
         durasiHari: body.durasiHari !== undefined ? Number(body.durasiHari) : undefined,
         tahunPelaksanaan: body.tahunPelaksanaan !== undefined ? Number(body.tahunPelaksanaan) : undefined,
+        tanggalPelaksanaan: body.tanggalPelaksanaan ? new Date(body.tanggalPelaksanaan) : body.tanggalPelaksanaan === null ? null : undefined,
       },
     })
     // Sinkronisasi ke Pelatihan
