@@ -163,12 +163,14 @@ export async function POST(req: Request) {
     const durasiJP = body.durasiJP ? Number(body.durasiJP) : 0
     const durasiHari = body.durasiHari ? Number(body.durasiHari) : 0
     const tahunPelaksanaan = body.tahunPelaksanaan ? Number(body.tahunPelaksanaan) : new Date().getFullYear()
+    const tanggalPelaksanaan = body.tanggalPelaksanaan ? new Date(body.tanggalPelaksanaan) : null
     const item = await db.analisisDiklatItem.create({
       data: {
         ...body,
         durasiJP,
         durasiHari,
         tahunPelaksanaan,
+        tanggalPelaksanaan,
         dibuatOleh: session.user.id,
       },
     })
