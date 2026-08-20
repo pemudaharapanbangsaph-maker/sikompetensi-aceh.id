@@ -202,6 +202,7 @@ export interface AnalisisDiklatItem {
   targetOutput: string
   prioritas: string
   tahunPelaksanaan: number
+  tanggalPelaksanaan: string | null
   status: string
   createdAt: string
 }
