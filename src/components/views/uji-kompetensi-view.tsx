@@ -1310,12 +1310,42 @@ const BIODATA_STATUS_STYLE: Record<string, string> = {
 
 const BIODATA_LS_KEY = 'sikompetensi_biodata_peserta_state'
 
-interface BiodataPesertaState {
+const SESSION_COLORS = [
+  'bg-[#0F4C81]/10 text-[#0F4C81] border-[#0F4C81]/20',
+  'bg-[#195737]/10 text-[#195737] border-[#86EFAC]/60',
+  'bg-amber-50 text-amber-700 border-amber-200',
+  'bg-purple-50 text-purple-700 border-purple-200',
+  'bg-rose-50 text-rose-700 border-rose-200',
+  'bg-cyan-50 text-cyan-700 border-cyan-200',
+  'bg-orange-50 text-orange-700 border-orange-200',
+  'bg-teal-50 text-teal-700 border-teal-200',
+]
+
+function getSessionColor(index: number): string {
+  return SESSION_COLORS[index % SESSION_COLORS.length]
+}
+
+interface BiodataSession {
+  id: string
   selectedPelatihan: string
-  locked: boolean
   fetched: boolean
   data: BiodataPesertaItem[]
+  loading: boolean
+}
+
+interface BiodataPesertaState {
+  sessions: BiodataSession[]
   search: string
+}
+
+function createEmptySession(): BiodataSession {
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    selectedPelatihan: '',
+    fetched: false,
+    data: [],
+    loading: false,
+  }
 }
 
 function loadBiodataState(): BiodataPesertaState | null {
@@ -1323,7 +1353,13 @@ function loadBiodataState(): BiodataPesertaState | null {
   try {
     const raw = localStorage.getItem(BIODATA_LS_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as BiodataPesertaState
+    const parsed = JSON.parse(raw)
+    // Migration: if old format (has selectedPelatihan at top level), clear it
+    if (parsed && !parsed.sessions) {
+      localStorage.removeItem(BIODATA_LS_KEY)
+      return null
+    }
+    return parsed as BiodataPesertaState
   } catch {
     return null
   }
@@ -1350,31 +1386,30 @@ function UjiBiodataPesertaView() {
   // Restore persisted state from localStorage
   const savedState = typeof window !== 'undefined' ? loadBiodataState() : null
 
-  // Pelatihan dropdown
-  const [pelatihanOptions, setPelatihanOptions] = useState<PelatihanOption[]>([])
-  const [selectedPelatihan, setSelectedPelatihan] = useState(savedState?.selectedPelatihan || '')
-  const [loadingOptions, setLoadingOptions] = useState(true)
-
-  // Data table
-  const [data, setData] = useState<BiodataPesertaItem[]>(savedState?.data || [])
-  const [loading, setLoading] = useState(false)
-  const [fetched, setFetched] = useState(savedState?.fetched || false)
+  // Sessions state
+  const [sessions, setSessions] = useState<BiodataSession[]>(
+    savedState?.sessions?.length ? savedState.sessions : [createEmptySession()]
+  )
   const [search, setSearch] = useState(savedState?.search || '')
-  const [locked, setLocked] = useState(savedState?.locked || false)
+
+  // Pelatihan dropdown options (fetched once)
+  const [pelatihanOptions, setPelatihanOptions] = useState<PelatihanOption[]>([])
+  const [loadingOptions, setLoadingOptions] = useState(true)
 
   // Detail
   const [selectedId, setSelectedId] = useState('')
   const [detail, setDetail] = useState<BiodataDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
-  // Persist state to localStorage whenever relevant state changes
+  // Persist state to localStorage when there's meaningful data
   useEffect(() => {
-    if (locked && fetched && selectedPelatihan) {
-      saveBiodataState({ selectedPelatihan, locked, fetched, data, search })
+    const hasData = sessions.some((s) => s.fetched)
+    if (hasData) {
+      saveBiodataState({ sessions, search })
     }
-  }, [locked, fetched, selectedPelatihan, data, search])
+  }, [sessions, search])
 
-  // Fetch pelatihan options on mount
+  // Fetch pelatihan options on mount (once)
   useEffect(() => {
     setLoadingOptions(true)
     fetch('/api/uji-kompetensi/biodata-peserta?listPelatihan=1', { credentials: 'same-origin' })
@@ -1384,40 +1419,99 @@ function UjiBiodataPesertaView() {
       .finally(() => setLoadingOptions(false))
   }, [])
 
-  // Ambil data peserta
-  const handleAmbilData = async () => {
-    if (!selectedPelatihan) {
+  // =============================================
+  // Session management
+  // =============================================
+
+  const updateSession = (sessionId: string, updates: Partial<BiodataSession>) => {
+    setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, ...updates } : s)))
+  }
+
+  const handleSelectPelatihan = (sessionId: string, value: string) => {
+    updateSession(sessionId, { selectedPelatihan: value, fetched: false, data: [] })
+  }
+
+  const handleAmbilData = async (sessionId: string) => {
+    const session = sessions.find((s) => s.id === sessionId)
+    if (!session || !session.selectedPelatihan) {
       toast({ title: 'Pilih Pelatihan', description: 'Silakan pilih pelatihan terlebih dahulu', variant: 'destructive' })
       return
     }
-    setLoading(true)
-    setFetched(true)
+    updateSession(sessionId, { loading: true })
     try {
-      const params = new URLSearchParams({ pelatihan: selectedPelatihan })
-      if (search) params.set('search', search)
+      const params = new URLSearchParams({ pelatihan: session.selectedPelatihan })
       const res = await fetch(`/api/uji-kompetensi/biodata-peserta?${params.toString()}`, { credentials: 'same-origin' })
       if (!res.ok) throw new Error('Gagal memuat data')
       const json = await res.json()
-      setData(json.data || [])
-      setLocked(true)
-      toast({ title: 'Berhasil', description: `${(json.data || []).length} peserta ditemukan.`, })
+      const pelatihanName = pelatihanOptions.find((p) => p.id === session.selectedPelatihan)?.nama || session.selectedPelatihan
+      updateSession(sessionId, {
+        fetched: true,
+        loading: false,
+        data: json.data || [],
+      })
+      toast({ title: 'Berhasil', description: `${(json.data || []).length} peserta ditemukan dari "${pelatihanName}".` })
     } catch (e) {
+      updateSession(sessionId, { loading: false })
       toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setLoading(false)
     }
   }
 
-  // Filter search (client-side)
-  const filteredData = search
-    ? data.filter((d) =>
-        d.nama.toLowerCase().includes(search.toLowerCase()) ||
-        d.nip.includes(search) ||
-        (d.instansi || '').toLowerCase().includes(search.toLowerCase())
-      )
-    : data
+  const handleTambahPelatihan = () => {
+    setSessions((prev) => [...prev, createEmptySession()])
+  }
 
-  // Fetch detail
+  const handleRemoveSession = (sessionId: string) => {
+    // First session cannot be removed
+    if (sessions[0]?.id === sessionId) return
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId))
+  }
+
+  // =============================================
+  // Computed values
+  // =============================================
+
+  // All data merged from all sessions
+  const allData = useMemo(() => sessions.flatMap((s) => s.data), [sessions])
+  const hasAnyData = sessions.some((s) => s.fetched)
+  const isAnyLoading = sessions.some((s) => s.loading)
+
+  // Filtered data for search
+  const filteredData = useMemo(() => {
+    if (!search) return allData
+    const q = search.toLowerCase()
+    return allData.filter(
+      (d) =>
+        d.nama.toLowerCase().includes(q) ||
+        d.nip.includes(search) ||
+        (d.instansi || '').toLowerCase().includes(q)
+    )
+  }, [allData, search])
+
+  // Available pelatihan options for a given session (exclude those selected in OTHER sessions)
+  const getAvailableOptions = useCallback(
+    (sessionId: string): PelatihanOption[] => {
+      const selectedInOtherSessions = sessions
+        .filter((s) => s.id !== sessionId && s.selectedPelatihan)
+        .map((s) => s.selectedPelatihan)
+      return pelatihanOptions.filter((p) => !selectedInOtherSessions.includes(p.id))
+    },
+    [sessions, pelatihanOptions]
+  )
+
+  // Should show "Tambah Pelatihan" button
+  const allSelectedIds = sessions.filter((s) => s.selectedPelatihan).map((s) => s.selectedPelatihan)
+  const hasAvailableOptions = pelatihanOptions.some((p) => !allSelectedIds.includes(p.id))
+  const hasUnfetchedNewSession = sessions.some((s) => !s.fetched && s.id !== sessions[0]?.id)
+  const showTambahButton = sessions[0]?.fetched && hasAvailableOptions && !hasUnfetchedNewSession
+
+  // Helper: get pelatihan option by id
+  const getPelatihanOption = (id: string): PelatihanOption | undefined => pelatihanOptions.find((p) => p.id === id)
+  const getPelatihanName = (id: string): string => getPelatihanOption(id)?.nama || id
+
+  // =============================================
+  // Detail & Download (unchanged)
+  // =============================================
+
   const fetchDetail = useCallback(async (id: string) => {
     setDetailLoading(true)
     try {
@@ -1432,14 +1526,12 @@ function UjiBiodataPesertaView() {
     }
   }, [toast])
 
-  // Open detail
   const handleRowClick = (item: BiodataPesertaItem) => {
     setSelectedId(item.id)
     setDetail(null)
     fetchDetail(item.id)
   }
 
-  // Download dokumen
   const handleDownloadDokumen = async (id: string, tipe: string, label: string) => {
     if (!id || !tipe) {
       toast({ title: 'Gagal mengunduh', description: 'ID atau tipe dokumen tidak valid', variant: 'destructive' })
@@ -1449,7 +1541,10 @@ function UjiBiodataPesertaView() {
       const res = await fetch(`/api/pendaftaran/${id}/dokumen/${tipe}`, { credentials: 'same-origin' })
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`
-        try { const err = await res.json(); errMsg = err.error || errMsg } catch {}
+        try {
+          const err = await res.json()
+          errMsg = err.error || errMsg
+        } catch {}
         throw new Error(errMsg)
       }
       const blob = await res.blob()
@@ -1467,7 +1562,10 @@ function UjiBiodataPesertaView() {
     }
   }
 
-  // Detail mode
+  // =============================================
+  // DETAIL MODE (unchanged)
+  // =============================================
+
   if (selectedId && (detail || detailLoading)) {
     if (detailLoading) {
       return (
@@ -1481,37 +1579,56 @@ function UjiBiodataPesertaView() {
 
     const StatusIcon = BIODATA_STATUS_ICON[detail.status] || AlertCircle
     const detailSections = [
-      { title: 'Data Pribadi', fields: [
-        { label: 'Nama Lengkap', value: detail.nama },
-        { label: 'NIP', value: detail.nip },
-        { label: 'Jenis Kelamin', value: detail.jenisKelamin === 'L' ? 'Laki-laki' : detail.jenisKelamin === 'P' ? 'Perempuan' : '-' },
-        { label: 'Pangkat/Golongan', value: detail.pangkatGolongan },
-        { label: 'Tempat Lahir', value: detail.tempatLahir },
-        { label: 'Tanggal Lahir', value: detail.tanggalLahir },
-      ]},
-      { title: 'Jabatan & Instansi', fields: [
-        { label: 'Jabatan', value: detail.jabatan },
-        { label: 'Unit Kerja', value: detail.unitKerja },
-        { label: 'Instansi', value: detail.instansi },
-      ]},
-      { title: 'Kontak & Rekening', fields: [
-        { label: 'No. HP', value: detail.nomorHP },
-        { label: 'No. REK Bank Aceh', value: detail.nomorRekening },
-        { label: 'NPWP', value: detail.npwp },
-      ]},
-      { title: 'Pelatihan', fields: [
-        { label: 'Nama Pelatihan', value: detail.pelatihan },
-        { label: 'Kategori', value: detail.pelatihanKategori },
-        { label: 'Metode', value: detail.pelatihanMetode },
-        { label: 'Tanggal Daftar', value: formatTanggal(detail.createdAt) },
-      ]},
+      {
+        title: 'Data Pribadi',
+        fields: [
+          { label: 'Nama Lengkap', value: detail.nama },
+          { label: 'NIP', value: detail.nip },
+          { label: 'Jenis Kelamin', value: detail.jenisKelamin === 'L' ? 'Laki-laki' : detail.jenisKelamin === 'P' ? 'Perempuan' : '-' },
+          { label: 'Pangkat/Golongan', value: detail.pangkatGolongan },
+          { label: 'Tempat Lahir', value: detail.tempatLahir },
+          { label: 'Tanggal Lahir', value: detail.tanggalLahir },
+        ],
+      },
+      {
+        title: 'Jabatan & Instansi',
+        fields: [
+          { label: 'Jabatan', value: detail.jabatan },
+          { label: 'Unit Kerja', value: detail.unitKerja },
+          { label: 'Instansi', value: detail.instansi },
+        ],
+      },
+      {
+        title: 'Kontak & Rekening',
+        fields: [
+          { label: 'No. HP', value: detail.nomorHP },
+          { label: 'No. REK Bank Aceh', value: detail.nomorRekening },
+          { label: 'NPWP', value: detail.npwp },
+        ],
+      },
+      {
+        title: 'Pelatihan',
+        fields: [
+          { label: 'Nama Pelatihan', value: detail.pelatihan },
+          { label: 'Kategori', value: detail.pelatihanKategori },
+          { label: 'Metode', value: detail.pelatihanMetode },
+          { label: 'Tanggal Daftar', value: formatTanggal(detail.createdAt) },
+        ],
+      },
     ]
 
     return (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => { setSelectedId(''); setDetail(null) }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedId('')
+                setDetail(null)
+              }}
+            >
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
@@ -1519,7 +1636,12 @@ function UjiBiodataPesertaView() {
               <p className="text-sm text-slate-500">Biodata & dokumen peserta uji kompetensi</p>
             </div>
           </div>
-          <span className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium', BIODATA_STATUS_STYLE[detail.status])}>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium',
+              BIODATA_STATUS_STYLE[detail.status]
+            )}
+          >
             <StatusIcon className="w-4 h-4" />
             {detail.status === 'MENUNGGU' ? 'Menunggu' : detail.status === 'DITERIMA' ? 'Diterima' : 'Ditolak'}
           </span>
@@ -1536,7 +1658,9 @@ function UjiBiodataPesertaView() {
                 <div className="space-y-2.5">
                   {section.fields.map((f) => (
                     <div key={f.label} className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-3">
-                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide sm:w-36 sm:flex-shrink-0">{f.label}</span>
+                      <span className="text-xs font-medium text-slate-400 uppercase tracking-wide sm:w-36 sm:flex-shrink-0">
+                        {f.label}
+                      </span>
                       <span className="text-sm text-slate-700">{f.value || '-'}</span>
                     </div>
                   ))}
@@ -1577,19 +1701,33 @@ function UjiBiodataPesertaView() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {detail.dokumen.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors gap-3">
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors gap-3"
+                  >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-lg bg-[#195737]/10 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-4 h-4 text-[#195737]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe}</p>
-                        <p className="text-xs text-slate-400">{doc.namaFile} • {doc.ukuran}</p>
+                        <p className="text-sm font-medium text-slate-800 truncate">
+                          {TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {doc.namaFile} &bull; {doc.ukuran}
+                        </p>
                       </div>
                     </div>
                     <Button
-                      variant="outline" size="sm"
-                      onClick={() => handleDownloadDokumen(detail.id, doc.tipe, TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe)}
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDownloadDokumen(
+                          detail.id,
+                          doc.tipe,
+                          TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe
+                        )
+                      }
                       className="flex-shrink-0 h-8 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -1606,9 +1744,11 @@ function UjiBiodataPesertaView() {
   }
 
   // =============================================
-  // LIST MODE - Dropdown + Tombol Ambil Data
+  // LIST MODE - Multi-session Dropdown + Table
   // =============================================
-  const selectedOption = pelatihanOptions.find((p) => p.id === selectedPelatihan)
+
+  // Fetched session badges for display
+  const fetchedSessions = sessions.filter((s) => s.fetched)
 
   return (
     <div className="space-y-4">
@@ -1618,61 +1758,264 @@ function UjiBiodataPesertaView() {
         </Button>
       </PageHeader>
 
-      {/* Dropdown Pelatihan + Tombol Ambil Data */}
-      <Card className={cn("border-slate-200 shadow-sm", locked && "border-[#86EFAC]")}>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3 items-end">
-            <div className="flex-1 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <Label className="text-xs text-slate-500">Pilih Pelatihan</Label>
-                {locked && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#195737] bg-[#86EFAC]/30 px-2 py-0.5 rounded-full">
-                    <Lock className="w-3 h-3" /> Terkunci
-                  </span>
+      {/* =============================================
+          Session Selector Area
+          ============================================= */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardContent className="p-4 space-y-0">
+          {sessions.map((session, index) => {
+            const isFirst = index === 0
+            const isLocked = isFirst && session.fetched
+            const opt = session.selectedPelatihan ? getPelatihanOption(session.selectedPelatihan) : undefined
+            const availableOpts = getAvailableOptions(session.id)
+
+            return (
+              <div
+                key={session.id}
+                className={cn(
+                  'py-3',
+                  index > 0 && 'border-t border-slate-100'
                 )}
-              </div>
-              <Select
-                value={selectedPelatihan}
-                onValueChange={(v) => { if (!locked) { setSelectedPelatihan(v); setFetched(false); setData([]) } }}
-                disabled={locked}
               >
-                <SelectTrigger className={cn("h-10", locked && "bg-slate-50 opacity-80")}>
-                  <SelectValue placeholder={loadingOptions ? 'Memuat...' : 'Pilih pelatihan...'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {pelatihanOptions.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="truncate">{p.nama}</span>
-                        <span className="text-[10px] text-slate-400 ml-auto flex-shrink-0">({p.totalPendaftar} pendaftar)</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button
-              onClick={handleAmbilData}
-              disabled={!selectedPelatihan || loading}
-              className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
-            >
-              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Users className="w-4 h-4 mr-2" />}
-              Ambil Data Peserta
-            </Button>
-          </div>
-          {selectedOption && (
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              <span className="inline-flex items-center rounded-full bg-blue-50 text-[#0F4C81] px-2.5 py-1 font-medium">{selectedOption.kategori}</span>
-              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">{selectedOption.metode === 'TATAP_MUKA' ? 'Tatap Muka' : selectedOption.metode === 'DARING' ? 'Daring' : 'Blended'}</span>
-              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">{selectedOption.jp} JP</span>
-              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1">Tahun {selectedOption.tahun}</span>
+                {/* Session header row */}
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {isFirst && (
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sesi Utama</span>
+                  )}
+                  {!isFirst && (
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sesi {index + 1}</span>
+                  )}
+
+                  {/* Colored pelatihan badge for fetched sessions */}
+                  {session.fetched && opt && (
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                        getSessionColor(index)
+                      )}
+                    >
+                      <FileUser className="w-3 h-3" />
+                      {opt.nama}
+                      <span className="opacity-70">({session.data.length})</span>
+                    </span>
+                  )}
+
+                  {/* Lock badge for first session */}
+                  {isLocked && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#195737] bg-[#86EFAC]/30 px-2 py-0.5 rounded-full">
+                      <Lock className="w-3 h-3" /> Terkunci
+                    </span>
+                  )}
+
+                  {/* Pelatihan info chips for selected but not-yet-fetched */}
+                  {!session.fetched && opt && (
+                    <span className="inline-flex items-center rounded-full bg-blue-50 text-[#0F4C81] px-2.5 py-1 text-xs font-medium">
+                      {opt.kategori}
+                    </span>
+                  )}
+                  {!session.fetched && opt && (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1 text-xs">
+                      {opt.metode === 'TATAP_MUKA' ? 'Tatap Muka' : opt.metode === 'DARING' ? 'Daring' : 'Blended'}
+                    </span>
+                  )}
+                  {!session.fetched && opt && (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1 text-xs">
+                      {opt.jp} JP
+                    </span>
+                  )}
+                  {!session.fetched && opt && (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-2.5 py-1 text-xs">
+                      Tahun {opt.tahun}
+                    </span>
+                  )}
+                </div>
+
+                {/* Dropdown + action buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 items-end">
+                  <div className="flex-1 space-y-1.5">
+                    <Label className="text-xs text-slate-500">
+                      {isFirst ? 'Pilih Pelatihan' : `Pelatihan Tambahan ${index}`}
+                    </Label>
+                    {isLocked ? (
+                      <Select value={session.selectedPelatihan} disabled>
+                        <SelectTrigger className="h-10 bg-slate-50 opacity-80">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pelatihanOptions
+                            .filter((p) => p.id === session.selectedPelatihan)
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate">{p.nama}</span>
+                                  <span className="text-[10px] text-slate-400 ml-auto flex-shrink-0">
+                                    ({p.totalPendaftar} pendaftar)
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    ) : session.fetched ? (
+                      <Select value={session.selectedPelatihan} disabled>
+                        <SelectTrigger className="h-10 bg-slate-50 opacity-80">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pelatihanOptions
+                            .filter((p) => p.id === session.selectedPelatihan)
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate">{p.nama}</span>
+                                  <span className="text-[10px] text-slate-400 ml-auto flex-shrink-0">
+                                    ({p.totalPendaftar} pendaftar)
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Select
+                        value={session.selectedPelatihan}
+                        onValueChange={(v) => handleSelectPelatihan(session.id, v)}
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue
+                            placeholder={loadingOptions ? 'Memuat...' : 'Pilih pelatihan...'}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableOpts.length === 0 ? (
+                            <div className="px-3 py-6 text-center">
+                              <p className="text-xs text-slate-400">Semua pelatihan sudah dipilih</p>
+                            </div>
+                          ) : (
+                            availableOpts.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate">{p.nama}</span>
+                                  <span className="text-[10px] text-slate-400 ml-auto flex-shrink-0">
+                                    ({p.totalPendaftar} pendaftar)
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  {isFirst && !session.fetched && (
+                    <Button
+                      onClick={() => handleAmbilData(session.id)}
+                      disabled={!session.selectedPelatihan || session.loading}
+                      className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
+                    >
+                      {session.loading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Users className="w-4 h-4 mr-2" />
+                      )}
+                      Ambil Data Peserta
+                    </Button>
+                  )}
+
+                  {!isFirst && !session.fetched && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => handleAmbilData(session.id)}
+                        disabled={!session.selectedPelatihan || session.loading}
+                        className="h-10 bg-[#195737] hover:bg-[#0F4227] text-white"
+                      >
+                        {session.loading ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Users className="w-4 h-4 mr-2" />
+                        )}
+                        Ambil Data
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRemoveSession(session.id)}
+                        disabled={session.loading}
+                        className="h-10 text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {!isFirst && session.fetched && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveSession(session.id)}
+                      className="h-10 text-red-500 hover:text-red-600 hover:bg-red-50 border-red-200"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Hapus Sesi
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Tambah Pelatihan button */}
+          {showTambahButton && (
+            <div className="pt-3 border-t border-slate-100">
+              <Button
+                variant="outline"
+                onClick={handleTambahPelatihan}
+                className="h-10 border-dashed border-slate-300 text-slate-600 hover:text-[#0F4C81] hover:border-[#0F4C81] hover:bg-[#0F4C81]/5"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Tambah Pelatihan Lain
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Search bar (setelah data diambil) */}
-      {fetched && (
+      {/* =============================================
+          Session badges (fetched sessions indicator)
+          ============================================= */}
+      {fetchedSessions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {fetchedSessions.map((session, idx) => {
+            const sessionIndex = sessions.findIndex((s) => s.id === session.id)
+            const opt = getPelatihanOption(session.selectedPelatihan)
+            return (
+              <motion.span
+                key={session.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm',
+                  getSessionColor(sessionIndex)
+                )}
+              >
+                <FileUser className="w-3.5 h-3.5" />
+                {opt?.nama || session.selectedPelatihan}
+                <span className="opacity-60">&bull; {session.data.length} peserta</span>
+              </motion.span>
+            )
+          })}
+          <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium py-1">
+            Total: {allData.length} peserta
+          </span>
+        </div>
+      )}
+
+      {/* =============================================
+          Search bar
+          ============================================= */}
+      {hasAnyData && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -1684,36 +2027,50 @@ function UjiBiodataPesertaView() {
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
+      {/* =============================================
+          Loading state
+          ============================================= */}
+      {isAnyLoading && (
         <Card className="border-slate-200 shadow-sm animate-pulse">
           <CardContent className="p-5 h-48 bg-slate-100 rounded-xl" />
         </Card>
       )}
 
-      {/* Empty state - belum ambil data */}
-      {!fetched && !loading && (
+      {/* =============================================
+          Empty state - belum ambil data
+          ============================================= */}
+      {!hasAnyData && !isAnyLoading && (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-16 text-center">
             <FileUser className="w-12 h-12 mx-auto mb-3 text-slate-200" />
-            <p className="text-sm font-medium text-slate-500">Pilih pelatihan lalu klik "Ambil Data Peserta"</p>
-            <p className="text-xs text-slate-400 mt-1">Data pendaftar akan tampil sesuai pelatihan yang dipilih</p>
+            <p className="text-sm font-medium text-slate-500">
+              Pilih pelatihan lalu klik &quot;Ambil Data Peserta&quot;
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Data pendaftar akan tampil sesuai pelatihan yang dipilih
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Data kosong */}
-      {fetched && !loading && filteredData.length === 0 && (
+      {/* =============================================
+          Data kosong setelah fetch
+          ============================================= */}
+      {hasAnyData && !isAnyLoading && filteredData.length === 0 && (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-16 text-center">
             <AlertCircle className="w-12 h-12 mx-auto mb-3 text-slate-200" />
-            <p className="text-sm font-medium text-slate-500">Belum ada pendaftar untuk pelatihan ini</p>
+            <p className="text-sm font-medium text-slate-500">
+              {search ? 'Tidak ada data yang cocok dengan pencarian' : 'Belum ada pendaftar untuk pelatihan yang dipilih'}
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Tabel Data Pendaftar */}
-      {fetched && !loading && filteredData.length > 0 && (
+      {/* =============================================
+          Tabel Data Pendaftar (merged from all sessions)
+          ============================================= */}
+      {hasAnyData && !isAnyLoading && filteredData.length > 0 && (
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-2 border-b border-slate-100">
             <CardTitle className="text-base flex items-center gap-2">
@@ -1727,9 +2084,15 @@ function UjiBiodataPesertaView() {
                   <tr>
                     <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">No</th>
                     <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Nama / NIP</th>
-                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden lg:table-cell">Jabatan</th>
-                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden lg:table-cell">Unit Kerja</th>
-                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden xl:table-cell">Instansi</th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden lg:table-cell">
+                      Jabatan
+                    </th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden lg:table-cell">
+                      Unit Kerja
+                    </th>
+                    <th className="text-left py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase hidden xl:table-cell">
+                      Instansi
+                    </th>
                     <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Dok</th>
                     <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Status</th>
                     <th className="text-center py-2.5 px-3 text-xs font-semibold text-slate-500 uppercase">Tgl Daftar</th>
@@ -1742,10 +2105,10 @@ function UjiBiodataPesertaView() {
                     const docComplete = item.jumlahDokumen >= 3
                     return (
                       <motion.tr
-                        key={item.id}
+                        key={`${item.id}_${idx}`}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: idx * 0.02 }}
+                        transition={{ delay: Math.min(idx * 0.02, 0.5) }}
                         className="hover:bg-slate-50/80 cursor-pointer"
                         onClick={() => handleRowClick(item)}
                       >
@@ -1755,34 +2118,58 @@ function UjiBiodataPesertaView() {
                           <p className="text-xs font-mono text-slate-400">{item.nip}</p>
                         </td>
                         <td className="py-2.5 px-3 hidden lg:table-cell">
-                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">{item.jabatan || '-'}</span>
+                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">
+                            {item.jabatan || '-'}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3 hidden lg:table-cell">
-                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">{item.unitKerja || '-'}</span>
+                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">
+                            {item.unitKerja || '-'}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3 hidden xl:table-cell">
-                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">{item.instansi || '-'}</span>
+                          <span className="text-xs text-slate-600 max-w-[150px] truncate block">
+                            {item.instansi || '-'}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className={cn(
-                            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
-                            docComplete ? 'bg-green-50 text-[#195737]' : 'bg-amber-50 text-amber-600'
-                          )}>
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
+                              docComplete ? 'bg-green-50 text-[#195737]' : 'bg-amber-50 text-amber-600'
+                            )}
+                          >
                             {docComplete ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
                             {item.jumlahDokumen}/4
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium', BIODATA_STATUS_STYLE[item.status])}>
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
+                              BIODATA_STATUS_STYLE[item.status]
+                            )}
+                          >
                             <Icon className="w-3 h-3" />
-                            {item.status === 'MENUNGGU' ? 'Menunggu' : item.status === 'DITERIMA' ? 'Diterima' : 'Ditolak'}
+                            {item.status === 'MENUNGGU'
+                              ? 'Menunggu'
+                              : item.status === 'DITERIMA'
+                                ? 'Diterima'
+                                : 'Ditolak'}
                           </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className="text-slate-500 text-xs whitespace-nowrap">{formatTanggalSingkat(item.createdAt)}</span>
+                          <span className="text-slate-500 text-xs whitespace-nowrap">
+                            {formatTanggalSingkat(item.createdAt)}
+                          </span>
                         </td>
                         <td className="py-2.5 px-3 text-center">
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-500 hover:text-[#195737]" title="Lihat Detail">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-slate-500 hover:text-[#195737]"
+                            title="Lihat Detail"
+                          >
                             <Eye className="w-3.5 h-3.5" />
                           </Button>
                         </td>
