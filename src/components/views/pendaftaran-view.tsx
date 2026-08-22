@@ -383,6 +383,12 @@ function PendaftaranDokumenView() {
     jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
   })
 
+  // Preview dokumen dialog
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState('')
+  const [previewLabel, setPreviewLabel] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+
   // === LIST MODE STATE ===
   const [listData, setListData] = useState<PendaftaranItem[]>([])
   const [listLoading, setListLoading] = useState(true)
@@ -548,6 +554,40 @@ function PendaftaranDokumenView() {
     } catch (e) {
       toast({ title: 'Gagal mengunduh', description: (e as Error).message, variant: 'destructive' })
     }
+  }
+
+  const handlePreviewDokumen = async (id: string, tipe: string, label: string) => {
+    if (!id || !tipe) {
+      toast({ title: 'Gagal memuat', description: 'ID pendaftaran atau tipe dokumen tidak valid', variant: 'destructive' })
+      return
+    }
+    setPreviewLoading(true)
+    setPreviewLabel(label)
+    setPreviewOpen(true)
+    try {
+      const res = await fetch(`/api/pendaftaran/${id}/dokumen/${tipe}`, { credentials: 'same-origin' })
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`
+        try { const err = await res.json(); errMsg = err.error || errMsg } catch {}
+        throw new Error(errMsg)
+      }
+      const blob = await res.blob()
+      if (blob.size === 0) throw new Error('File kosong')
+      const url = URL.createObjectURL(blob)
+      setPreviewUrl(url)
+    } catch (e) {
+      toast({ title: 'Gagal memuat dokumen', description: (e as Error).message, variant: 'destructive' })
+      setPreviewOpen(false)
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const closePreviewDialog = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl('')
+    setPreviewLabel('')
+    setPreviewOpen(false)
   }
 
   const openStatusDialog = () => {
@@ -850,15 +890,27 @@ function PendaftaranDokumenView() {
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownloadDokumen(data.id, doc.tipe, TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe)}
-                    className="flex-shrink-0 h-8 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline ml-1">Unduh</span>
-                  </Button>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePreviewDokumen(data.id, doc.tipe, TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe)}
+                      className="h-8 text-[#0F4C81] border-[#0F4C81]/30 hover:bg-[#0F4C81] hover:text-white"
+                      title="Lihat dokumen"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline ml-1">Lihat</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadDokumen(data.id, doc.tipe, TIPE_DOKUMEN_LABELS[doc.tipe] || doc.label || doc.tipe)}
+                      className="h-8 text-[#195737] border-[#86EFAC] hover:bg-[#195737] hover:text-white"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline ml-1">Unduh</span>
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -975,6 +1027,38 @@ function PendaftaranDokumenView() {
               Simpan
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dokumen Dialog */}
+      <Dialog open={previewOpen} onOpenChange={(open) => { if (!open) closePreviewDialog() }}>
+        <DialogContent className="sm:max-w-4xl h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b border-slate-100 flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-base">Lihat Dokumen: {previewLabel}</DialogTitle>
+              <DialogClose asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={closePreviewDialog}>
+                  <XCircle className="w-4 h-4" />
+                </Button>
+              </DialogClose>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 relative">
+            {previewLoading && !previewUrl ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="w-8 h-8 text-[#0F4C81] animate-spin" />
+                  <p className="text-sm text-slate-500">Memuat dokumen...</p>
+                </div>
+              </div>
+            ) : previewUrl ? (
+              <iframe
+                src={previewUrl}
+                className="w-full h-full border-0"
+                title={`Preview ${previewLabel}`}
+              />
+            ) : null}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
