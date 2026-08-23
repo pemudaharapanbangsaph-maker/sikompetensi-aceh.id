@@ -5,6 +5,8 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+const ALLOWED_SORT = ['outcome', 'namaPelatihan', 'programPrioritasRPJMA', 'sasaranRPJMA', 'prioritas', 'kategori', 'tahunPelaksanaan', 'createdAt', 'updatedAt']
+
 // --- Helper: generate kode pelatihan otomatis dari counter ---
 async function generateKodePelatihan(): Promise<string> {
   const all = await db.pelatihan.findMany({
@@ -33,7 +35,6 @@ async function syncToPelatihan(analisisId: string, data: {
   status: string
   outcome: string
 }, userId?: string): Promise<string | null> {
-  // Cek apakah item analisis sudah punya linked pelatihan
   const analisisItem = await db.analisisDiklatItem.findUnique({
     where: { id: analisisId },
     select: { pelatihanId: true },
@@ -52,7 +53,6 @@ async function syncToPelatihan(analisisId: string, data: {
   let pelatihanId = analisisItem?.pelatihanId || null
 
   if (pelatihanId) {
-    // Update Pelatihan yang sudah terlink
     await db.pelatihan.update({
       where: { id: pelatihanId },
       data: {
@@ -65,7 +65,6 @@ async function syncToPelatihan(analisisId: string, data: {
       },
     })
   } else if (data.status === 'AKTIF') {
-    // Buat Pelatihan baru hanya jika status AKTIF
     const kode = await generateKodePelatihan()
     const newPelatihan = await db.pelatihan.create({
       data: {
@@ -79,14 +78,12 @@ async function syncToPelatihan(analisisId: string, data: {
         createdBy: userId,
       },
     })
-    // Simpan ID Pelatihan ke AnalisisDiklatItem
     await db.analisisDiklatItem.update({
       where: { id: analisisId },
       data: { pelatihanId: newPelatihan.id },
     })
     pelatihanId = newPelatihan.id
 
-     // Otomatis buat Angkatan default agar muncul di dropdown Peserta Per Kegiatan
     const tahun = data.tahunPelaksanaan || new Date().getFullYear()
     const startAngkatan = new Date(tahun, 0, 1)
     const endAngkatan = new Date(startAngkatan)
@@ -101,7 +98,6 @@ async function syncToPelatihan(analisisId: string, data: {
         metode: data.metodePembelajaran || 'TATAP_MUKA',
         kuota: 30,
         status: 'PERENCANAAN',
-        createdBy: userId,
       },
     })
   }
@@ -130,12 +126,13 @@ export async function GET(req: Request) {
     if (tahun !== undefined && tahun !== '') {
       where.tahunPelaksanaan = Number(tahun)
     }
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.analisisDiklatItem.findMany({
         where,
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.analisisDiklatItem.count({ where }),
     ])
@@ -160,21 +157,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
     const durasiJP = body.durasiJP ? Number(body.durasiJP) : 0
     const durasiHari = body.durasiHari ? Number(body.durasiHari) : 0
     const tahunPelaksanaan = body.tahunPelaksanaan ? Number(body.tahunPelaksanaan) : new Date().getFullYear()
     const tanggalPelaksanaan = body.tanggalPelaksanaan ? new Date(body.tanggalPelaksanaan) : null
     const item = await db.analisisDiklatItem.create({
       data: {
-        ...body,
+        outcome: body.outcome || '',
+        programPrioritasRPJMA: body.programPrioritasRPJMA || '',
+        sasaranRPJMA: body.sasaranRPJMA || '',
+        skpaSasaran: body.skpaSasaran || '',
+        namaPelatihan: body.namaPelatihan || '',
+        kategori: body.kategori || 'TEKNIS',
+        metodePembelajaran: body.metodePembelajaran || 'TATAP_MUKA',
         durasiJP,
         durasiHari,
+        targetOutput: body.targetOutput || '',
+        prioritas: body.prioritas || 'SEDANG',
         tahunPelaksanaan,
         tanggalPelaksanaan,
+        status: body.status || 'AKTIF',
+        pelatihanId: body.pelatihanId || null,
         dibuatOleh: session.user.id,
       },
     })
-    // Sinkronisasi ke Pelatihan + Angkatan
     await syncToPelatihan(item.id, {
       namaPelatihan: item.namaPelatihan,
       kategori: item.kategori,
