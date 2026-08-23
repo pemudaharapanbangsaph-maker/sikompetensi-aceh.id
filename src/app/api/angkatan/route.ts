@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+const ALLOWED_SORT = ['namaAngkatan', 'lokasi', 'status', 'metode', 'createdAt', 'updatedAt']
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -19,6 +21,7 @@ export async function GET(req: Request) {
     const where = buildWhere(search as string, ['namaAngkatan', 'lokasi'], filters)
     where.pelatihan = { deleted: false }
     where.deleted = false
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.angkatan.findMany({
         where,
@@ -28,7 +31,7 @@ export async function GET(req: Request) {
         },
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.angkatan.count({ where }),
     ])
@@ -50,14 +53,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
-    const { tanggalMulai, tanggalSelesai, ...rest } = body
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
     const item = await db.angkatan.create({
       data: {
-        ...rest,
-        tanggalMulai: tanggalMulai ? new Date(tanggalMulai) : new Date(),
-        tanggalSelesai: tanggalSelesai ? new Date(tanggalSelesai) : new Date(),
-        kuota: body.kuota ? Number(body.kuota) : undefined,
-        createdBy: session.user.id,
+        pelatihanId: body.pelatihanId,
+        namaAngkatan: body.namaAngkatan,
+        tanggalMulai: body.tanggalMulai ? new Date(body.tanggalMulai) : new Date(),
+        tanggalSelesai: body.tanggalSelesai ? new Date(body.tanggalSelesai) : new Date(),
+        lokasi: body.lokasi || null,
+        metode: body.metode || 'TATAP_MUKA',
+        kuota: body.kuota ? Number(body.kuota) : 30,
+        status: body.status || 'PERENCANAAN',
+        catatan: body.catatan || null,
       },
     })
     await auditLog(session, 'CREATE', 'ANGKATAN', `Tambah angkatan: ${item.namaAngkatan}`, req)
