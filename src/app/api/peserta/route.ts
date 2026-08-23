@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+const ALLOWED_SORT = ['nama', 'nip', 'unitKerja', 'instansi', 'jenisKelamin', 'status', 'createdAt', 'updatedAt']
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -18,12 +20,13 @@ export async function GET(req: Request) {
     }
     const where = buildWhere(search as string, ['nama', 'nip', 'unitKerja', 'instansi'], filters)
     where.deleted = false
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.peserta.findMany({
         where,
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.peserta.count({ where }),
     ])
@@ -45,10 +48,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
-    const { tanggalLahir, ...rest } = body
-    const data: Record<string, unknown> = { ...rest }
-    if (tanggalLahir) data.tanggalLahir = new Date(tanggalLahir)
-    const item = await db.peserta.create({ data: data as any })
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
+    const item = await db.peserta.create({
+      data: {
+        nip: body.nip,
+        nama: body.nama,
+        jenisKelamin: body.jenisKelamin || 'L',
+        tempatLahir: body.tempatLahir || null,
+        tanggalLahir: body.tanggalLahir ? new Date(body.tanggalLahir) : null,
+        jabatan: body.jabatan || null,
+        pangkatGolongan: body.pangkatGolongan || null,
+        unitKerja: body.unitKerja || null,
+        instansi: body.instansi || null,
+        pendidikan: body.pendidikan || null,
+        noTelp: body.noTelp || null,
+        email: body.email || null,
+        alamat: body.alamat || null,
+        fotoUrl: body.fotoUrl || null,
+        status: body.status || 'AKTIF',
+      },
+    })
     await auditLog(session, 'CREATE', 'PESERTA', `Tambah peserta: ${body.nama || '-'}`, req)
     return NextResponse.json(item)
   } catch (e) {
