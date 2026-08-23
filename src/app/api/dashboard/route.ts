@@ -40,7 +40,25 @@ export async function GET() {
       db.pendaftaranPortal.count({ where: { status: 'MENUNGGU' } }),
     ])
     const ujiSelesai = await db.ujiKompetensi.count({ where: { status: 'SELESAI', deleted: false } })
-
+    // Trend: angkatan bulan ini vs bulan lalu (data asli dari database)
+    const now = new Date()
+    const startBulanIni = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startBulanLalu = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const [angkatanBulanIni, angkatanBulanLalu] = await Promise.all([
+      db.angkatan.count({
+        where: { tanggalMulai: { gte: startBulanIni }, pelatihan: { deleted: false }, deleted: false },
+      }),
+      db.angkatan.count({
+        where: { tanggalMulai: { gte: startBulanLalu, lt: startBulanIni }, pelatihan: { deleted: false }, deleted: false },
+      }),
+    ])
+    let trendPelatihan: { value: string; up: boolean } | null = null
+    if (angkatanBulanLalu > 0) {
+      const pct = Math.round(((angkatanBulanIni - angkatanBulanLalu) / angkatanBulanLalu) * 100)
+      trendPelatihan = { value: `${Math.abs(pct)}% bulan ini`, up: pct >= 0 }
+    } else if (angkatanBulanIni > 0) {
+      trendPelatihan = { value: `${angkatanBulanIni} baru bulan ini`, up: true }
+    }
     // Grafik pelatihan per bulan (12 bulan terakhir) — exclude archived
     const now = new Date()
     const monthsData: { bulan: string; jumlah: number }[] = []
