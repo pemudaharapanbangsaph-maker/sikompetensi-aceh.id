@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+const ALLOWED_SORT = ['nama', 'nip', 'bidangKeahlian', 'status', 'createdAt', 'updatedAt']
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -17,12 +19,13 @@ export async function GET(req: Request) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
     const where = buildWhere(search as string, ['nama', 'nip', 'bidangKeahlian'], filters)
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.asesor.findMany({
         where,
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.asesor.count({ where }),
     ])
@@ -44,10 +47,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
-    const { tanggalSertifikat, ...rest } = body
-    const data: Record<string, unknown> = { ...rest }
-    if (tanggalSertifikat) data.tanggalSertifikat = new Date(tanggalSertifikat)
-    const item = await db.asesor.create({ data: data as any })
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
+    const item = await db.asesor.create({
+      data: {
+        nip: body.nip,
+        nama: body.nama,
+        bidangKeahlian: body.bidangKeahlian,
+        noSertifikat: body.noSertifikat || null,
+        tanggalSertifikat: body.tanggalSertifikat ? new Date(body.tanggalSertifikat) : null,
+        instansi: body.instansi || null,
+        email: body.email || null,
+        noTelp: body.noTelp || null,
+        status: body.status || 'AKTIF',
+      },
+    })
     await auditLog(session, 'CREATE', 'ASESOR', `Tambah asesor: ${item.nama}`, req)
     return NextResponse.json(item)
   } catch (e) {
