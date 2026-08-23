@@ -239,7 +239,7 @@ export function DashboardView() {
               <Clock className="w-4 h-4 text-[#0F4C81]" />
               Aktivitas Terbaru
             </CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs text-[#0F4C81]">Lihat Semua</Button>
+            <Button variant="ghost" size="sm" className="text-xs text-[#0F4C81]" onClick={() => setActiveView('user-log')}>Lihat Semua</Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
