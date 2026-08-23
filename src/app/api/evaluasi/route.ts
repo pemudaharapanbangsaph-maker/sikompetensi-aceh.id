@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+const ALLOWED_SORT = ['jenisEvaluasi', 'aspek', 'nilai', 'createdAt', 'updatedAt']
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -17,6 +19,7 @@ export async function GET(req: Request) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
     const where = buildWhere(search as string, ['aspek', 'catatan'], filters)
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.evaluasi.findMany({
         where,
@@ -26,7 +29,7 @@ export async function GET(req: Request) {
         },
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.evaluasi.count({ where }),
     ])
@@ -48,10 +51,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
     const item = await db.evaluasi.create({
       data: {
-        ...body,
+        angkatanId: body.angkatanId || null,
+        pesertaId: body.pesertaId || null,
+        jenisEvaluasi: body.jenisEvaluasi || 'PRE_TEST',
+        aspek: body.aspek || null,
         nilai: body.nilai ? Number(body.nilai) : 0,
+        catatan: body.catatan || null,
         diinputOleh: session.user.id,
       },
       include: {
