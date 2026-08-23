@@ -40,6 +40,7 @@ export async function GET() {
       db.pendaftaranPortal.count({ where: { status: 'MENUNGGU' } }),
     ])
     const ujiSelesai = await db.ujiKompetensi.count({ where: { status: 'SELESAI', deleted: false } })
+
     // Trend: angkatan bulan ini vs bulan lalu (data asli dari database)
     const now = new Date()
     const startBulanIni = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -59,8 +60,8 @@ export async function GET() {
     } else if (angkatanBulanIni > 0) {
       trendPelatihan = { value: `${angkatanBulanIni} baru bulan ini`, up: true }
     }
+
     // Grafik pelatihan per bulan (12 bulan terakhir) — exclude archived
-    const now = new Date()
     const monthsData: { bulan: string; jumlah: number }[] = []
     for (let i = 11; i >= 0; i--) {
       const start = new Date(now.getFullYear(), now.getMonth() - i, 1)
@@ -141,6 +142,7 @@ export async function GET() {
       grafikKategoriPelatihan,
       jadwalTerdekat,
       aktivitasTerbaru,
+      trendPelatihan,
     })
   } catch (e) {
     console.error('Dashboard error:', e)
