@@ -186,6 +186,7 @@ export interface DashboardStats {
   grafikKategoriPelatihan: { kategori: string; jumlah: number }[]
   jadwalTerdekat: (Angkatan | UjiKompetensi)[]
   aktivitasTerbaru: AuditLog[]
+  trendPelatihan: { value: string; up: boolean } | null
 }
 
 export interface AnalisisDiklatItem {
