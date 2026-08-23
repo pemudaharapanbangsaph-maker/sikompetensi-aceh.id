@@ -5,6 +5,9 @@ import fs from 'fs'
 
 export const dynamic = 'force-dynamic'
 
+// Token sekali pakai untuk seed — harus diset di env
+const SEED_TOKEN = process.env.SEED_TOKEN
+
 function getDbPath(): string {
   const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
   const match = dbUrl.match(/file:(.+)/)
@@ -15,7 +18,17 @@ function getDbPath(): string {
   return dbPath
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  // Cek token seed untuk mencegah akses sembarangan
+  if (SEED_TOKEN) {
+    const authHeader = req.headers.get('authorization')
+    const queryToken = new URL(req.url).searchParams.get('token')
+    const token = authHeader?.replace('Bearer ', '') || queryToken
+    if (token !== SEED_TOKEN) {
+      return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 })
+    }
+  }
+
   const dbPath = getDbPath()
   const flagPath = path.join(path.dirname(dbPath), '.seed-done')
 
@@ -63,10 +76,10 @@ export async function GET() {
     db.close()
     fs.writeFileSync(flagPath, new Date().toISOString())
 
+    // JANGAN kembalikan password di response!
     return NextResponse.json({
       status: 'seeded',
-      users: ['superadmin', 'admin', 'operator'],
-      password: 'admin123',
+      message: 'Data awal berhasil dimuat. Silakan ganti password default setelah login pertama.',
     })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error'
