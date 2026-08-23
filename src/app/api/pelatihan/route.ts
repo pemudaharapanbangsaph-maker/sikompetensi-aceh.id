@@ -3,6 +3,9 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+// Whitelist kolom yang boleh di-sort
+const ALLOWED_SORT = ['nama', 'kode', 'kategori', 'status', 'createdAt', 'updatedAt']
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -18,12 +21,13 @@ export async function GET(req: Request) {
     }
     const where = buildWhere(search as string, ['nama', 'kode'], filters)
     where.deleted = false
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.pelatihan.findMany({
         where,
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.pelatihan.count({ where }),
     ])
@@ -45,12 +49,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
     const item = await db.pelatihan.create({
       data: {
-        ...body,
+        kode: body.kode,
+        nama: body.nama,
+        kategori: body.kategori || 'TEKNIS',
+        deskripsi: body.deskripsi || null,
+        durasiHari: body.durasiHari ? Number(body.durasiHari) : 1,
+        jp: body.jp ? Number(body.jp) : 8,
         createdBy: session.user.id,
-        durasiHari: body.durasiHari ? Number(body.durasiHari) : undefined,
-        jp: body.jp ? Number(body.jp) : undefined,
       },
     })
     await auditLog(session, 'CREATE', 'PELATIHAN', `Tambah pelatihan: ${item.nama}`, req)
