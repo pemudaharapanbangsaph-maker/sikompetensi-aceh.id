@@ -5,7 +5,20 @@ import crypto from 'crypto'
 
 const SESSION_COOKIE = 'bpsdm_session'
 const SESSION_DURATION = 30 * 60 * 1000 // 30 minutes
-const ENCRYPTION_KEY = process.env.SESSION_SECRET || 'sikompetensi-aceh-secret-key-2024-v1'
+
+// TIDAK ADA FALLBACK — SESSION_SECRET wajib diset di .env
+// Jika tidak diset, server akan gagal start dengan pesan yang jelas
+const ENCRYPTION_KEY = (() => {
+  const secret = process.env.SESSION_SECRET
+  if (!secret || secret.length < 16) {
+    throw new Error(
+      'FATAL: SESSION_SECRET tidak diset atau terlalu pendek (min 16 karakter). ' +
+      'Silakan tambahkan SESSION_SECRET di file .env Anda. ' +
+      'Contoh: SESSION_SECRET=your-very-secure-random-secret-key-min-16-chars'
+    )
+  }
+  return secret
+})()
 
 // Derive a 32-byte key from the secret
 function getKey(): Buffer {
