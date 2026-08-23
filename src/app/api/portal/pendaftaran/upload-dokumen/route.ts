@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import * as fs from 'fs'
 import * as path from 'path'
+import crypto from 'crypto'
 
 const UPLOAD_DIR = '/data/uploads/pendaftaran'
 const ALLOWED_TIPE = ['KTP', 'SURAT_TUGAS', 'NPWP', 'REK_BANK']
@@ -15,11 +16,37 @@ const TIPE_LABEL: Record<string, string> = {
   REK_BANK: 'REK Bank Aceh',
 }
 
-// Pastikan folder upload ada
+// Token upload berlaku 24 jam
+const UPLOAD_TOKEN_EXPIRY = 24 * 60 * 60 * 1000
+
 function ensureDir() {
   if (!fs.existsSync(UPLOAD_DIR)) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true })
   }
+}
+
+function verifyUploadToken(pendaftaranId: string, token: string): boolean {
+  const secret = process.env.SESSION_SECRET || 'fallback-secret-change-me'
+  const [timestampStr, hash] = token.split('.')
+  if (!timestampStr || !hash) return false
+
+  // Cek expiry (24 jam)
+  const timestamp = parseInt(timestampStr, 36)
+  if (Date.now() - timestamp > UPLOAD_TOKEN_EXPIRY) return false
+
+  // Verifikasi hash
+  const raw = `${pendaftaranId}:${secret}:${timestampStr}`
+  const expectedHash = crypto.createHash('sha256').update(raw).digest('hex')
+  return hash === expectedHash
+}
+
+// Fungsi untuk generate token upload (dipanggil saat pendaftaran dibuat)
+export function generateUploadToken(pendaftaranId: string): string {
+  const secret = process.env.SESSION_SECRET || 'fallback-secret-change-me'
+  const timestamp = Date.now().toString(36)
+  const raw = `${pendaftaranId}:${secret}:${timestamp}`
+  const hash = crypto.createHash('sha256').update(raw).digest('hex')
+  return `${timestamp}.${hash}`
 }
 
 export async function POST(req: Request) {
@@ -30,12 +57,18 @@ export async function POST(req: Request) {
     const pendaftaranId = formData.get('pendaftaranId') as string
     const tipe = formData.get('tipe') as string
     const file = formData.get('file') as File | null
+    const uploadToken = formData.get('uploadToken') as string
 
     if (!pendaftaranId) return NextResponse.json({ error: 'ID pendaftaran diperlukan' }, { status: 400 })
     if (!tipe || !ALLOWED_TIPE.includes(tipe)) {
       return NextResponse.json({ error: `Tipe dokumen tidak valid. Pilih: ${ALLOWED_TIPE.join(', ')}` }, { status: 400 })
     }
     if (!file) return NextResponse.json({ error: 'File diperlukan' }, { status: 400 })
+
+    // VERIFIKASI TOKEN UPLOAD — cegah upload tanpa otorisasi
+    if (!uploadToken || !verifyUploadToken(pendaftaranId, uploadToken)) {
+      return NextResponse.json({ error: 'Token upload tidak valid atau sudah kadaluarsa' }, { status: 403 })
+    }
 
     // Validasi tipe file
     const ext = path.extname(file.name).toLowerCase()
@@ -57,7 +90,7 @@ export async function POST(req: Request) {
       where: { pendaftaranId_tipe: { pendaftaranId, tipe } },
     })
     if (existingDoc && existingDoc.filePath) {
- try { fs.unlinkSync(existingDoc.filePath) } catch { /* ignore */ }
+      try { fs.unlinkSync(existingDoc.filePath) } catch { /* ignore */ }
     }
 
     // Simpan file
