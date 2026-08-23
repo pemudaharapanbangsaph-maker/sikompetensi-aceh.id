@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
+const ALLOWED_SORT = ['kode', 'skemaSertifikasi', 'tempat', 'status', 'tanggalUji', 'createdAt', 'updatedAt']
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -18,6 +20,7 @@ export async function GET(req: Request) {
     }
     const where = buildWhere(search as string, ['kode', 'skemaSertifikasi', 'tempat'], filters)
     where.deleted = false
+    const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
       db.ujiKompetensi.findMany({
         where,
@@ -28,7 +31,7 @@ export async function GET(req: Request) {
         },
         skip: ((page as number) - 1) * (pageSize as number),
         take: pageSize as number,
-        orderBy: sortBy ? { [sortBy as string]: (sortOrder as 'asc' | 'desc') || 'asc' } : { createdAt: 'desc' },
+        orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
       }),
       db.ujiKompetensi.count({ where }),
     ])
@@ -56,10 +59,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const body = await req.json()
-    const { tanggalUji, asesorIds, ...rest } = body
-    const data: Record<string, unknown> = { ...rest }
-    if (tanggalUji) data.tanggalUji = new Date(tanggalUji)
-    if (body.jumlahPeserta !== undefined) data.jumlahPeserta = Number(body.jumlahPeserta)
+    // Ekstrak hanya field yang diizinkan — cegah mass assignment
+    const asesorIds = body.asesorIds
+    const data: Record<string, unknown> = {
+      kode: body.kode,
+      angkatanId: body.angkatanId || null,
+      tanggalUji: body.tanggalUji ? new Date(body.tanggalUji) : new Date(),
+      tempat: body.tempat,
+      skemaSertifikasi: body.skemaSertifikasi,
+      jumlahPeserta: body.jumlahPeserta ? Number(body.jumlahPeserta) : 0,
+      status: body.status || 'DIJADWALKAN',
+      catatan: body.catatan || null,
+    }
     if (Array.isArray(asesorIds) && asesorIds.length > 0) {
       data.asesor = {
         create: asesorIds.map((asesorId: string) => ({ asesorId })),
