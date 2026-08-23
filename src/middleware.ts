@@ -5,9 +5,13 @@ import type { NextRequest } from 'next/server'
 const PUBLIC_ROUTES = [
   '/api/auth/login',
   '/api/auth/logout',
+  '/api/2fa/verify-login',           // Verifikasi 2FA saat login (belum punya session)
+  '/api/2fa/verify-setup',           // Verifikasi setup 2FA
   '/api/portal/pendaftaran',       // GET daftar pelatihan & POST pendaftaran baru
   '/api/portal/pelatihan-list',
+  '/api/portal/pendaftaran/',      // Sub-routes pendaftaran portal
   '/api/programs/public',
+  '/api/settings/logo',             // GET logo harus publik (dipakai di halaman login)
 ]
 
 // Route yang dikecualikan dari proteksi (setup, seed, dll — hanya bisa via env token)
