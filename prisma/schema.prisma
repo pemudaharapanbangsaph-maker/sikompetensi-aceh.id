@@ -80,6 +80,8 @@ model Peserta {
   nilai        Nilai[]
   kehadiran    Kehadiran[]
   evaluasi     Evaluasi[]
+  sertifikat   Sertifikat[]
+  suratTugas   SuratTugas[]
 }
 
 model Pelatihan {
@@ -102,6 +104,7 @@ model Pelatihan {
   analisis     AnalisisKebutuhan[]
   pendaftaran  PendaftaranPortal[]
   analisisDiklatItems AnalisisDiklatItem[]
+  suratTugas   SuratTugas[]
 }
 
 model Angkatan {
@@ -127,6 +130,8 @@ model Angkatan {
   evaluasi      Evaluasi[]
   ujiKompetensi UjiKompetensi[]
   dokumentasi   Dokumentasi[]
+  sertifikat    Sertifikat[]
+  suratTugas    SuratTugas[]
 }
 
 model PesertaAngkatan {
@@ -277,6 +282,7 @@ model UjiKompetensi {
 
   asesor          UjiKompetensiAsesor[]
   nilai           Nilai[]
+  sertifikat      Sertifikat[]
 }
 
 model UjiKompetensiAsesor {
@@ -336,6 +342,85 @@ model Evaluasi {
   diinputOleh   String?
   user          User?    @relation(fields: [diinputOleh], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
+}
+
+// ====================== SERTIFIKAT ======================
+
+model Sertifikat {
+  id              String    @id @default(cuid())
+  jenis           String    // PELATIHAN | UJI_KOMPETENSI
+  angkatanId      String?
+  angkatan        Angkatan?       @relation(fields: [angkatanId], references: [id], onDelete: SetNull)
+  ujiKompetensiId String?
+  ujiKompetensi  UjiKompetensi? @relation(fields: [ujiKompetensiId], references: [id], onDelete: SetNull)
+  pesertaId       String?
+  peserta         Peserta?        @relation(fields: [pesertaId], references: [id], onDelete: SetNull)
+  nomorSertifikat String?
+  namaPeserta     String?
+  namaKegiatan    String?
+  file            String    // path ke file upload
+  ukuranFile      String?
+  tanggalTerbit   DateTime?
+  catatan         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ====================== NOTIFIKASI EMAIL ======================
+
+model NotifikasiEmail {
+  id            String    @id @default(cuid())
+  subjek        String
+  isi           String
+  penerima      String    // email tujuan
+  status        String    @default("DRAF") // DRAF | TERKIRIM | GAGAL
+  jenis         String?   // INFO | PENGINGAT | UNDANGAN
+  referensiId   String?
+  referensiTipe String?
+  sentAt        DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+// ====================== WORKFLOW PERSETUJUAN ======================
+
+model Persetujuan {
+  id            String   @id @default(cuid())
+  jenis         String   // PELATIHAN | UJI_KOMPETENSI | ANGKATAN | SURAT_TUGAS
+  referensiId   String
+  judul         String
+  deskripsi     String?
+  pemohonId     String?
+  pemohonNama   String?
+  status        String   @default("MENUNGGU") // MENUNGGU | DISETUJUI | DITOLAK
+  catatan       String?
+  approverId    String?
+  approverNama  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ====================== SURAT TUGAS ======================
+
+model SuratTugas {
+  id              String    @id @default(cuid())
+  nomor           String
+  perihal         String
+  tanggalSurat    DateTime
+  tanggalMulai    DateTime?
+  tanggalSelesai  DateTime?
+  penerima        String    // nama penerima / instansi
+  pesertaId       String?
+  peserta         Peserta?   @relation(fields: [pesertaId], references: [id], onDelete: SetNull)
+  pelatihanId     String?
+  pelatihan       Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
+  angkatanId      String?
+  angkatan        Angkatan?  @relation(fields: [angkatanId], references: [id], onDelete: SetNull)
+  file            String?   // path ke file PDF
+  ukuranFile      String?
+  status          String    @default("DRAFT") // DRAFT | TERBIT
+  catatan         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 // ====================== BACKUP & SYSTEM ======================
