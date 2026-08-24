@@ -215,3 +215,74 @@ export interface PaginatedResponse<T> {
   pageSize: number
   totalPages: number
 }
+
+export interface Sertifikat {
+  id: string
+  jenis: string
+  angkatanId?: string | null
+  angkatan?: Angkatan | null
+  ujiKompetensiId?: string | null
+  ujiKompetensi?: UjiKompetensi | null
+  pesertaId?: string | null
+  peserta?: Peserta | null
+  nomorSertifikat?: string | null
+  namaPeserta?: string | null
+  namaKegiatan?: string | null
+  file: string
+  ukuranFile?: string | null
+  tanggalTerbit?: string | null
+  catatan?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NotifikasiEmail {
+  id: string
+  subjek: string
+  isi: string
+  penerima: string
+  status: string
+  jenis?: string | null
+  referensiId?: string | null
+  referensiTipe?: string | null
+  sentAt?: string | null
+  createdAt: string
+}
+
+export interface Persetujuan {
+  id: string
+  jenis: string
+  referensiId: string
+  judul: string
+  deskripsi?: string | null
+  pemohonId?: string | null
+  pemohonNama?: string | null
+  status: string
+  catatan?: string | null
+  approverId?: string | null
+  approverNama?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SuratTugas {
+  id: string
+  nomor: string
+  perihal: string
+  tanggalSurat: string
+  tanggalMulai?: string | null
+  tanggalSelesai?: string | null
+  penerima: string
+  pesertaId?: string | null
+  peserta?: Peserta | null
+  pelatihanId?: string | null
+  pelatihan?: Pelatihan | null
+  angkatanId?: string | null
+  angkatan?: Angkatan | null
+  file?: string | null
+  ukuranFile?: string | null
+  status: string
+  catatan?: string | null
+  createdAt: string
+  updatedAt: string
+}
