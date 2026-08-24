@@ -1,7 +1,8 @@
 import type {
   User, Peserta, Pelatihan, Angkatan, AnalisisKebutuhan, AnalisisDiklatItem,
   UjiKompetensi, Asesor, Nilai, Kehadiran, Evaluasi,
-  AuditLog, BackupHistory, DashboardStats, PaginatedResponse
+  AuditLog, BackupHistory, DashboardStats, PaginatedResponse,
+  Sertifikat, NotifikasiEmail, Persetujuan, SuratTugas
 } from './types'
 
 const BASE = '/api'
@@ -238,6 +239,63 @@ export const api = {
         headers: {},
       })
     },
+  },
+
+  // ===== Sertifikat =====
+  sertifikat: {
+    list: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<Sertifikat>>(`/sertifikat${qs}`)
+    },
+    create: (data: FormData) =>
+      request<Sertifikat>('/sertifikat', { method: 'POST', body: data, headers: {} }),
+    remove: (id: string) => request<void>(`/sertifikat/${id}`, { method: 'DELETE' }),
+    downloadFile: (id: string) => { window.location.href = `${BASE}/sertifikat/${id}/file` },
+  },
+
+  // ===== Notifikasi Email =====
+  notifikasi: {
+    list: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<NotifikasiEmail>>(`/notifikasi${qs}`)
+    },
+    create: (data: Partial<NotifikasiEmail>) => request<NotifikasiEmail>('/notifikasi', { method: 'POST', body: JSON.stringify(data) }),
+    send: (id: string) => request<NotifikasiEmail>(`/notifikasi`, { method: 'POST', body: JSON.stringify({ action: 'send', id }) }),
+    remove: (id: string) => request<void>(`/notifikasi/${id}`, { method: 'DELETE' }),
+  },
+
+  // ===== Persetujuan =====
+  persetujuan: {
+    list: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<Persetujuan>>(`/persetujuan${qs}`)
+    },
+    create: (data: Partial<Persetujuan>) => request<Persetujuan>('/persetujuan', { method: 'POST', body: JSON.stringify(data) }),
+    approve: (id: string, data: { catatan?: string }) =>
+      request<Persetujuan>(`/persetujuan/${id}`, { method: 'PUT', body: JSON.stringify({ action: 'DISETUJUI', ...data }) }),
+    reject: (id: string, data: { catatan?: string }) =>
+      request<Persetujuan>(`/persetujuan/${id}`, { method: 'PUT', body: JSON.stringify({ action: 'DITOLAK', ...data }) }),
+  },
+
+  // ===== Surat Tugas =====
+  suratTugas: {
+    list: (params?: Record<string, string | number | undefined>) => {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
+      ).toString() : ''
+      return request<PaginatedResponse<SuratTugas>>(`/surat-tugas${qs}`)
+    },
+    create: (data: FormData) =>
+      request<SuratTugas>('/surat-tugas', { method: 'POST', body: data, headers: {} }),
+    update: (id: string, data: Partial<SuratTugas>) => request<SuratTugas>(`/surat-tugas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    remove: (id: string) => request<void>(`/surat-tugas/${id}`, { method: 'DELETE' }),
+    downloadFile: (id: string) => { window.location.href = `${BASE}/surat-tugas/${id}/file` },
   },
 }
 
