@@ -8,10 +8,16 @@ import type {
 const BASE = '/api'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const { headers: optHeaders, body: optBody, ...rest } = options || {}
+  const isFormData = optBody instanceof FormData
+  const headers: HeadersInit = isFormData
+    ? { ...(optHeaders || {}) }
+    : { 'Content-Type': 'application/json', ...(optHeaders || {}) }
   const res = await fetch(`${BASE}${url}`, {
     credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json', ...(options?.headers || {}) },
-    ...options,
+    ...rest,
+    headers,
+    body: optBody,
   })
   if (!res.ok) {
     let msg = `HTTP ${res.status}`
