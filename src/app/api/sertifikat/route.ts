@@ -39,8 +39,7 @@ export async function GET(req: Request) {
         take: pageSize as number,
         orderBy: { [safeSortBy]: (sortOrder as 'asc' | 'desc') || 'desc' },
         include: {
-          angkatan: { select: { id: true, namaAngkatan: true } },
-          pelatihan: { select: { id: true, nama: true, kode: true } },
+          angkatan: { select: { id: true, namaAngkatan: true, pelatihanId: true, pelatihan: { select: { id: true, nama: true, kode: true } } } },
           peserta: { select: { id: true, nama: true, nip: true } },
           ujiKompetensi: { select: { id: true, kode: true, skemaSertifikasi: true } },
         },
@@ -70,7 +69,6 @@ export async function POST(req: Request) {
     const fd = await req.formData()
     const file = fd.get('file') as File | null
 
-    // Ambil field metadata dari FormData
     const jenis = (fd.get('jenis') as string) || 'PELATIHAN'
     const angkatanId = fd.get('angkatanId') as string | null
     const ujiKompetensiId = fd.get('ujiKompetensiId') as string | null
@@ -85,12 +83,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File sertifikat wajib diupload' }, { status: 400 })
     }
 
-    // Validasi jenis
     if (!['PELATIHAN', 'UJI_KOMPETENSI'].includes(jenis)) {
       return NextResponse.json({ error: 'Jenis harus PELATIHAN atau UJI_KOMPETENSI' }, { status: 400 })
     }
 
-    // Validasi tipe file
     const ext = path.extname(file.name).toLowerCase()
     if (!ALLOWED_EXT.includes(ext)) {
       return NextResponse.json({ error: `Format file harus: ${ALLOWED_EXT.join(', ')}` }, { status: 400 })
@@ -99,7 +95,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Ukuran file maksimal 10MB' }, { status: 400 })
     }
 
-    // Simpan file
     const uniqueName = `${crypto.randomUUID()}${ext}`
     const filePath = path.join(process.cwd(), 'uploads', 'sertifikat', uniqueName)
     const bytes = Buffer.from(await file.arrayBuffer())
@@ -123,8 +118,7 @@ export async function POST(req: Request) {
         catatan,
       },
       include: {
-        angkatan: { select: { id: true, namaAngkatan: true } },
-        pelatihan: { select: { id: true, nama: true, kode: true } },
+        angkatan: { select: { id: true, namaAngkatan: true, pelatihanId: true, pelatihan: { select: { id: true, nama: true, kode: true } } } },
         peserta: { select: { id: true, nama: true, nip: true } },
         ujiKompetensi: { select: { id: true, kode: true, skemaSertifikasi: true } },
       },
