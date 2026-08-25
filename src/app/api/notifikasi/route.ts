@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
+import { sendEmail } from '@/lib/email'
 
 const ALLOWED_SORT = ['subjek', 'penerima', 'status', 'jenis', 'createdAt']
 
@@ -56,23 +57,41 @@ export async function POST(req: Request) {
     const { action } = body
 
     if (action === 'send') {
-      // Tandai notifikasi sebagai terkirim berdasarkan id yang dikirim
       const { id, penerima } = body
       if (!id) return NextResponse.json({ error: 'ID notifikasi diperlukan' }, { status: 400 })
 
       const existing = await db.notifikasiEmail.findUnique({ where: { id } })
       if (!existing) return NextResponse.json({ error: 'Notifikasi tidak ditemukan' }, { status: 404 })
 
-      const item = await db.notifikasiEmail.update({
-        where: { id },
-        data: {
-          status: 'TERKIRIM',
-          sentAt: new Date(),
-          penerima: penerima || existing.penerima,
-        },
-      })
-      await auditLog(session, 'UPDATE', 'NOTIFIKASI', `Kirim notifikasi: ${item.subjek}`, req)
-      return NextResponse.json(item)
+      // Actually send the email via SMTP
+      try {
+        const recipientEmail = penerima || existing.penerima
+        await sendEmail(recipientEmail, existing.subjek, existing.isi, existing.jenis)
+
+        const item = await db.notifikasiEmail.update({
+          where: { id },
+          data: {
+            status: 'TERKIRIM',
+            sentAt: new Date(),
+            penerima: recipientEmail,
+            errorMessage: null,
+          },
+        })
+        await auditLog(session, 'UPDATE', 'NOTIFIKASI', `Kirim notifikasi email: ${item.subjek} → ${recipientEmail}`, req)
+        return NextResponse.json(item)
+      } catch (emailErr) {
+        // Mark as GAGAL with error message
+        const errorMsg = (emailErr as Error).message || 'Gagal mengirim email'
+        const item = await db.notifikasiEmail.update({
+          where: { id },
+          data: {
+            status: 'GAGAL',
+            errorMessage: errorMsg,
+          },
+        })
+        await auditLog(session, 'UPDATE', 'NOTIFIKASI', `Gagal kirim notifikasi: ${item.subjek} — ${errorMsg}`, req)
+        return NextResponse.json({ error: `Gagal mengirim email: ${errorMsg}` }, { status: 400 })
+      }
     }
 
     // Default: buat draf baru
