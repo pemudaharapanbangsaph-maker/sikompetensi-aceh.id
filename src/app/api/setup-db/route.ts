@@ -75,6 +75,22 @@ export async function GET() {
       results.push(`AnalisisDiklatItem migration skipped: ${e.message}`)
     }
 
+    // 3. NotifikasiEmail table - add errorMessage column
+    try {
+      const notifTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='NotifikasiEmail'").get()
+      if (notifTable) {
+        const notifCols = db.pragma('table_info(NotifikasiEmail)') as { name: string }[]
+        const notifColNames = new Set(notifCols.map(c => c.name))
+
+        if (!notifColNames.has('errorMessage')) {
+          db.exec("ALTER TABLE NotifikasiEmail ADD COLUMN errorMessage TEXT")
+          results.push('NotifikasiEmail: added errorMessage column')
+        }
+      }
+    } catch (e: any) {
+      results.push(`NotifikasiEmail migration skipped: ${e.message}`)
+    }
+
     if (results.length === 0) {
       results.push('Schema already up to date - no changes needed')
     }
