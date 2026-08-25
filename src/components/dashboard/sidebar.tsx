@@ -116,6 +116,7 @@ const menuItems: MenuItem[] = [
       { key: 'settings-profil', label: 'Profil Instansi', view: 'settings-profil', permission: 'settings' },
       { key: 'settings-logo', label: 'Logo', view: 'settings-logo', permission: 'settings' },
       { key: 'settings-login', label: 'Pengaturan Login', view: 'settings-login', permission: 'settings' },
+      { key: 'settings-smtp', label: 'Pengaturan SMTP', view: 'settings-smtp', permission: 'settings' },
       { key: 'settings-audit', label: 'Audit Log', view: 'settings-audit', permission: 'settings' },
     ],
   },
