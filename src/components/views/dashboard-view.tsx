@@ -84,18 +84,18 @@ export function DashboardView() {
         <>
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={stats.trendPelatihan ?? undefined} />
-        <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.totalAngkatan} angkatan`} icon={Users} color="green" />
-        <StatCard title="Uji Kompetensi" value={stats.totalUjiKompetensi} subtitle={`${stats.ujiSelesai} selesai`} icon={Award} color="amber" />
-        <StatCard title="Analisis Kebutuhan" value={stats.totalAnalisis} subtitle={`${stats.totalAsesor} asesor`} icon={ClipboardList} color="purple" />
+        <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={stats.trendPelatihan ?? undefined} onClick={() => setActiveView('pelatihan')} />
+        <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.totalAngkatan} angkatan`} icon={Users} color="green" onClick={() => setActiveView('peserta')} />
+        <StatCard title="Uji Kompetensi" value={stats.totalUjiKompetensi} subtitle={`${stats.ujiSelesai} selesai`} icon={Award} color="amber" onClick={() => setActiveView('uji-jadwal')} />
+        <StatCard title="Analisis Kebutuhan" value={stats.totalAnalisis} subtitle={`${stats.totalAsesor} asesor`} icon={ClipboardList} color="purple" onClick={() => setActiveView('analisis')} />
       </div>
 
       {/* Secondary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <StatCard title="Pelatihan Berjalan" value={stats.pelatihanBerjalan} icon={Activity} color="blue" />
-        <StatCard title="Angkatan Selesai" value={stats.angkatanSelesai} icon={CheckCircle2} color="green" />
-        <StatCard title="Pendaftaran Portal" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="amber" />
-        <StatCard title="Uji Kompetensi Selesai" value={stats.ujiSelesai} icon={FileCheck} color="green" />
+        <StatCard title="Pelatihan Berjalan" value={stats.pelatihanBerjalan} icon={Activity} color="blue" onClick={() => setActiveView('angkatan')} />
+        <StatCard title="Angkatan Selesai" value={stats.angkatanSelesai} icon={CheckCircle2} color="green" onClick={() => setActiveView('pelatihan-arsip')} />
+        <StatCard title="Pendaftaran Portal" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="amber" onClick={() => setActiveView('pendaftaran-list')} />
+        <StatCard title="Uji Kompetensi Selesai" value={stats.ujiSelesai} icon={FileCheck} color="green" onClick={() => setActiveView('uji-hasil')} />
       </div>
 
       {/* Charts */}
