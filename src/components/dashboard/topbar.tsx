@@ -52,6 +52,7 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'settings-profil': { title: 'Profil Instansi', subtitle: 'Pengaturan profil instansi' },
   'settings-logo': { title: 'Logo', subtitle: 'Pengaturan logo instansi' },
   'settings-login': { title: 'Pengaturan Login', subtitle: 'Konfigurasi keamanan login' },
+  'settings-smtp': { title: 'Pengaturan SMTP', subtitle: 'Konfigurasi server email' },
   'settings-audit': { title: 'Audit Log', subtitle: 'Log audit sistem' },
   'account-profil': { title: 'Profil Saya', subtitle: 'Informasi akun dan profil' },
   'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
