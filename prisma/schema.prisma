@@ -81,7 +81,6 @@ model Peserta {
   kehadiran    Kehadiran[]
   evaluasi     Evaluasi[]
   sertifikat   Sertifikat[]
-  suratTugas   SuratTugas[]
 }
 
 model Pelatihan {
@@ -104,7 +103,6 @@ model Pelatihan {
   analisis     AnalisisKebutuhan[]
   pendaftaran  PendaftaranPortal[]
   analisisDiklatItems AnalisisDiklatItem[]
-  suratTugas   SuratTugas[]
 }
 
 model Angkatan {
@@ -131,7 +129,6 @@ model Angkatan {
   ujiKompetensi UjiKompetensi[]
   dokumentasi   Dokumentasi[]
   sertifikat    Sertifikat[]
-  suratTugas    SuratTugas[]
 }
 
 model PesertaAngkatan {
@@ -379,48 +376,6 @@ model NotifikasiEmail {
   referensiTipe String?
   sentAt        DateTime?
   createdAt     DateTime  @default(now())
-}
-
-// ====================== WORKFLOW PERSETUJUAN ======================
-
-model Persetujuan {
-  id            String   @id @default(cuid())
-  jenis         String   // PELATIHAN | UJI_KOMPETENSI | ANGKATAN | SURAT_TUGAS
-  referensiId   String
-  judul         String
-  deskripsi     String?
-  pemohonId     String?
-  pemohonNama   String?
-  status        String   @default("MENUNGGU") // MENUNGGU | DISETUJUI | DITOLAK
-  catatan       String?
-  approverId    String?
-  approverNama  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-// ====================== SURAT TUGAS ======================
-
-model SuratTugas {
-  id              String    @id @default(cuid())
-  nomor           String
-  perihal         String
-  tanggalSurat    DateTime
-  tanggalMulai    DateTime?
-  tanggalSelesai  DateTime?
-  penerima        String    // nama penerima / instansi
-  pesertaId       String?
-  peserta         Peserta?   @relation(fields: [pesertaId], references: [id], onDelete: SetNull)
-  pelatihanId     String?
-  pelatihan       Pelatihan? @relation(fields: [pelatihanId], references: [id], onDelete: SetNull)
-  angkatanId      String?
-  angkatan        Angkatan?  @relation(fields: [angkatanId], references: [id], onDelete: SetNull)
-  file            String?   // path ke file PDF
-  ukuranFile      String?
-  status          String    @default("DRAFT") // DRAFT | TERBIT
-  catatan         String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
 }
 
 // ====================== BACKUP & SYSTEM ======================
