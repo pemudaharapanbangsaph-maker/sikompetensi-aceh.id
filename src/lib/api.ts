@@ -273,6 +273,13 @@ export const api = {
     send: (id: string) => request<NotifikasiEmail>(`/notifikasi`, { method: 'POST', body: JSON.stringify({ action: 'send', id }) }),
     remove: (id: string) => request<void>(`/notifikasi/${id}`, { method: 'DELETE' }),
   },
+
+  // ===== SMTP Settings =====
+  smtp: {
+    get: () => request<Record<string, string>>('/smtp'),
+    save: (data: Record<string, string>) => request<void>('/smtp', { method: 'PUT', body: JSON.stringify(data) }),
+    test: () => request<{ success: boolean; message: string }>('/smtp', { method: 'POST' }),
+  },
 }
 
 export interface PesertaAngkatanView {
