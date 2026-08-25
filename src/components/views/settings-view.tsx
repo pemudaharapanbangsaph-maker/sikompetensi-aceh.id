@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { Save, Building2, ImageIcon, Shield, ScrollText, Upload, CheckCircle2, Lock, Clock, RefreshCw, KeyRound, FileCheck, Loader2 } from 'lucide-react'
+import { Save, Building2, ImageIcon, Shield, ScrollText, Upload, CheckCircle2, Lock, Clock, RefreshCw, KeyRound, FileCheck, Loader2, Mail, Wifi, WifiOff, Eye, EyeOff, Zap } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // ===========================================================================
 // ROOT
@@ -24,6 +25,7 @@ export function SettingsView() {
 
   if (activeView === 'settings-logo') return <SettingsLogoView />
   if (activeView === 'settings-login') return <SettingsLoginView />
+  if (activeView === 'settings-smtp') return <SettingsSmtpView />
   if (activeView === 'settings-audit') return <SettingsAuditView />
   return <SettingsProfilView />
 }
@@ -604,6 +606,238 @@ function SettingsAuditView() {
         rowKey={(r) => r.id}
         emptyMessage="Belum ada aktivitas tercatat"
       />
+    </div>
+  )
+}
+
+// ===========================================================================
+// SUBTAB 4: PENGATURAN SMTP
+// ===========================================================================
+
+function SettingsSmtpView() {
+  const { toast } = useToast()
+  const [config, setConfig] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [showPass, setShowPass] = useState(false)
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const r = await api.smtp.get()
+        if (!cancelled) setConfig(r)
+      } catch (e) {
+        if (!cancelled) toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [toast])
+
+  const update = (k: string, v: string) => {
+    setConfig((prev) => ({ ...prev, [k]: v }))
+    setTestResult(null)
+  }
+
+  const isConfigured = !!(config.smtp_host && config.smtp_user && config.smtp_from)
+
+  const handleSave = async () => {
+    if (!config.smtp_host || !config.smtp_user || !config.smtp_from) {
+      toast({ title: 'Validasi', description: 'Host, User, dan Email Pengirim wajib diisi', variant: 'destructive' })
+      return
+    }
+    setSaving(true)
+    try {
+      await api.smtp.save(config)
+      setTestResult(null)
+      toast({ title: 'Berhasil', description: 'Konfigurasi SMTP disimpan' })
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleTest = async () => {
+    if (!isConfigured) {
+      toast({ title: 'Validasi', description: 'Lengkapi konfigurasi SMTP terlebih dahulu', variant: 'destructive' })
+      return
+    }
+    setTesting(true)
+    setTestResult(null)
+    try {
+      const res = await api.smtp.test()
+      setTestResult(res)
+      toast({ title: 'Berhasil', description: res.message })
+    } catch (e) {
+      setTestResult({ success: false, message: (e as Error).message })
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  const SMTP_FIELDS = [
+    { key: 'smtp_host', label: 'SMTP Host', placeholder: 'smtp.gmail.com', required: true, hint: 'Alamat server SMTP' },
+    { key: 'smtp_port', label: 'SMTP Port', placeholder: '587', type: 'number', hint: 'Port standar: 587 (TLS), 465 (SSL), 25 (non-secure)' },
+    { key: 'smtp_user', label: 'Username / Email Akun', placeholder: 'noreply@bpsdm.acehprov.go.id', required: true, hint: 'Username autentikasi SMTP' },
+    { key: 'smtp_pass', label: 'Password / App Password', placeholder: '••••••••', type: 'password', hint: 'Gunakan App Password untuk Gmail' },
+    { key: 'smtp_from', label: 'Email Pengirim', placeholder: 'noreply@bpsdm.acehprov.go.id', required: true, hint: 'Email yang tampil sebagai pengirim' },
+    { key: 'smtp_from_name', label: 'Nama Pengirim', placeholder: 'SIKOMPETENSI BPSDM Aceh', hint: 'Nama yang tampil di email keluar' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Pengaturan SMTP" description="Konfigurasi server email untuk mengirim notifikasi" />
+
+      {/* Status Banner */}
+      <Card className={cn(
+        'border shadow-sm',
+        isConfigured ? 'border-green-200 bg-green-50/50' : 'border-amber-200 bg-amber-50/50'
+      )}>
+        <CardContent className="p-4 flex items-center gap-3">
+          {isConfigured ? (
+            <Wifi className="w-5 h-5 text-green-600 flex-shrink-0" />
+          ) : (
+            <WifiOff className="w-5 h-5 text-amber-600 flex-shrink-0" />
+          )}
+          <div className="text-xs text-slate-700 leading-relaxed">
+            {isConfigured ? (
+              <p>SMTP <span className="font-semibold text-green-700">terkonfigurasi</span> — sistem siap mengirim notifikasi email.</p>
+            ) : (
+              <p>SMTP <span className="font-semibold text-amber-700">belum dikonfigurasi</span> — notifikasi email tidak dapat dikirim sampai SMTP diatur.</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="pb-3 border-b border-slate-100">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="w-4 h-4 text-[#0F4C81]" /> Konfigurasi Server SMTP
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Pengaturan koneksi SMTP untuk pengiriman email notifikasi. Simpan terlebih dahulu sebelum tes koneksi.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          {loading ? (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-slate-100 rounded w-32 animate-pulse" />
+                  <div className="h-9 bg-slate-100 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {SMTP_FIELDS.map((f) => (
+                  <div key={f.key} className="space-y-1.5">
+                    <Label>
+                      {f.label} {f.required && <span className="text-red-500">*</span>}
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type={f.key === 'smtp_pass' && !showPass ? 'password' : (f.type || 'text')}
+                        value={config[f.key] || ''}
+                        onChange={(e) => update(f.key, e.target.value)}
+                        placeholder={f.placeholder}
+                        className={f.key === 'smtp_pass' ? 'pr-10' : ''}
+                      />
+                      {f.key === 'smtp_pass' && (
+                        <button
+                          type="button"
+                          onClick={() => setShowPass(!showPass)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">{f.hint}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* TLS/SSL Toggle */}
+              <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <input
+                  type="checkbox"
+                  id="smtp-secure"
+                  checked={config.smtp_secure === 'true'}
+                  onChange={(e) => update('smtp_secure', e.target.checked ? 'true' : 'false')}
+                  className="h-4 w-4 rounded border-slate-300 text-[#0F4C81] focus:ring-[#0F4C81]"
+                />
+                <Label htmlFor="smtp-secure" className="text-sm font-medium cursor-pointer">
+                  Gunakan koneksi aman (SSL/TLS)
+                </Label>
+                <span className="text-xs text-slate-500 ml-auto">Aktifkan untuk port 465 (SSL) atau 587 (STARTTLS)</span>
+              </div>
+
+              {/* Test Result */}
+              {testResult && (
+                <div className={cn(
+                  'mt-4 flex items-center gap-3 p-3 rounded-lg border',
+                  testResult.success
+                    ? 'border-green-200 bg-green-50 text-green-700'
+                    : 'border-red-200 bg-red-50 text-red-700'
+                )}>
+                  {testResult.success ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <WifiOff className="w-4 h-4 flex-shrink-0" />}
+                  <span className="text-sm">{testResult.message}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-5 mt-5 border-t border-slate-100">
+                <Button variant="outline" onClick={handleTest} disabled={testing || saving} className="h-10">
+                  {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  {testing ? 'Menguji...' : 'Tes Koneksi'}
+                </Button>
+                <Button onClick={handleSave} disabled={saving} className="bg-[#0F4C81] hover:bg-[#0a3a63] h-10">
+                  <Save className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan SMTP'}
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Contoh konfigurasi populer */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="pb-3 border-b border-slate-100">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="w-4 h-4 text-slate-500" /> Contoh Konfigurasi
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="rounded-lg border border-slate-200 p-4 space-y-2">
+              <p className="text-sm font-semibold text-slate-900">Gmail</p>
+              <div className="text-xs text-slate-600 space-y-0.5">
+                <p>Host: <code className="bg-slate-100 px-1 rounded">smtp.gmail.com</code></p>
+                <p>Port: <code className="bg-slate-100 px-1 rounded">587</code></p>
+                <p>Secure: <code className="bg-slate-100 px-1 rounded">Tidak (STARTTLS)</code></p>
+                <p className="text-slate-400 mt-1">Gunakan App Password dari Google Account → Security → 2FA → App passwords</p>
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-200 p-4 space-y-2">
+              <p className="text-sm font-semibold text-slate-900">Microsoft 365</p>
+              <div className="text-xs text-slate-600 space-y-0.5">
+                <p>Host: <code className="bg-slate-100 px-1 rounded">smtp.office365.com</code></p>
+                <p>Port: <code className="bg-slate-100 px-1 rounded">587</code></p>
+                <p>Secure: <code className="bg-slate-100 px-1 rounded">Tidak (STARTTLS)</code></p>
+                <p className="text-slate-400 mt-1">Pastikan SMTP Auth diaktifkan di Exchange Admin.</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
