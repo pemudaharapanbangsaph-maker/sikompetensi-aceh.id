@@ -246,5 +246,6 @@ export interface NotifikasiEmail {
   referensiId?: string | null
   referensiTipe?: string | null
   sentAt?: string | null
+  errorMessage?: string | null
   createdAt: string
 }
