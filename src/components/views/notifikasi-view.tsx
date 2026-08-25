@@ -209,10 +209,16 @@ function NotifikasiDataTable() {
     {
       key: 'status', header: 'Status', render: (r) => {
         const badge = STATUS_BADGE_MAP[r.status] || { label: r.status, className: 'bg-slate-100 text-slate-700 border-slate-200' }
+        const errMsg = (r as any).errorMessage
         return (
-          <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', badge.className)}>
-            {badge.label}
-          </span>
+          <div>
+            <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', badge.className)}>
+              {badge.label}
+            </span>
+            {r.status === 'GAGAL' && errMsg && (
+              <p className='text-[10px] text-red-500 mt-1 line-clamp-1 max-w-[200px]' title={errMsg}>{errMsg}</p>
+            )}
+          </div>
         )
       },
     },
@@ -263,7 +269,7 @@ function NotifikasiDataTable() {
         emptyMessage="Belum ada data notifikasi"
         actions={(row) => (
           <>
-            {row.status === 'DRAF' && (
+            {(row.status === 'DRAF' || row.status === 'GAGAL') && (
               <Button
                 size="sm"
                 variant="ghost"
