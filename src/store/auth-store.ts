@@ -99,7 +99,7 @@ export type ViewKey =
   | 'laporan-pelatihan' | 'laporan-uji' | 'laporan-peserta'
   | 'user-data' | 'user-hak-akses' | 'user-log'
   | 'backup' | 'backup-restore' | 'backup-riwayat'
-  | 'settings-profil' | 'settings-logo' | 'settings-login' | 'settings-audit'
+  | 'settings-profil' | 'settings-logo' | 'settings-login' | 'settings-smtp' | 'settings-audit'
   | 'account-profil' | 'account-keamanan'
   | 'sertifikat-pelatihan' | 'sertifikat-uji'
   | 'notifikasi'
