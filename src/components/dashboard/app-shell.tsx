@@ -90,6 +90,7 @@ function renderView(view: string): React.ReactNode {
     case 'settings-profil':
     case 'settings-logo':
     case 'settings-login':
+    case 'settings-smtp':
     case 'settings-audit':
       return <SettingsView />
     case 'account-profil':
