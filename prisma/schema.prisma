@@ -375,6 +375,7 @@ model NotifikasiEmail {
   referensiId   String?
   referensiTipe String?
   sentAt        DateTime?
+  errorMessage  String?
   createdAt     DateTime  @default(now())
 }
 
