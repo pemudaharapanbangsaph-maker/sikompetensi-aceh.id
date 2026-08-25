@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, FileBadge, Mail, GitPullRequest, ScrollText } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, FileBadge, Mail } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -109,8 +109,6 @@ const menuItems: MenuItem[] = [
       { key: 'sertifikat-uji', label: 'Sertifikat Uji Kompetensi', view: 'sertifikat-uji' as ViewKey, permission: 'uji_kompetensi' },
     ],
   },
-  { key: 'persetujuan', label: 'Workflow Persetujuan', icon: GitPullRequest, view: 'persetujuan' as ViewKey, permission: 'pelatihan' },
-  { key: 'surat-tugas', label: 'Surat Tugas', icon: ScrollText, view: 'surat-tugas' as ViewKey, permission: 'pelatihan' },
   { key: 'notifikasi', label: 'Notifikasi Email', icon: Mail, view: 'notifikasi' as ViewKey, permission: 'settings' },
   {
     key: 'settings', label: 'Pengaturan Sistem', icon: Settings, permission: 'settings',
