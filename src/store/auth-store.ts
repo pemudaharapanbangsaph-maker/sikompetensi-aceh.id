@@ -101,6 +101,8 @@ export type ViewKey =
   | 'backup' | 'backup-restore' | 'backup-riwayat'
   | 'settings-profil' | 'settings-logo' | 'settings-login' | 'settings-audit'
   | 'account-profil' | 'account-keamanan'
+  | 'sertifikat-pelatihan' | 'sertifikat-uji'
+  | 'notifikasi'
 
 interface NavigationState {
   activeView: ViewKey
