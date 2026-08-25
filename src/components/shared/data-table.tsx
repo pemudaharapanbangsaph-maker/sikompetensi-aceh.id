@@ -234,7 +234,7 @@ function useAnimatedNumber(target: number, duration = 800): number {
 
 // Stat card component
 export function StatCard({
-  title, value, icon: Icon, color = 'blue', subtitle, trend,
+  title, value, icon: Icon, color = 'blue', subtitle, trend, onClick,
 }: {
   title: string
   value: string | number
@@ -242,6 +242,7 @@ export function StatCard({
   color?: 'blue' | 'green' | 'amber' | 'purple' | 'red' | 'slate'
   subtitle?: string
   trend?: { value: string; up: boolean }
+  onClick?: () => void
 }) {
   const colors: Record<string, { bg: string; text: string; ring: string; hover: string; shadow: string }> = {
     blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100', hover: 'hover:shadow-blue-200/40', shadow: 'shadow-blue-100/60' },
@@ -258,10 +259,14 @@ export function StatCard({
   const displayValue = isNumeric ? animatedValue : value
 
   return (
-    <Card className={cn(
-      'border-slate-100 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg',
-      c.hover
-    )}>
+    <Card
+      onClick={onClick}
+      className={cn(
+        'border-slate-100 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg',
+        c.hover,
+        onClick && 'cursor-pointer'
+      )}
+    >
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
