@@ -32,7 +32,6 @@ export async function GET(req: Request) {
         { unitKerja: { contains: search } },
       ]
     }
-    // Filter tipe & angkatan sama seperti list
     if (tipe === 'PELATIHAN') {
       where.angkatan = { some: angkatanId ? { id: angkatanId } : {} }
     } else if (tipe === 'UJI_KOMPETENSI') {
@@ -41,15 +40,56 @@ export async function GET(req: Request) {
 
     const data = await db.peserta.findMany({
       where,
-      include: { _count: { select: { angkatan: true, nilai: true } } },
+      include: {
+        angkatan: {
+          include: {
+            angkatan: {
+              include: { pelatihan: true }
+            }
+          }
+        },
+        nilai: {
+          include: {
+            ujiKompetensi: true
+          }
+        },
+      },
       orderBy: { deletedAt: 'desc' },
     })
 
+    function buildAngkatanLabel(p: typeof data[0]): string {
+      const pelatihanLabels = (p.angkatan || [])
+        .map(pa => {
+          const a = pa.angkatan
+          const pel = a?.pelatihan
+          return pel ? `${a.namaAngkatan} - ${pel.nama}` : a?.namaAngkatan || ''
+        })
+        .filter(Boolean)
+      const ukSet = new Set<string>()
+      ;(p.nilai || []).forEach(n => {
+        const uk = n.ujiKompetensi
+        if (uk) {
+          const label = `${uk.kode} - ${uk.skemaSertifikasi}`
+          if (!ukSet.has(label)) ukSet.add(label)
+        }
+      })
+      const ukLabels = Array.from(ukSet)
+      const all = [...pelatihanLabels, ...ukLabels]
+      return all.length > 0 ? all.join('; ') : '-'
+    }
+
+    function buildNilaiLabel(p: typeof data[0]): string {
+      const nilais = p.nilai
+      if (!nilais || nilais.length === 0) return '-'
+      return nilais.map(n => {
+        const na = n.nilaiAkhir !== null && n.nilaiAkhir !== undefined ? String(n.nilaiAkhir) : '-'
+        return na
+      }).join('; ')
+    }
+
     const totalArsip = data.length
-    // Label untuk judul export
     const filterLabel = tipe === 'PELATIHAN' ? ' PELATIHAN' : tipe === 'UJI_KOMPETENSI' ? ' UJI KOMPETENSI' : ''
 
-    // === FORMAT PDF ===
     if (format === 'pdf') {
       const { jsPDF } = await import('jspdf')
       const autoTable = (await import('jspdf-autotable')).default
@@ -92,18 +132,26 @@ export async function GET(req: Request) {
         p.jabatan || '-',
         p.pangkatGolongan || '-',
         p.unitKerja || '-',
-        String(p._count?.angkatan || 0),
-        String(p._count?.nilai || 0),
+        buildAngkatanLabel(p),
+        buildNilaiLabel(p),
         p.deletedAt ? fmtTanggal(p.deletedAt) : '-',
       ])
 
       autoTable(doc, {
         startY: y, head: headerRow, body: bodyRows,
         headStyles: { fillColor: [15, 76, 129], textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', cellPadding: { top: 3, bottom: 3, left: 2, right: 2 }, halign: 'center', valign: 'middle' },
-        bodyStyles: { fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
+        bodyStyles: { fontSize: 7, cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1 },
         columnStyles: {
-          0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 22 }, 2: { cellWidth: 40 }, 3: { cellWidth: 14, halign: 'center' },
-          4: { cellWidth: 28 }, 5: { cellWidth: 24 }, 6: { cellWidth: 40 }, 7: { cellWidth: 18, halign: 'center' }, 8: { cellWidth: 14, halign: 'center' }, 9: { cellWidth: 26 },
+          0: { cellWidth: 10, halign: 'center' },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 32 },
+          3: { cellWidth: 14, halign: 'center' },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 28 },
+          7: { cellWidth: 80 },
+          8: { cellWidth: 14, halign: 'center' },
+          9: { cellWidth: 24 },
         },
         margin: { left: marginL, right: marginR }, rowPageBreak: 'avoid', theme: 'grid',
       })
@@ -122,21 +170,24 @@ export async function GET(req: Request) {
       return new NextResponse(pdfBuf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="arsip-peserta.pdf"' } })
     }
 
-    // === FORMAT XLSX ===
     const rows = data.map((p, idx) => ({
       No: idx + 1, NIP: p.nip, Nama: p.nama,
       'Jenis Kelamin': JK_LABEL[p.jenisKelamin] || p.jenisKelamin,
       Jabatan: p.jabatan || '-', 'Pangkat/Golongan': p.pangkatGolongan || '-',
       'Unit Kerja': p.unitKerja || '-', Instansi: p.instansi || '-',
       Pendidikan: p.pendidikan || '-', 'No. Telp': p.noTelp || '-',
-      Email: p.email || '-', Angkatan: p._count?.angkatan || 0,
-      Nilai: p._count?.nilai || 0,
+      Email: p.email || '-',
+      Angkatan: buildAngkatanLabel(p),
+      Nilai: buildNilaiLabel(p),
       'Tanggal Diarsipkan': p.deletedAt ? fmtTanggal(p.deletedAt) : '-',
     }))
 
     const wb = XLSX.utils.book_new()
     const wsData = XLSX.utils.json_to_sheet(rows)
-    wsData['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 30 }, { wch: 14 }, { wch: 25 }, { wch: 20 }, { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 10 }, { wch: 18 }]
+    wsData['!cols'] = [
+      { wch: 5 }, { wch: 20 }, { wch: 30 }, { wch: 14 }, { wch: 25 }, { wch: 20 },
+      { wch: 30 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 25 }, { wch: 40 }, { wch: 18 },
+    ]
     XLSX.utils.book_append_sheet(wb, wsData, 'Arsip Peserta')
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
 
