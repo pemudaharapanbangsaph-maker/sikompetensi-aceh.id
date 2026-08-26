@@ -11,13 +11,19 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const params = parseListParams(new URL(req.url).searchParams)
-    const { page, pageSize, search, sortBy, sortOrder, status, ...rest } = params
+    const { page, pageSize, search, sortBy, sortOrder, status, tipe, ...rest } = params
     const filters: Record<string, string | number | undefined> = { status }
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
     const where = buildWhere(search as string, ['nama', 'nip', 'unitKerja'], filters)
     where.deleted = true
+    // Filter tipe: PELATIHAN = punya angkatan, UJI_KOMPETENSI = punya nilai
+    if (tipe === 'PELATIHAN') {
+      where.angkatan = { some: {} }
+    } else if (tipe === 'UJI_KOMPETENSI') {
+      where.nilai = { some: {} }
+    }
     const [data, total] = await Promise.all([
       db.peserta.findMany({
         where,
