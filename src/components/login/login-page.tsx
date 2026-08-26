@@ -785,14 +785,15 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
         else setError(data.error || 'Gagal mendaftar')
         setStep('form'); setLoading(false); return
       }
-      const regId = data.id
+            const regId = data.id
+      const uploadToken = data.uploadToken
       // Upload dokumen wajib + opsional yang sudah dipilih
       const docsToUpload = ALL_DOKUMEN.filter((d) => files[d.tipe])
       for (let i = 0; i < docsToUpload.length; i++) {
-        const d = docsToUpload[i]; const file = files[d.tipe]; if (!file) continue
-        setUploadProgress(`Mengupload ${d.label}... (${i + 1}/${docsToUpload.length})`)
-        const fd = new FormData(); fd.append('pendaftaranId', regId); fd.append('tipe', d.tipe); fd.append('file', file)
-        const ures = await fetch('/api/portal/pendaftaran/upload-dokumen', { method: 'POST', body: fd })
+      const d = docsToUpload[i]; const file = files[d.tipe]; if (!file) continue
+      setUploadProgress(`Mengupload ${d.label}... (${i + 1}/${docsToUpload.length})`)
+      const fd = new FormData(); fd.append('pendaftaranId', regId); fd.append('tipe', d.tipe); fd.append('file', file); fd.append('uploadToken', uploadToken)
+      const ures = await fetch('/api/portal/pendaftaran/upload-dokumen', { method: 'POST', body: fd })
         if (!ures.ok) { const udata = await ures.json().catch(() => ({})); setError(`Gagal upload ${d.label}: ${udata.error || 'unknown error'}`); setStep('form'); setLoading(false); return }
       }
       setStep('done'); setSuccess({ nama: data.nama, id: regId })
