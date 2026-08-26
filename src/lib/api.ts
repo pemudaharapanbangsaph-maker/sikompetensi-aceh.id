@@ -231,6 +231,7 @@ export const api = {
     },
     exportPesertaPdf: () => window.location.href = `${BASE}/arsip/peserta/export?format=pdf`,
     exportPesertaXls: () => window.location.href = `${BASE}/arsip/peserta/export`,
+    angkatanOptions: (tipe: string) => request<Array<{ id: string; label: string; count: number }>>(`/arsip/peserta/angkatan-options?tipe=${tipe}`),
   },
 
   settings: {
