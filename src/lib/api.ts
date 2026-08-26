@@ -229,9 +229,14 @@ export const api = {
       ).toString() : ''
       return request<PaginatedResponse<Peserta>>(`/arsip/peserta${qs}`)
     },
-    exportPesertaPdf: () => window.location.href = `${BASE}/arsip/peserta/export?format=pdf`,
-    exportPesertaXls: () => window.location.href = `${BASE}/arsip/peserta/export`,
-    angkatanOptions: (tipe: string) => request<Array<{ id: string; label: string; count: number }>>(`/arsip/peserta/angkatan-options?tipe=${tipe}`),
+    exportPesertaPdf: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() + '&format=pdf' : '?format=pdf'
+      window.location.href = `${BASE}/arsip/peserta/export${qs}`
+    },
+    exportPesertaXls: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+      window.location.href = `${BASE}/arsip/peserta/export${qs}`
+    },
   },
 
   settings: {
