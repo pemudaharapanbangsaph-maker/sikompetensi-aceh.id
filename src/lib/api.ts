@@ -237,6 +237,7 @@ export const api = {
       const qs = params ? '?' + new URLSearchParams(params).toString() : ''
       window.location.href = `${BASE}/arsip/peserta/export${qs}`
     },
+    angkatanOptions: (tipe: string) => request<Array<{ id: string; label: string; count: number }>>(`/arsip/peserta/angkatan-options?tipe=${tipe}`),
   },
 
   settings: {
