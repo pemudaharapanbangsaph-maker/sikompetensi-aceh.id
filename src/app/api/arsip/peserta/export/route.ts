@@ -21,6 +21,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const format = searchParams.get('format') || 'xlsx'
     const search = searchParams.get('search') || undefined
+    const tipe = searchParams.get('tipe') || undefined
+    const angkatanId = searchParams.get('angkatanId') || undefined
 
     const where: Record<string, unknown> = { deleted: true }
     if (search) {
@@ -30,6 +32,12 @@ export async function GET(req: Request) {
         { unitKerja: { contains: search } },
       ]
     }
+    // Filter tipe & angkatan sama seperti list
+    if (tipe === 'PELATIHAN') {
+      where.angkatan = { some: angkatanId ? { id: angkatanId } : {} }
+    } else if (tipe === 'UJI_KOMPETENSI') {
+      where.nilai = { some: angkatanId ? { ujiKompetensiId: angkatanId } : {} }
+    }
 
     const data = await db.peserta.findMany({
       where,
@@ -38,6 +46,8 @@ export async function GET(req: Request) {
     })
 
     const totalArsip = data.length
+    // Label untuk judul export
+    const filterLabel = tipe === 'PELATIHAN' ? ' PELATIHAN' : tipe === 'UJI_KOMPETENSI' ? ' UJI KOMPETENSI' : ''
 
     // === FORMAT PDF ===
     if (format === 'pdf') {
@@ -53,7 +63,7 @@ export async function GET(req: Request) {
       let y = 12
       doc.setFontSize(14)
       doc.setFont('helvetica', 'bold')
-      doc.text('ARSIP PESERTA', pageW / 2, y, { align: 'center' })
+      doc.text(`ARSIP PESERTA${filterLabel}`, pageW / 2, y, { align: 'center' })
       y += 6
       doc.setFontSize(10)
       doc.setFont('helvetica', 'normal')
@@ -107,7 +117,7 @@ export async function GET(req: Request) {
         doc.setTextColor(0, 0, 0)
       }
 
-      await auditLog(session, 'EXPORT', 'ARSIP_PESERTA', `Export arsip peserta (${totalArsip} data) ke PDF`, req)
+      await auditLog(session, 'EXPORT', 'ARSIP_PESERTA', `Export arsip peserta${filterLabel} (${totalArsip} data) ke PDF`, req)
       const pdfBuf = Buffer.from(doc.output('arraybuffer'))
       return new NextResponse(pdfBuf, { headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="arsip-peserta.pdf"' } })
     }
@@ -130,7 +140,7 @@ export async function GET(req: Request) {
     XLSX.utils.book_append_sheet(wb, wsData, 'Arsip Peserta')
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
 
-    await auditLog(session, 'EXPORT', 'ARSIP_PESERTA', `Export arsip peserta (${totalArsip} data) ke XLSX`, req)
+    await auditLog(session, 'EXPORT', 'ARSIP_PESERTA', `Export arsip peserta${filterLabel} (${totalArsip} data) ke XLSX`, req)
     return new NextResponse(buf, { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename="arsip-peserta.xlsx"' } })
   } catch (e) {
     console.error('arsip peserta export error:', e)
