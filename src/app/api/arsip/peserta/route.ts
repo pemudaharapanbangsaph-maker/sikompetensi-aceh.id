@@ -11,7 +11,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const params = parseListParams(new URL(req.url).searchParams)
-    const { page, pageSize, search, sortBy, sortOrder, status, tipe, angkatanId, ...rest } = params
+    const { page, pageSize, search, sortBy, sortOrder, status, tipe, ...rest } = params
     const filters: Record<string, string | number | undefined> = { status }
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined && v !== '') filters[k] = v as string
@@ -20,9 +20,9 @@ export async function GET(req: Request) {
     where.deleted = true
     // Filter tipe: PELATIHAN = punya angkatan, UJI_KOMPETENSI = punya nilai
     if (tipe === 'PELATIHAN') {
-      where.angkatan = { some: angkatanId ? { id: angkatanId as string } : {} }
+      where.angkatan = { some: {} }
     } else if (tipe === 'UJI_KOMPETENSI') {
-      where.nilai = { some: angkatanId ? { ujiKompetensiId: angkatanId as string } : {} }
+      where.nilai = { some: {} }
     }
     const [data, total] = await Promise.all([
       db.peserta.findMany({
