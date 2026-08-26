@@ -9,7 +9,8 @@ import { StatusBadge, formatTanggal, kategoriLabel } from '@/components/shared/u
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Archive, FileText, FileSpreadsheet, Printer, BookOpen, Award, Eye, X, RotateCcw, Trash2 } from 'lucide-react'
+import { Archive, FileText, FileSpreadsheet, Printer, BookOpen, Award, Eye, X, RotateCcw, Trash2, Filter } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -227,6 +228,7 @@ function ArsipPesertaView() {
   const [pageSize] = useState(10)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [tipe, setTipe] = useState<string>('')
 
   const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
@@ -237,13 +239,14 @@ function ArsipPesertaView() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.arsip.peserta({ page, pageSize, search })
+      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}) })
       setData(res.data); setTotal(res.total)
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setLoading(false) }
-  }, [page, pageSize, search, toast])
+  }, [page, pageSize, search, tipe, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
+  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setPage(1) }
 
   const handleRestore = async () => {
     if (!restoreTarget) return; setRestoring(true)
@@ -276,6 +279,19 @@ function ArsipPesertaView() {
   return (
     <div className="space-y-4">
       <PageHeader title="Arsip Peserta" description="Data peserta yang telah dihapus (soft delete) dan dipindahkan ke arsip">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4 text-slate-500" />
+          <Select value={tipe || 'SEMUA'} onValueChange={handleTipeChange}>
+            <SelectTrigger className="w-[200px] h-9 text-sm">
+              <SelectValue placeholder="Filter tipe..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="SEMUA">Semua Peserta</SelectItem>
+              <SelectItem value="PELATIHAN">Peserta Pelatihan</SelectItem>
+              <SelectItem value="UJI_KOMPETENSI">Peserta Uji Kompetensi</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-peserta.pdf...' }); api.arsip.exportPesertaPdf() }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
         <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-peserta.xlsx...' }); api.arsip.exportPesertaXls() }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
       </PageHeader>
