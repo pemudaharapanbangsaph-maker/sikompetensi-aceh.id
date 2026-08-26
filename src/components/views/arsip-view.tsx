@@ -288,7 +288,7 @@ function ArsipPesertaView() {
     { key: 'jenisKelamin', header: 'JK', render: (r) => <span className="text-slate-600 text-xs">{r.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</span> },
     { key: 'jabatan', header: 'Jabatan', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[120px] inline-block">{r.jabatan || '-'}</span> },
     { key: 'unitKerja', header: 'Unit Kerja', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[120px] inline-block">{r.unitKerja || '-'}</span> },
-    { key: 'angkatan', header: 'Angkatan', render: (r) => <span className="font-medium text-[#0F4C81]">{r._count?.angkatan || 0}</span> },
+    { key: 'angkatan', header: 'Angkatan', render: (r: any) => <span className="text-[#0F4C81] text-xs line-clamp-1 max-w-[200px] inline-block" title={r.angkatanLabel}>{r.angkatanLabel || '-'}</span> },
     { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
   ]
 
