@@ -229,6 +229,9 @@ function ArsipPesertaView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tipe, setTipe] = useState<string>('')
+  const [angkatanId, setAngkatanId] = useState<string>('')
+  const [angkatanOptions, setAngkatanOptions] = useState<{ id: string; label: string; count: number }[]>([])
+  const [loadingOptions, setLoadingOptions] = useState(false)
 
   const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
@@ -239,14 +242,27 @@ function ArsipPesertaView() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}) })
+      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}), ...(angkatanId ? { angkatanId } : {}) })
       setData(res.data); setTotal(res.total)
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setLoading(false) }
-  }, [page, pageSize, search, tipe, toast])
+  }, [page, pageSize, search, tipe, angkatanId, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setPage(1) }
+  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setAngkatanId(''); setPage(1) }
+  const handleAngkatanChange = (v: string) => { setAngkatanId(v === 'SEMUA' ? '' : v); setPage(1) }
+
+  // Load angkatan/uji options ketika tipe berubah
+  useEffect(() => {
+    if (!tipe) { setAngkatanOptions([]); setAngkatanId(''); return }
+    let cancelled = false
+    setLoadingOptions(true)
+    api.arsip.angkatanOptions(tipe)
+      .then(opts => { if (!cancelled) setAngkatanOptions(opts) })
+      .catch(() => { if (!cancelled) setAngkatanOptions([]) })
+      .finally(() => { if (!cancelled) setLoadingOptions(false) })
+    return () => { cancelled = true }
+  }, [tipe])
 
   const handleRestore = async () => {
     if (!restoreTarget) return; setRestoring(true)
