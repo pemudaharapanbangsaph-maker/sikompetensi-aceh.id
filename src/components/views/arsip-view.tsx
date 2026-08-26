@@ -229,9 +229,6 @@ function ArsipPesertaView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tipe, setTipe] = useState<string>('')
-  const [angkatanId, setAngkatanId] = useState<string>('')
-  const [angkatanOptions, setAngkatanOptions] = useState<{ id: string; label: string; count: number }[]>([])
-  const [loadingOptions, setLoadingOptions] = useState(false)
 
   const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
@@ -242,27 +239,14 @@ function ArsipPesertaView() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}), ...(angkatanId ? { angkatanId } : {}) })
+      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}) })
       setData(res.data); setTotal(res.total)
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setLoading(false) }
-  }, [page, pageSize, search, tipe, angkatanId, toast])
-
-  // Load angkatan/uji options ketika tipe berubah
-  useEffect(() => {
-    if (!tipe) { setAngkatanOptions([]); setAngkatanId(''); return }
-    let cancelled = false
-    setLoadingOptions(true)
-    api.arsip.angkatanOptions(tipe)
-      .then(opts => { if (!cancelled) setAngkatanOptions(opts) })
-      .catch(() => { if (!cancelled) setAngkatanOptions([]) })
-      .finally(() => { if (!cancelled) setLoadingOptions(false) })
-    return () => { cancelled = true }
-  }, [tipe])
+  }, [page, pageSize, search, tipe, toast])
 
   useEffect(() => { fetchData() }, [fetchData])
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setAngkatanId(''); setPage(1) }
-  const handleAngkatanChange = (v: string) => { setAngkatanId(v === 'SEMUA' ? '' : v); setPage(1) }
+  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setPage(1) }
 
   const handleRestore = async () => {
     if (!restoreTarget) return; setRestoring(true)
@@ -291,6 +275,11 @@ function ArsipPesertaView() {
     { key: 'angkatan', header: 'Angkatan', render: (r) => <span className="font-medium text-[#0F4C81]">{r._count?.angkatan || 0}</span> },
     { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
   ]
+
+  const exportParams: Record<string, string> = {}
+  if (tipe) exportParams.tipe = tipe
+  if (angkatanId) exportParams.angkatanId = angkatanId
+  if (search) exportParams.search = search
 
   return (
     <div className="space-y-4">
@@ -321,8 +310,8 @@ function ArsipPesertaView() {
             </Select>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-peserta.pdf...' }); api.arsip.exportPesertaPdf() }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
-        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-peserta.xlsx...' }); api.arsip.exportPesertaXls() }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-peserta.pdf...' }); api.arsip.exportPesertaPdf(exportParams) }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
+        <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-peserta.xlsx...' }); api.arsip.exportPesertaXls(exportParams) }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
       </PageHeader>
       <StatCard title="Total Arsip Peserta" value={total} icon={Archive} color="purple" subtitle="Data yang diarsipkan" />
       <DataTable
