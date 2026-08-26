@@ -229,6 +229,9 @@ function ArsipPesertaView() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tipe, setTipe] = useState<string>('')
+  const [angkatanId, setAngkatanId] = useState<string>('')
+  const [angkatanOptions, setAngkatanOptions] = useState<{ id: string; label: string; count: number }[]>([])
+  const [loadingOptions, setLoadingOptions] = useState(false)
 
   const [detailTarget, setDetailTarget] = useState<(typeof data)[0] | null>(null)
   const [restoreTarget, setRestoreTarget] = useState<(typeof data)[0] | null>(null)
@@ -239,14 +242,27 @@ function ArsipPesertaView() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}) })
+      const res = await api.arsip.peserta({ page, pageSize, search, ...(tipe ? { tipe } : {}), ...(angkatanId ? { angkatanId } : {}) })
       setData(res.data); setTotal(res.total)
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setLoading(false) }
-  }, [page, pageSize, search, tipe, toast])
+  }, [page, pageSize, search, tipe, angkatanId, toast])
+
+  // Load angkatan/uji options ketika tipe berubah
+  useEffect(() => {
+    if (!tipe) { setAngkatanOptions([]); setAngkatanId(''); return }
+    let cancelled = false
+    setLoadingOptions(true)
+    api.arsip.angkatanOptions(tipe)
+      .then(opts => { if (!cancelled) setAngkatanOptions(opts) })
+      .catch(() => { if (!cancelled) setAngkatanOptions([]) })
+      .finally(() => { if (!cancelled) setLoadingOptions(false) })
+    return () => { cancelled = true }
+  }, [tipe])
 
   useEffect(() => { fetchData() }, [fetchData])
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setPage(1) }
+  const handleTipeChange = (v: string) => { setTipe(v === 'SEMUA' ? '' : v); setAngkatanId(''); setPage(1) }
+  const handleAngkatanChange = (v: string) => { setAngkatanId(v === 'SEMUA' ? '' : v); setPage(1) }
 
   const handleRestore = async () => {
     if (!restoreTarget) return; setRestoring(true)
@@ -291,6 +307,19 @@ function ArsipPesertaView() {
               <SelectItem value="UJI_KOMPETENSI">Peserta Uji Kompetensi</SelectItem>
             </SelectContent>
           </Select>
+          {tipe && (
+            <Select value={angkatanId || 'SEMUA'} onValueChange={handleAngkatanChange} disabled={loadingOptions}>
+              <SelectTrigger className="w-[280px] h-9 text-sm">
+                <SelectValue placeholder={loadingOptions ? 'Memuat...' : 'Pilih angkatan...'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SEMUA">Semua {tipe === 'PELATIHAN' ? 'Angkatan' : 'Uji Kompetensi'}</SelectItem>
+                {angkatanOptions.map(opt => (
+                  <SelectItem key={opt.id} value={opt.id}>{opt.label} ({opt.count})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export PDF', description: 'Mengunduh arsip-peserta.pdf...' }); api.arsip.exportPesertaPdf() }} className="h-9"><Printer className="w-4 h-4" /> Export PDF</Button>
         <Button variant="outline" size="sm" onClick={() => { toast({ title: 'Export Excel', description: 'Mengunduh arsip-peserta.xlsx...' }); api.arsip.exportPesertaXls() }} className="h-9"><FileSpreadsheet className="w-4 h-4" /> Export Excel</Button>
