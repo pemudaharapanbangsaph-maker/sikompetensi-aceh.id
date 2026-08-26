@@ -18,21 +18,26 @@ export async function GET(req: Request) {
     }
     const where = buildWhere(search as string, ['nama', 'nip', 'unitKerja'], filters)
     where.deleted = true
-    // Filter tipe: PELATIHAN = punya angkatan, UJI_KOMPETENSI = punya nilai
     if (tipe === 'PELATIHAN') {
       where.angkatan = { some: angkatanId ? { id: angkatanId as string } : {} }
     } else if (tipe === 'UJI_KOMPETENSI') {
       where.nilai = { some: angkatanId ? { ujiKompetensiId: angkatanId as string } : {} }
     }
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       db.peserta.findMany({
         where,
         include: {
-          _count: {
-            select: {
-              angkatan: true,
-              nilai: true,
-            },
+          angkatan: {
+            include: {
+              angkatan: {
+                include: { pelatihan: true }
+              }
+            }
+          },
+          nilai: {
+            include: {
+              ujiKompetensi: true
+            }
           },
         },
         skip: ((page as number) - 1) * (pageSize as number),
@@ -41,6 +46,31 @@ export async function GET(req: Request) {
       }),
       db.peserta.count({ where }),
     ])
+
+    const data = rawData.map(p => {
+      const pelatihanLabels = (p.angkatan || [])
+        .map(pa => {
+          const a = pa.angkatan
+          const pel = a?.pelatihan
+          return pel ? `${a.namaAngkatan} - ${pel.nama}` : a?.namaAngkatan || ''
+        })
+        .filter(Boolean)
+      const ukSet = new Set<string>()
+      ;(p.nilai || []).forEach(n => {
+        const uk = n.ujiKompetensi
+        if (uk) {
+          const label = `${uk.kode} - ${uk.skemaSertifikasi}`
+          if (!ukSet.has(label)) ukSet.add(label)
+        }
+      })
+      const ukLabels = Array.from(ukSet)
+      const allLabels = [...pelatihanLabels, ...ukLabels]
+      return {
+        ...p,
+        angkatanLabel: allLabels.length > 0 ? allLabels.join('; ') : '-',
+      }
+    })
+
     return NextResponse.json({
       data, total, page: page as number, pageSize: pageSize as number,
       totalPages: Math.ceil(total / (pageSize as number)),
