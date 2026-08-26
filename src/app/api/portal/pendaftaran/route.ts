@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { generateUploadToken } from './upload-dokumen/route'
 
 export async function POST(req: Request) {
   try {
@@ -47,11 +48,14 @@ export async function POST(req: Request) {
       },
     })
 
+    const uploadToken = generateUploadToken(pendaftaran.id)
+
     return NextResponse.json({
       success: true,
       id: pendaftaran.id,
       nama: pendaftaran.nama,
       nip: pendaftaran.nip,
+      uploadToken,
       message: 'Pendaftaran berhasil! Silakan upload dokumen pendukung.',
     })
   } catch (e) {
