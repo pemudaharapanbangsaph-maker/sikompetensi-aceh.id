@@ -14,7 +14,25 @@ export async function GET(
     const p = await db.pendaftaranPortal.findUnique({
       where: { id },
       include: {
-        analisisDiklatItem: { select: { namaPelatihan: true, kategori: true, metodePembelajaran: true, durasiJP: true, durasiHari: true, tahunPelaksanaan: true, tanggalPelaksanaan: true } },
+        analisisDiklatItem: {
+          select: {
+            namaPelatihan: true,
+            kategori: true,
+            metodePembelajaran: true,
+            durasiJP: true,
+            durasiHari: true,
+            tahunPelaksanaan: true,
+            pelatihan: {
+              select: {
+                angkatan: {
+                  select: { namaAngkatan: true, tanggalMulai: true, tanggalSelesai: true, lokasi: true },
+                  orderBy: { createdAt: 'asc' },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
         dokumen: { select: { tipe: true, namaFile: true } },
       },
     })
@@ -57,17 +75,15 @@ export async function GET(
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
     const pw = 210
     const ph = 297
-    const ml = 20 // margin left
+    const ml = 20
     const mr = 20
-    const cw = pw - ml - mr // content width
+    const cw = pw - ml - mr
     let y = 15
 
     // ========== KOP SURAT ==========
-    // Header bar
-    doc.setFillColor(15, 76, 129) // #0F4C81
+    doc.setFillColor(15, 76, 129)
     doc.rect(0, 0, pw, 8, 'F')
 
-    // Logo Panca Cita dari file
     const logoPath = path.join(process.cwd(), 'public', 'logo-pancacita.png')
     let logoAdded = false
     try {
@@ -75,7 +91,7 @@ export async function GET(
       const logoBase64 = 'data:image/png;base64,' + logoBuf.toString('base64')
       doc.addImage(logoBase64, 'PNG', ml, y + 5, 14, 14)
       logoAdded = true
-    } catch { /* fallback ke placeholder jika logo tidak ada */ }
+    } catch { }
     if (!logoAdded) {
       doc.setFillColor(15, 76, 129)
       doc.circle(ml + 7, y + 5, 7, 'F')
@@ -87,7 +103,6 @@ export async function GET(
       doc.text('ACEH', ml + 7, y + 8, { align: 'center' })
     }
 
-    // Nama instansi
     doc.setTextColor(15, 76, 129)
     doc.setFontSize(12)
     doc.setFont('helvetica', 'bold')
@@ -100,7 +115,6 @@ export async function GET(
     doc.text(instansiAlamat, pw / 2, y + 17.5, { align: 'center' })
 
     y += 22
-    // Garis kop
     doc.setDrawColor(15, 76, 129)
     doc.setLineWidth(0.8)
     doc.line(ml, y, pw - mr, y)
@@ -127,14 +141,6 @@ export async function GET(
     y += 8
 
     // ========== INFORMASI PELATIHAN ==========
-    doc.setFillColor(248, 250, 252)
-    doc.roundedRect(ml, y, cw, 38, 2, 2, 'F')
-
-    doc.setTextColor(15, 76, 129)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.text('INFORMASI PELATIHAN', ml + 4, y + 6)
-
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(30, 41, 59)
     doc.setFontSize(9)
@@ -144,46 +150,68 @@ export async function GET(
     const pelatihanJP = p.analisisDiklatItem?.durasiJP || 0
     const pelatihanHari = p.analisisDiklatItem?.durasiHari || 0
     const pelatihanTahun = p.analisisDiklatItem?.tahunPelaksanaan || '-'
-    const tanggalPelaksanaan = p.analisisDiklatItem?.tanggalPelaksanaan
-      ? new Date(p.analisisDiklatItem.tanggalPelaksanaan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-      : '-'
+    const angkatanPertama = p.analisisDiklatItem?.pelatihan?.angkatan?.[0]
+    const tanggalMulai = angkatanPertama?.tanggalMulai
+      ? new Date(angkatanPertama.tanggalMulai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : ''
+    const tanggalSelesai = angkatanPertama?.tanggalSelesai
+      ? new Date(angkatanPertama.tanggalSelesai).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : ''
+    const tanggalPelaksanaan = tanggalMulai && tanggalSelesai
+      ? `${tanggalMulai} s/d ${tanggalSelesai}`
+      : tanggalMulai || tanggalSelesai || '-'
+    const pelatihanLokasi = angkatanPertama?.lokasi || '-'
 
-    // Left column
+    const tanggalTextLen = tanggalPelaksanaan.length
+    const extraHeight = tanggalTextLen > 40 ? 8 : 0
+    const boxHeight = 44 + extraHeight
+
+    doc.setFillColor(248, 250, 252)
+    doc.roundedRect(ml, y, cw, boxHeight, 2, 2, 'F')
+
+    doc.setTextColor(15, 76, 129)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INFORMASI PELATIHAN', ml + 4, y + 6)
+
     let ly = y + 13
     doc.setFont('helvetica', 'bold')
     doc.text('Nama Pelatihan', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
     doc.text(`: ${pelatihanNama}`, ml + 38, ly)
     ly += 6
+
+    const rcol = pw / 2 + 5
     doc.setFont('helvetica', 'bold')
     doc.text('Kategori', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
     doc.text(`: ${pelatihanKategori}`, ml + 38, ly)
+    doc.setFont('helvetica', 'bold')
+    doc.text('JP / Hari', rcol, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 28, ly)
     ly += 6
+
     doc.setFont('helvetica', 'bold')
     doc.text('Metode', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
     doc.text(`: ${pelatihanMetode}`, ml + 38, ly)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tahun', rcol, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${pelatihanTahun}`, rcol + 28, ly)
+    ly += 6
 
-    // Right column
-    let ry = y + 13
-    const rcol = pw / 2 + 5
     doc.setFont('helvetica', 'bold')
-    doc.text('JP / Hari', rcol, ry)
+    doc.text('Tgl Pelaksanaan', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 30, ry)
-    ry += 6
+    doc.text(`: ${tanggalPelaksanaan}`, ml + 38, ly)
     doc.setFont('helvetica', 'bold')
-    doc.text('Tgl Pelaksanaan', rcol, ry)
+    doc.text('Lokasi', rcol, ly)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${tanggalPelaksanaan}`, rcol + 30, ry)
-    ry += 6
-    doc.setFont('helvetica', 'bold')
-    doc.text('Tahun', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanTahun}`, rcol + 30, ry)
+    doc.text(`: ${pelatihanLokasi}`, rcol + 28, ly)
 
-    y += 44
+    y += boxHeight + 6
 
     // ========== DATA PESERTA ==========
     doc.setTextColor(15, 76, 129)
@@ -211,12 +239,12 @@ export async function GET(
 
     doc.setFontSize(9)
     for (const [label, value] of biodata) {
-    doc.setTextColor(71, 85, 105)
-    doc.setFont('helvetica', 'normal')
-    doc.text(label, ml + 4, y)
-    doc.setTextColor(30, 41, 59)
-    doc.text(`: ${value}`, ml + 42, y)
-    y += 6.5
+      doc.setTextColor(71, 85, 105)
+      doc.setFont('helvetica', 'normal')
+      doc.text(label, ml + 4, y)
+      doc.setTextColor(30, 41, 59)
+      doc.text(`: ${value}`, ml + 42, y)
+      y += 6.5
     }
 
     y += 3
@@ -247,8 +275,7 @@ export async function GET(
         doc.setTextColor(30, 41, 59)
         doc.setFontSize(8.5)
         const tipeLabel = TIPE_DOK[d.tipe] || d.tipe
-        // Checkmark
-        doc.setTextColor(21, 128, 61) // green
+        doc.setTextColor(21, 128, 61)
         doc.text('\u2713', ml + 4, y)
         doc.setTextColor(30, 41, 59)
         doc.text(`${tipeLabel}`, ml + 9, y)
@@ -265,9 +292,9 @@ export async function GET(
 
     // ========== CATATAN ADMIN ==========
     if (p.catatanAdmin) {
-      doc.setFillColor(255, 251, 235) // amber-50
+      doc.setFillColor(255, 251, 235)
       doc.roundedRect(ml, y, cw, 12, 2, 2, 'F')
-      doc.setDrawColor(251, 191, 36) // amber-400
+      doc.setDrawColor(251, 191, 36)
       doc.setLineWidth(0.3)
       doc.roundedRect(ml, y, cw, 12, 2, 2, 'S')
       doc.setTextColor(146, 64, 14)
@@ -280,7 +307,6 @@ export async function GET(
     }
 
     // ========== FOOTER: TTD ==========
-    // Push y to at least 200 for signature area
     if (y < 200) y = 200
 
     y += 5
@@ -311,7 +337,6 @@ export async function GET(
     const pageCount = doc.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
-      // Bottom line
       doc.setDrawColor(15, 76, 129)
       doc.setLineWidth(0.3)
       doc.line(ml, ph - 12, pw - mr, ph - 12)
