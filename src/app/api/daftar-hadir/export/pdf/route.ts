@@ -1,6 +1,28 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { readFile } from 'fs/promises'
+import path from 'path'
+
+function generateDates(start: Date, end: Date): string[] {
+  const out: string[] = []
+  const s = new Date(start)
+  const e = new Date(end)
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return out
+  const cur = new Date(s)
+  while (cur <= e) {
+    out.push(cur.toISOString().slice(0, 10))
+    cur.setDate(cur.getDate() + 1)
+  }
+  return out
+}
+
+const STATUS_SHORT: Record<string, string> = {
+  HADIR: 'H',
+  SAKIT: 'S',
+  IZIN: 'I',
+  ALPA: 'A',
+}
 
 export async function GET(req: Request) {
   try {
@@ -11,6 +33,7 @@ export async function GET(req: Request) {
     const angkatanId = searchParams.get('angkatanId')
     if (!angkatanId) return NextResponse.json({ error: 'angkatanId wajib diisi' }, { status: 400 })
 
+    // Fetch angkatan + peserta + kehadiran
     const angkatan = await db.angkatan.findUnique({
       where: { id: angkatanId },
       include: {
@@ -21,137 +44,294 @@ export async function GET(req: Request) {
         },
       },
     })
-
     if (!angkatan) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
 
-    const pesertaList = angkatan.peserta.map((pa) => pa.peserta)
-    const bulanNama = angkatan.tanggalMulai.toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Jakarta' })
-    const tahun = angkatan.tanggalMulai.getFullYear()
-    const tglMulai = angkatan.tanggalMulai.getDate()
-    const tglSelesai = angkatan.tanggalSelesai.getDate()
-    const lokasi = angkatan.lokasi || 'Banda Aceh'
+    // Fetch all kehadiran records for this angkatan
+    const kehadiranRecords = await db.kehadiran.findMany({
+      where: { angkatanId },
+      orderBy: [{ tanggal: 'asc' }, { pesertaId: 'asc' }],
+    })
+
+    // Build kehadiran map: pesertaId_tanggalIso -> { statusKehadiran, keterangan }
+    const kehadiranMap: Record<string, { status: string; keterangan: string | null }> = {}
+    for (const rec of kehadiranRecords) {
+      const key = `${rec.pesertaId}_${rec.tanggal.toISOString().slice(0, 10)}`
+      kehadiranMap[key] = { status: rec.statusKehadiran, keterangan: rec.keterangan }
+    }
+
+    // Generate date range
+    const dates = generateDates(angkatan.tanggalMulai, angkatan.tanggalSelesai)
+
+    // Fetch pengaturan for kop surat
+    const settingsRows = await db.pengaturan.findMany()
+    const settings: Record<string, string> = {}
+    for (const r of settingsRows) settings[r.key] = r.value
+
+    const instansiNama = settings.instansi_nama || 'Badan Pengembangan Sumber Daya Manusia Aceh'
+    const instansiSingkat = settings.instansi_singkat || 'BPSDM Aceh'
+    const instansiAlamat = settings.instansi_alamat || 'Jl. T.Panglima Nyak Makam No 8 Lampineng, Kota Banda Aceh, 24415'
 
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [215.9, 355.6] })
-    const pageW = 215.9
-    const marginL = 15
-    const marginR = 15
+    // Use landscape A3 for wide matrix
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
+    const pageW = 420
+    const pageH = 297
+    const marginL = 12
+    const marginR = 12
     const contentW = pageW - marginL - marginR
 
-    // HEADER
+    // ========== KOP SURAT ==========
+    // Header bar
+    doc.setFillColor(15, 76, 129) // #0F4C81
+    doc.rect(0, 0, pageW, 8, 'F')
+
     let y = 12
-    doc.setFontSize(14)
-    doc.setFont('helvetica', 'bold')
-    doc.text('DAFTAR HADIR PESERTA', pageW / 2, y, { align: 'center' })
-    y += 7
 
-    doc.setFontSize(11)
-    doc.setFont('helvetica', 'bold')
-    const pelatihanText = `${angkatan.pelatihan.nama.toUpperCase()} TAHUN ${tahun}`
-    doc.text(pelatihanText, pageW / 2, y, { align: 'center' })
-    y += 7
-
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`${lokasi}, ${tglMulai} s.d ${tglSelesai} ${bulanNama} ${tahun}`, pageW / 2, y, { align: 'center' })
-    y += 10
-
-    // FIELDS
-    doc.setFontSize(10)
-    const fields = [
-      ['Hari/Tanggal', ': ……………………………….'],
-      ['Waktu', ': ……………………………….'],
-      ['Fasilitator', ': ……………………………….'],
-      ['Materi', '.……………….'],
-    ]
-
-    for (const [label, value] of fields) {
-      doc.setFont('helvetica', 'normal')
-      doc.text(`${label}`, marginL, y)
-      const labelW = doc.getTextWidth(`${label} `)
-      doc.text(value, marginL + labelW, y)
-      y += 7
+    // Logo
+    const logoPath = path.join(process.cwd(), 'public', 'logo-pancacita.png')
+    let logoAdded = false
+    try {
+      const logoBuf = await readFile(logoPath)
+      const logoBase64 = 'data:image/png;base64,' + logoBuf.toString('base64')
+      doc.addImage(logoBase64, 'PNG', marginL, y, 16, 16)
+      logoAdded = true
+    } catch { /* fallback */ }
+    if (!logoAdded) {
+      doc.setFillColor(15, 76, 129)
+      doc.circle(marginL + 8, y + 8, 8, 'F')
+      doc.setFontSize(7)
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.text('BPSDM', marginL + 8, y + 7, { align: 'center' })
+      doc.setFontSize(5)
+      doc.text('ACEH', marginL + 8, y + 11, { align: 'center' })
     }
-    y += 3
 
-    // TABLE
-    const headerRow = [['No.', 'NAMA', 'NIP', 'INSTANSI', 'TANDA TANGAN']]
-    const bodyRows = pesertaList.map((p, i) => [
-      String(i + 1),
-      p.nama,
-      p.nip,
-      p.instansi || p.unitKerja || '-',
-      '',
-    ])
+    // Institution name
+    doc.setTextColor(15, 76, 129)
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PEMERINTAH ACEH', pageW / 2, y + 2, { align: 'center' })
+    doc.setFontSize(11)
+    doc.text(instansiNama.toUpperCase(), pageW / 2, y + 8, { align: 'center' })
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.text('BIDANG PENGEMBANGAN DAN SERTIFIKASI KOMPETENSI TEKNIS INTI', pageW / 2, y + 13, { align: 'center' })
+    doc.setFontSize(7)
+    doc.text(instansiAlamat, pageW / 2, y + 17, { align: 'center' })
+
+    y += 22
+    // Double line
+    doc.setDrawColor(15, 76, 129)
+    doc.setLineWidth(0.8)
+    doc.line(marginL, y, pageW - marginR, y)
+    doc.setLineWidth(0.3)
+    doc.line(marginL, y + 1, pageW - marginR, y + 1)
+
+    y += 8
+
+    // ========== TITLE ==========
+    doc.setFillColor(15, 76, 129)
+    doc.roundedRect(marginL, y, contentW, 10, 2, 2, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.text('REKAP KEHADIRAN PESERTA', pageW / 2, y + 6.5, { align: 'center' })
+    y += 15
+
+    // ========== INFO PELATIHAN ==========
+    const lokasi = angkatan.lokasi || 'Banda Aceh'
+    const tglMulaiStr = angkatan.tanggalMulai.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    const tglSelesaiStr = angkatan.tanggalSelesai.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+
+    doc.setFontSize(9)
+    doc.setTextColor(30, 41, 59)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Nama Pelatihan', marginL, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${angkatan.pelatihan.nama}`, marginL + 35, y)
+    y += 5.5
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Angkatan', marginL, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${angkatan.namaAngkatan}`, marginL + 35, y)
+    y += 5.5
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Periode', marginL, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${tglMulaiStr} s.d ${tglSelesaiStr}`, marginL + 35, y)
+    y += 5.5
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Lokasi', marginL, y)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${lokasi}`, marginL + 35, y)
+    y += 5.5
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Metode', marginL, y)
+    doc.setFont('helvetica', 'normal')
+    const metodeLabel: Record<string, string> = { TATAP_MUKA: 'Tatap Muka', DARING: 'Daring', BLENDED: 'Blended' }
+    doc.text(`: ${metodeLabel[angkatan.metode] || angkatan.metode}`, marginL + 35, y)
+    y += 8
+
+    // ========== MATRIX TABLE ==========
+    // Build header: No | Nama | NIP | date headers... | Keterangan
+    const dateHeaders = dates.map((d) => {
+      const dt = new Date(d + 'T00:00:00')
+      const dayName = dt.toLocaleDateString('id-ID', { weekday: 'short' })
+      const dayNum = dt.getDate()
+      return `${dayName}\n${dayNum}`
+    })
+
+    const headerRow = ['No.', 'Nama Peserta', 'NIP', ...dateHeaders, 'Keterangan']
+
+    // Build body rows
+    const bodyRows = angkatan.peserta.map((pa, i) => {
+      const row: string[] = [
+        String(i + 1),
+        pa.peserta.nama,
+        pa.peserta.nip,
+      ]
+      // Matrix cells
+      for (const d of dates) {
+        const key = `${pa.pesertaId}_${d}`
+        const rec = kehadiranMap[key]
+        row.push(rec ? STATUS_SHORT[rec.status] || rec.status : '-')
+      }
+      // Keterangan: combine all keterangan from this peserta
+      const keters: string[] = []
+      for (const d of dates) {
+        const key = `${pa.pesertaId}_${d}`
+        const rec = kehadiranMap[key]
+        if (rec?.keterangan) {
+          const dt = new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+          keters.push(`${dt}: ${rec.keterangan}`)
+        }
+      }
+      row.push(keters.length > 0 ? keters.join('; ') : '')
+      return row
+    })
+
+    // Column styles
+    const colStyles: Record<number, object> = {
+      0: { cellWidth: 8, halign: 'center', valign: 'middle', fontStyle: 'bold' },
+      1: { cellWidth: 40 },
+      2: { cellWidth: 32 },
+    }
+    // Date columns
+    const dateColW = dates.length > 0 ? Math.min(16, (contentW - 8 - 40 - 32 - 40) / dates.length) : 16
+    for (let i = 0; i < dates.length; i++) {
+      colStyles[3 + i] = { cellWidth: dateColW, halign: 'center', valign: 'middle' }
+    }
+    // Keterangan column takes remaining space
+    const keteranganW = contentW - 8 - 40 - 32 - (dates.length * dateColW)
+    colStyles[3 + dates.length] = { cellWidth: Math.max(keteranganW, 30) }
 
     autoTable(doc, {
       startY: y,
-      head: headerRow,
+      head: [headerRow],
       body: bodyRows,
       headStyles: {
-        fillColor: [0, 0, 0],
+        fillColor: [15, 76, 129],
         textColor: [255, 255, 255],
-        fontSize: 9,
+        fontSize: 6.5,
         fontStyle: 'bold',
-        cellPadding: { top: 3, bottom: 3, left: 3, right: 3 },
+        cellPadding: { top: 2, bottom: 2, left: 1.5, right: 1.5 },
         halign: 'center',
         valign: 'middle',
       },
       bodyStyles: {
-        fontSize: 8,
-        cellPadding: { top: 4, bottom: 4, left: 2, right: 2 },
+        fontSize: 7,
+        cellPadding: { top: 3, bottom: 3, left: 1.5, right: 1.5 },
         textColor: [0, 0, 0],
         lineColor: [0, 0, 0],
         lineWidth: 0.1,
+        valign: 'middle',
       },
-      columnStyles: {
-        0: { cellWidth: 10, halign: 'center', valign: 'middle' },
-        1: { cellWidth: 42 },
-        2: { cellWidth: 38 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 55.9, halign: 'center' },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
       },
+      columnStyles: colStyles,
       margin: { left: marginL, right: marginR },
       rowPageBreak: 'avoid',
       theme: 'grid',
     })
 
-    // FOOTER - 3 kolom tanda tangan
+    // ========== LEGENDA ==========
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y
-    let fy = finalY + 10
+    let ly = finalY + 6
 
-    // 3 kolom: Tanda Tangan | DTO | Penyelenggara
-    const colW = contentW / 3
-    const signX1 = marginL + colW / 2
-    const signX2 = marginL + colW + colW / 2
-    const signX3 = marginL + colW * 2 + colW / 2
-
-    // Banda Aceh di kanan atas, di atas Penyelenggara
-    doc.setFontSize(10)
+    doc.setFontSize(7)
     doc.setFont('helvetica', 'normal')
-    doc.text(`${lokasi},       ${bulanNama} ${tahun}`, signX3, fy, { align: 'right' })
-    fy += 14
+    doc.setTextColor(71, 85, 105)
+    doc.text('Keterangan:', marginL, ly)
+    ly += 4
 
-    doc.text('Tanda Tangan', signX1, fy, { align: 'center' })
-    doc.text('DTO', signX2, fy, { align: 'center' })
-    doc.text('Penyelenggara', signX3, fy, { align: 'center' })
-    fy += 25
+    const legends = [
+      { code: 'H', label: 'Hadir', color: [25, 87, 55] },
+      { code: 'S', label: 'Sakit', color: [180, 83, 9] },
+      { code: 'I', label: 'Izin', color: [37, 99, 235] },
+      { code: 'A', label: 'Alpa', color: [220, 38, 38] },
+      { code: '-', label: 'Belum diisi', color: [148, 163, 184] },
+    ]
 
-    doc.text('(..................................)', signX1, fy, { align: 'center' })
-    doc.text('(..................................)', signX2, fy, { align: 'center' })
-    doc.text('(..................................)', signX3, fy, { align: 'center' })
+    let lx = marginL
+    for (const leg of legends) {
+      doc.setFillColor(...(leg.color as [number, number, number]))
+      doc.roundedRect(lx, ly - 2.5, 3.5, 3.5, 0.5, 0.5, 'F')
+      doc.setTextColor(30, 41, 59)
+      doc.text(`${leg.code} = ${leg.label}`, lx + 5, ly)
+      lx += doc.getTextWidth(`${leg.code} = ${leg.label}`) + 12
+    }
 
-    // Page numbers
+    // ========== SIGNATURE BLOCK ==========
+    let sy = finalY + 22
+    if (sy > pageH - 50) {
+      doc.addPage()
+      sy = 20
+    }
+
+    const signColW = contentW / 3
+    const signX1 = marginL + signColW / 2
+    const signX2 = marginL + signColW + signColW / 2
+    const signX3 = marginL + signColW * 2 + signColW / 2
+
+    const now = new Date()
+    const tglCetak = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+
+    doc.setFontSize(8)
+    doc.setTextColor(30, 41, 59)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Banda Aceh, ${tglCetak}`, signX3, sy, { align: 'right' })
+    sy += 4
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Peserta', signX1, sy, { align: 'center' })
+    doc.text('Widyaiswara / DTO', signX2, sy, { align: 'center' })
+    doc.text('Penyelenggara', signX3, sy, { align: 'center' })
+    sy += 22
+
+    doc.setFont('helvetica', 'normal')
+    doc.text('(........................................)', signX1, sy, { align: 'center' })
+    doc.text('(........................................)', signX2, sy, { align: 'center' })
+    doc.text('(........................................)', signX3, sy, { align: 'center' })
+
+    // ========== PAGE FOOTER ==========
     const pageCount = doc.getNumberOfPages()
-    const pageH = 355.6
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
-      doc.setFontSize(7)
+      doc.setDrawColor(15, 76, 129)
+      doc.setLineWidth(0.3)
+      doc.line(marginL, pageH - 10, pageW - marginR, pageH - 10)
+      doc.setFontSize(6.5)
       doc.setTextColor(148, 163, 184)
-      doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, pageH - 8, { align: 'center' })
-      doc.setTextColor(0, 0, 0)
+      doc.text(`SIKOMPETENSI — ${instansiSingkat}`, marginL, pageH - 6)
+      doc.text(`Halaman ${i} dari ${pageCount}`, pageW - marginR, pageH - 6, { align: 'right' })
     }
 
     const pdfBuf = Buffer.from(doc.output('arraybuffer'))
@@ -159,7 +339,7 @@ export async function GET(req: Request) {
     return new NextResponse(pdfBuf, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="daftar-hadir-${safeName}.pdf"`,
+        'Content-Disposition': `attachment; filename="rekap-kehadiran-${safeName}.pdf"`,
       },
     })
   } catch (e) {
