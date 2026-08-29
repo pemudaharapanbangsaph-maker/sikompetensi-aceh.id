@@ -3,6 +3,19 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import * as XLSX from 'xlsx'
 
+function generateDates(start: Date, end: Date): string[] {
+  const out: string[] = []
+  const s = new Date(start)
+  const e = new Date(end)
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return out
+  const cur = new Date(s)
+  while (cur <= e) {
+    out.push(cur.toISOString().slice(0, 10))
+    cur.setDate(cur.getDate() + 1)
+  }
+  return out
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -22,26 +35,74 @@ export async function GET(req: Request) {
         },
       },
     })
-
     if (!angkatan) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
 
-    const rows = angkatan.peserta.map((pa, i) => ({
-      'No': i + 1,
-      'NAMA': pa.peserta.nama,
-      'NIP': pa.peserta.nip,
-      'INSTANSI': pa.peserta.instansi || pa.peserta.unitKerja || '-',
-      'Paraf 1': '',
-      'Paraf 2': '',
-    }))
+    // Fetch kehadiran records
+    const kehadiranRecords = await db.kehadiran.findMany({
+      where: { angkatanId },
+      orderBy: [{ tanggal: 'asc' }, { pesertaId: 'asc' }],
+    })
 
+    // Build kehadiran map
+    const kehadiranMap: Record<string, { status: string; keterangan: string | null }> = {}
+    for (const rec of kehadiranRecords) {
+      const key = `${rec.pesertaId}_${rec.tanggal.toISOString().slice(0, 10)}`
+      kehadiranMap[key] = { status: rec.statusKehadiran, keterangan: rec.keterangan }
+    }
+
+    const dates = generateDates(angkatan.tanggalMulai, angkatan.tanggalSelesai)
+
+    // Build header row
+    const dateHeaders = dates.map((d) => {
+      const dt = new Date(d + 'T00:00:00')
+      const dayName = dt.toLocaleDateString('id-ID', { weekday: 'short' })
+      const dayNum = dt.getDate()
+      return `${dayName} ${dayNum}`
+    })
+
+    const headers = ['No', 'Nama Peserta', 'NIP', ...dateHeaders, 'Keterangan']
+
+    // Build data rows
+    const rows = angkatan.peserta.map((pa, i) => {
+      const row: (string | number)[] = [i + 1, pa.peserta.nama, pa.peserta.nip]
+      for (const d of dates) {
+        const key = `${pa.pesertaId}_${d}`
+        const rec = kehadiranMap[key]
+        row.push(rec ? rec.status : '-')
+      }
+      // Keterangan
+      const keters: string[] = []
+      for (const d of dates) {
+        const key = `${pa.pesertaId}_${d}`
+        const rec = kehadiranMap[key]
+        if (rec?.keterangan) {
+          const dt = new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+          keters.push(`${dt}: ${rec.keterangan}`)
+        }
+      }
+      row.push(keters.length > 0 ? keters.join('; ') : '')
+      return row
+    })
+
+    // Create workbook with header + rows
+    const wsData = [headers, ...rows]
     const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.json_to_sheet(rows)
+    const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-    ws['!cols'] = [
-      { wch: 5 }, { wch: 35 }, { wch: 25 }, { wch: 40 }, { wch: 12 }, { wch: 12 },
+    // Column widths
+    const colWidths = [
+      { wch: 5 },  // No
+      { wch: 35 }, // Nama
+      { wch: 25 }, // NIP
+      ...dates.map(() => ({ wch: 10 })), // date columns
+      { wch: 35 }, // Keterangan
     ]
+    ws['!cols'] = colWidths
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Daftar Hadir')
+    // Freeze panes: freeze first 3 columns and header row
+    ws['!freeze'] = { xSplit: 3, ySplit: 1 }
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Kehadiran')
 
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
     const safeName = angkatan.pelatihan.nama.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').slice(0, 60)
@@ -49,7 +110,7 @@ export async function GET(req: Request) {
     return new NextResponse(buf, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="daftar-hadir-${safeName}.xlsx"`,
+        'Content-Disposition': `attachment; filename="rekap-kehadiran-${safeName}.xlsx"`,
       },
     })
   } catch (e) {
