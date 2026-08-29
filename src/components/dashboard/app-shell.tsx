@@ -26,6 +26,7 @@ const ArsipView = lazy(() => import('@/components/views/arsip-view').then(m => (
 const AccountView = lazy(() => import('@/components/views/account-view').then(m => ({ default: m.AccountView })))
 const SertifikatView = lazy(() => import('@/components/views/sertifikat-view').then(m => ({ default: m.SertifikatView })))
 const NotifikasiView = lazy(() => import('@/components/views/notifikasi-view').then(m => ({ default: m.NotifikasiView })))
+const DaftarHadirView = lazy(() => import('@/components/views/daftar-hadir-view').then(m => ({ default: m.DaftarHadirView })))
 
 
 function ViewLoader() {
@@ -50,9 +51,10 @@ function renderView(view: string): React.ReactNode {
     case 'pelatihan-arsip':
       return <PelatihanView />
     case 'angkatan':
-    case 'kehadiran':
     case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
+    case 'kehadiran':
+      return <DaftarHadirView />
     case 'uji-biodata':
     case 'uji-jadwal':
     case 'uji-penilaian':
