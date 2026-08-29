@@ -5,7 +5,7 @@ import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound, Printer } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound, Printer, FileCheck2, XCircle, Hourglass, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
@@ -162,6 +162,11 @@ export function LoginPage() {
         <AnimatePresence mode="wait">
           <PendaftaranRight onBack={goBack} />
         </AnimatePresence>
+      ) : view === 'cek-status' ? (
+        /* ===== FULL-SCREEN: CEK STATUS ===== */
+        <AnimatePresence mode="wait">
+          <CekStatusRight onBack={goBack} onDaftar={() => setView('pendaftaran')} />
+        </AnimatePresence>
       ) : (
         /* ===== SPLIT SCREEN: LANDING / LOGIN ===== */
         <div className="flex-1 flex flex-col lg:flex-row">
@@ -212,7 +217,7 @@ export function LoginPage() {
           {/* ===== RIGHT PANEL ===== */}
           <AnimatePresence mode="wait">
             {view === 'landing' && (
-              <LandingRight onEnter={() => setView('login')} onPrograms={() => setView('programs')} onPendaftaran={() => setView('pendaftaran')} />
+              <LandingRight onEnter={() => setView('login')} onPrograms={() => setView('programs')} onPendaftaran={() => setView('pendaftaran')} onCekStatus={() => setView('cek-status')} />
             )}
             {view === 'login' && !pending2FA && (
               <LoginRight
@@ -247,7 +252,7 @@ export function LoginPage() {
 // RIGHT PANEL: LANDING
 // ==========================================================================
 
-function LandingRight({ onEnter, onPrograms, onPendaftaran }: { onEnter: () => void; onPrograms: () => void; onPendaftaran: () => void }) {
+function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onEnter: () => void; onPrograms: () => void; onPendaftaran: () => void; onCekStatus: () => void }) {
   return (
     <motion.div
       key="landing-right"
@@ -306,6 +311,13 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran }: { onEnter: () => v
           >
             <ClipboardList className="w-6 h-6" />
             Pendaftaran Pelatihan
+          </button>
+          <button
+            onClick={onCekStatus}
+            className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <FileCheck2 className="w-6 h-6" />
+            Cek Status Pendaftaran
           </button>
         </div>
         <div className="lg:hidden mt-6">
@@ -1091,6 +1103,290 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
           </form>
         </div>
       )}
+
+      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
+    </motion.div>
+  )
+}
+
+// ==========================================================================
+// FULL-SCREEN: CEK STATUS PENDAFTARAN
+// ==========================================================================
+
+const TIPE_DOK_LABEL: Record<string, string> = {
+  KTP: 'KTP',
+  SURAT_TUGAS: 'Surat Tugas',
+  NPWP: 'NPWP',
+  REK_BANK: 'Rekening Bank',
+}
+
+function CekStatusRight({ onBack, onDaftar }: { onBack: () => void; onDaftar: () => void }) {
+  const [nip, setNip] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [result, setResult] = useState<{
+    found: boolean
+    id?: string
+    nama?: string
+    nip?: string
+    status?: string
+    catatanAdmin?: string | null
+    pelatihan?: { id: string; nama: string } | null
+    dokumen?: { tipe: string; namaFile: string; createdAt: string }[]
+    createdAt?: string
+  } | null>(null)
+
+  const handleCek = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setResult(null)
+    const nipVal = nip.trim()
+    if (!nipVal) { setError('NIP wajib diisi'); return }
+    if (!/^\d{18}$/.test(nipVal)) { setError('Format NIP tidak valid (harus 18 digit angka)'); return }
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/portal/pendaftaran?nip=${encodeURIComponent(nipVal)}`)
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || 'Gagal mengecek status'); return }
+      setResult(data)
+    } catch {
+      setError('Terjadi kesalahan jaringan')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatDate = (d: string) => {
+    try {
+      return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    } catch { return d }
+  }
+
+  const statusConfig: Record<string, { label: string; bg: string; border: string; text: string; icon: React.ReactNode; desc: string }> = {
+    MENUNGGU: {
+      label: 'Menunggu Verifikasi',
+      bg: 'bg-amber-50',
+      border: 'border-amber-300',
+      text: 'text-amber-800',
+      icon: <Hourglass className="w-8 h-8 text-amber-600" />,
+      desc: 'Pendaftaran Anda sedang dalam proses verifikasi oleh admin. Silakan cek kembali secara berkala.',
+    },
+    DITERIMA: {
+      label: 'Diterima',
+      bg: 'bg-green-50',
+      border: 'border-green-300',
+      text: 'text-green-800',
+      icon: <CheckCircle2 className="w-8 h-8 text-green-600" />,
+      desc: 'Selamat! Pendaftaran Anda telah disetujui. Anda dapat mencetak bukti pendaftaran.',
+    },
+    DITOLAK: {
+      label: 'Ditolak',
+      bg: 'bg-red-50',
+      border: 'border-red-300',
+      text: 'text-red-800',
+      icon: <XCircle className="w-8 h-8 text-red-600" />,
+      desc: 'Maaf, pendaftaran Anda ditolak. Silakan perhatikan catatan admin di bawah.',
+    },
+  }
+
+  const status = result?.status || ''
+  const cfg = statusConfig[status]
+
+  return (
+    <motion.div
+      key="cek-status-right"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen flex flex-col bg-[#FFFEF9]"
+    >
+      {/* Header */}
+      <div className="px-6 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
+        <button type="button" onClick={onBack} disabled={loading} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4">
+          <ArrowLeft className="w-4 h-4" /> Kembali
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#0F4C81]/10 flex items-center justify-center">
+            <FileCheck2 className="w-5 h-5 text-[#0F4C81]" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Cek Status Pendaftaran</h2>
+            <p className="text-sm text-slate-500 mt-0.5">Masukkan NIP untuk melihat status pendaftaran pelatihan Anda</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6 sm:p-10">
+        <div className="max-w-2xl mx-auto space-y-6">
+
+          {/* Form Cari */}
+          <form onSubmit={handleCek} className="bg-white rounded-xl border-2 border-slate-200/80 p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-600">Nomor Induk Pegawai (NIP)</Label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-slate-400" />
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={nip}
+                    onChange={(e) => { setNip(e.target.value.replace(/\D/g, '').slice(0, 18)); setError(''); setResult(null) }}
+                    placeholder="Masukkan 18 digit NIP"
+                    maxLength={18}
+                    className="pl-11 h-12 bg-white border-slate-300 focus:border-[#0F4C81] focus:ring-[#0F4C81]/20 rounded-lg text-sm font-mono"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  disabled={loading || nip.trim().length !== 18}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2 px-8 h-12 font-semibold text-sm rounded-lg transition-all ${nip.trim().length === 18 && !loading ? 'bg-[#0F4C81] hover:bg-[#0d3d6b] text-white shadow-sm hover:shadow-md' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                >
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Mencari...</> : <><Search className="w-4 h-4" /> Cek Status</>}
+                </button>
+              </div>
+            </div>
+            {nip.trim().length > 0 && nip.trim().length < 18 && (
+              <p className="text-xs text-slate-400 mt-2">NIP harus 18 digit (saat ini: {nip.trim().length} digit)</p>
+            )}
+          </form>
+
+          {/* Error */}
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-2 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" /><span>{error}</span>
+            </motion.div>
+          )}
+
+          {/* Result: NIP Tidak Ditemukan */}
+          {result && !result.found && (
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-xl border-2 border-slate-200 p-8 text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto">
+                <Info className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800">NIP Tidak Ditemukan</h3>
+              <p className="text-sm text-slate-500 max-w-sm mx-auto">
+                NIP <span className="font-mono font-semibold text-slate-700">{nip.trim()}</span> belum terdaftar dalam sistem pendaftaran pelatihan.
+              </p>
+              <button
+                onClick={onDaftar}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-bold text-sm rounded-xl transition-colors"
+              >
+                <ClipboardList className="w-4 h-4" /> Daftar Sekarang
+              </button>
+            </motion.div>
+          )}
+
+          {/* Result: Status Ditemukan */}
+          {result && result.found && cfg && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+
+              {/* Status Card */}
+              <div className={`rounded-xl border-2 ${cfg.bg} ${cfg.border} p-6 sm:p-8`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="flex-shrink-0">{cfg.icon}</div>
+                  <div className="flex-1">
+                    <h3 className={`text-xl font-bold ${cfg.text}`}>{cfg.label}</h3>
+                    <p className="text-sm text-slate-600 mt-1">{cfg.desc}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Peserta */}
+              <div className="bg-white rounded-xl border-2 border-slate-200/80 p-5 sm:p-6 space-y-4">
+                <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <User className="w-4 h-4 text-[#0F4C81]" /> Data Pendaftar
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-slate-400 font-medium">Nama Lengkap</p>
+                    <p className="font-semibold text-slate-800">{result.nama}</p>
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-slate-400 font-medium">NIP</p>
+                    <p className="font-semibold text-slate-800 font-mono">{result.nip}</p>
+                  </div>
+                  {result.pelatihan && (
+                    <div className="space-y-0.5 sm:col-span-2">
+                      <p className="text-xs text-slate-400 font-medium">Pelatihan yang Dipilih</p>
+                      <p className="font-semibold text-slate-800">{result.pelatihan.nama}</p>
+                    </div>
+                  )}
+                  {result.createdAt && (
+                    <div className="space-y-0.5">
+                      <p className="text-xs text-slate-400 font-medium">Waktu Pendaftaran</p>
+                      <p className="font-semibold text-slate-800">{formatDate(result.createdAt)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Dokumen */}
+              {result.dokumen && result.dokumen.length > 0 && (
+                <div className="bg-white rounded-xl border-2 border-slate-200/80 p-5 sm:p-6 space-y-4">
+                  <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#0F4C81]" /> Dokumen yang Diunggah
+                  </h4>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {result.dokumen.map((d, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-green-50 border border-green-200">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <span className="text-sm text-slate-700 font-medium">{TIPE_DOK_LABEL[d.tipe] || d.tipe}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Catatan Admin */}
+              {result.catatanAdmin && (
+                <div className="bg-amber-50 rounded-xl border-2 border-amber-200 p-5 sm:p-6 space-y-2">
+                  <h4 className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                    <Info className="w-4 h-4" /> Catatan dari Admin
+                  </h4>
+                  <p className="text-sm text-amber-900 bg-white/70 rounded-lg p-3 border border-amber-200">{result.catatanAdmin}</p>
+                </div>
+              )}
+
+              {/* Aksi: Cetak Bukti (hanya DITERIMA) */}
+              {status === 'DITERIMA' && result.id && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="flex flex-col sm:flex-row items-center gap-3">
+                  <a
+                    href={`/api/portal/pendaftaran/${result.id}/cetak-bukti`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-8 py-4 bg-[#0F4C81] hover:bg-[#0d3d6b] text-white font-bold text-base rounded-xl transition-colors shadow-md hover:shadow-lg"
+                  >
+                    <Printer className="w-5 h-5" /> Cetak Bukti Pendaftaran
+                  </a>
+                  <p className="text-xs text-slate-400">Klik untuk membuka PDF bukti pendaftaran</p>
+                </motion.div>
+              )}
+
+              {/* Aksi: Saran untuk DITOLAK */}
+              {status === 'DITOLAK' && (
+                <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-center text-sm text-slate-500">
+                  Jika ada pertanyaan, silakan hubungi <strong>Admin BPSDM Aceh</strong> untuk informasi lebih lanjut.
+                </div>
+              )}
+
+              {/* Tombol Cek Ulang */}
+              <div className="flex justify-center pt-2">
+                <button
+                  onClick={handleCek}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#0F4C81] hover:bg-[#0F4C81]/5 rounded-lg transition-colors"
+                >
+                  <Search className="w-4 h-4" /> {loading ? 'Memperbarui...' : 'Perbarui Status'}
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </div>
 
       <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
     </motion.div>
