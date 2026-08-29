@@ -19,7 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, User, UserCircle, GraduationCap, Upload, Download, AlertCircle, CheckCircle2, Loader2, ClipboardList } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, CalendarCheck, Users, Eye, ArrowRight, FileSpreadsheet, FileDown, FileText, User, UserCircle, GraduationCap, Upload, Download, AlertCircle, CheckCircle2, Loader2, ClipboardList } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -432,6 +432,7 @@ function KehadiranView() {
   const [matrix, setMatrix] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState<string>('')
+  const [loadingExport, setLoadingExport] = useState<'pdf' | 'xls' | null>(null)
 
   useEffect(() => {
     api.angkatan.listAll()
@@ -493,6 +494,34 @@ function KehadiranView() {
   // Stats
   const totalHadir = Object.values(matrix).filter((s) => s === 'HADIR').length
   const totalAlpa = Object.values(matrix).filter((s) => s === 'ALPA').length
+
+  // Export handler
+  async function handleExport(format: 'pdf' | 'xls') {
+    if (!selectedId) {
+      toast({ title: 'Perhatian', description: 'Pilih angkatan terlebih dahulu', variant: 'destructive' })
+      return
+    }
+    setLoadingExport(format)
+    try {
+      const res = await fetch(`/api/daftar-hadir/export/${format}?angkatanId=${selectedId}`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Export gagal')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = format === 'pdf'
+        ? `rekap-kehadiran-${angkatan?.pelatihan?.kode || 'peserta'}.pdf`
+        : `rekap-kehadiran-${angkatan?.pelatihan?.kode || 'peserta'}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast({ title: 'Berhasil', description: `Rekap kehadiran berhasil diexport ke ${format.toUpperCase()}` })
+    } catch {
+      toast({ title: 'Gagal', description: `Gagal export rekap kehadiran ke ${format.toUpperCase()}`, variant: 'destructive' })
+    }
+    setLoadingExport(null)
+  }
 
   return (
     <div className="space-y-4">
@@ -557,6 +586,29 @@ function KehadiranView() {
         </Card>
       ) : (
         <>
+          {/* Export buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => handleExport('pdf')}
+              disabled={loadingExport !== null}
+              className="bg-[#195737] hover:bg-[#0F4227] text-white gap-2"
+              size="sm"
+            >
+              {loadingExport === 'pdf' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              Export Rekap PDF
+            </Button>
+            <Button
+              onClick={() => handleExport('xls')}
+              disabled={loadingExport !== null}
+              variant="outline"
+              className="gap-2 border-[#195737] text-[#195737] hover:bg-[#195737]/10"
+              size="sm"
+            >
+              {loadingExport === 'xls' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+              Export Rekap Excel
+            </Button>
+          </div>
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
             <StatCard title="Total Peserta" value={pesertaList.length} icon={Users} color="blue" />
             <StatCard title="Total Hari" value={dates.length} icon={CalendarCheck} color="amber" />
