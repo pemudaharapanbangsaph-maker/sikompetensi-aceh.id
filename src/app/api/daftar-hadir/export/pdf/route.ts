@@ -33,7 +33,6 @@ export async function GET(req: Request) {
     const angkatanId = searchParams.get('angkatanId')
     if (!angkatanId) return NextResponse.json({ error: 'angkatanId wajib diisi' }, { status: 400 })
 
-    // Fetch angkatan + peserta + kehadiran
     const angkatan = await db.angkatan.findUnique({
       where: { id: angkatanId },
       include: {
@@ -46,23 +45,19 @@ export async function GET(req: Request) {
     })
     if (!angkatan) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
 
-    // Fetch all kehadiran records for this angkatan
     const kehadiranRecords = await db.kehadiran.findMany({
       where: { angkatanId },
       orderBy: [{ tanggal: 'asc' }, { pesertaId: 'asc' }],
     })
 
-    // Build kehadiran map: pesertaId_tanggalIso -> { statusKehadiran, keterangan }
     const kehadiranMap: Record<string, { status: string; keterangan: string | null }> = {}
     for (const rec of kehadiranRecords) {
       const key = `${rec.pesertaId}_${rec.tanggal.toISOString().slice(0, 10)}`
       kehadiranMap[key] = { status: rec.statusKehadiran, keterangan: rec.keterangan }
     }
 
-    // Generate date range
     const dates = generateDates(angkatan.tanggalMulai, angkatan.tanggalSelesai)
 
-    // Fetch pengaturan for kop surat
     const settingsRows = await db.pengaturan.findMany()
     const settings: Record<string, string> = {}
     for (const r of settingsRows) settings[r.key] = r.value
@@ -78,7 +73,7 @@ export async function GET(req: Request) {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: [215.9, 330.2], // F4 Folio Portrait
+      format: [215.9, 330.2],
     })
     const pageW = 215.9
     const pageH = 330.2
@@ -87,13 +82,11 @@ export async function GET(req: Request) {
     const contentW = pageW - marginL - marginR
 
     // ========== KOP SURAT ==========
-    // Header bar
     doc.setFillColor(15, 76, 129)
     doc.rect(0, 0, pageW, 6, 'F')
 
     let y = 9
 
-    // Logo
     const logoPath = path.join(process.cwd(), 'public', 'logo-pancacita.png')
     let logoAdded = false
     try {
@@ -113,7 +106,6 @@ export async function GET(req: Request) {
       doc.text('ACEH', marginL + 7, y + 9, { align: 'center' })
     }
 
-    // Institution name
     doc.setTextColor(15, 76, 129)
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
@@ -127,7 +119,6 @@ export async function GET(req: Request) {
     doc.text(instansiAlamat, pageW / 2, y + 14.5, { align: 'center' })
 
     y += 19
-    // Double line
     doc.setDrawColor(15, 76, 129)
     doc.setLineWidth(0.6)
     doc.line(marginL, y, pageW - marginR, y)
@@ -184,7 +175,6 @@ export async function GET(req: Request) {
     y += 6
 
     // ========== MATRIX TABLE ==========
-    // Header: No | Nama | NIP | Instansi | date headers... | Keterangan
     const dateHeaders = dates.map((d) => {
       const dt = new Date(d + 'T00:00:00')
       const dayName = dt.toLocaleDateString('id-ID', { weekday: 'short' })
@@ -194,7 +184,6 @@ export async function GET(req: Request) {
 
     const headerRow = ['No.', 'Nama Peserta', 'NIP', 'Instansi', ...dateHeaders, 'Keterangan']
 
-    // Build body rows
     const bodyRows = angkatan.peserta.map((pa, i) => {
       const row: string[] = [
         String(i + 1),
@@ -202,13 +191,11 @@ export async function GET(req: Request) {
         pa.peserta.nip,
         pa.peserta.instansi || pa.peserta.unitKerja || '-',
       ]
-      // Matrix cells
       for (const d of dates) {
         const key = `${pa.pesertaId}_${d}`
         const rec = kehadiranMap[key]
         row.push(rec ? STATUS_SHORT[rec.status] || rec.status : '-')
       }
-      // Keterangan: combine all keterangan from this peserta
       const keters: string[] = []
       for (const d of dates) {
         const key = `${pa.pesertaId}_${d}`
@@ -222,21 +209,18 @@ export async function GET(req: Request) {
       return row
     })
 
-    // Column styles — compact for F4 Portrait
     const colStyles: Record<number, object> = {
       0: { cellWidth: 7, halign: 'center', valign: 'middle', fontStyle: 'bold' },
       1: { cellWidth: 32 },
       2: { cellWidth: 24 },
       3: { cellWidth: 28 },
     }
-    // Date columns — split remaining width
-    const fixedW = 7 + 32 + 24 + 28 + 22 // No + Nama + NIP + Instansi + Keterangan
+    const fixedW = 7 + 32 + 24 + 28 + 22
     const availForDates = contentW - fixedW
     const dateColW = dates.length > 0 ? Math.min(14, availForDates / dates.length) : 14
     for (let i = 0; i < dates.length; i++) {
       colStyles[4 + i] = { cellWidth: dateColW, halign: 'center', valign: 'middle' }
     }
-    // Keterangan column takes remaining
     const keteranganW = contentW - 7 - 32 - 24 - 28 - (dates.length * dateColW)
     colStyles[4 + dates.length] = { cellWidth: Math.max(keteranganW, 22) }
 
@@ -261,19 +245,16 @@ export async function GET(req: Request) {
         lineWidth: 0.1,
         valign: 'middle',
       },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252],
-      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: colStyles,
       margin: { left: marginL, right: marginR },
       rowPageBreak: 'avoid',
       theme: 'grid',
     })
 
-    // ========== LEGENDA (1 baris) ==========
+    // ========== LEGENDA ==========
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y
     let ly = finalY + 5
-
     doc.setFontSize(6)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(71, 85, 105)
@@ -281,10 +262,7 @@ export async function GET(req: Request) {
 
     // ========== SIGNATURE — HANYA PENYELENGGARA ==========
     let sy = finalY + 16
-    if (sy > pageH - 40) {
-      doc.addPage()
-      sy = 20
-    }
+    if (sy > pageH - 40) { doc.addPage(); sy = 20 }
 
     const now = new Date()
     const tglCetak = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
