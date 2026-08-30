@@ -74,20 +74,24 @@ export async function GET(req: Request) {
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
-    // Use landscape A3 for wide matrix
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' })
-    const pageW = 420
-    const pageH = 297
-    const marginL = 12
-    const marginR = 12
+    // ===== F4 PORTRAIT =====
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [215.9, 330.2], // F4 Folio Portrait
+    })
+    const pageW = 215.9
+    const pageH = 330.2
+    const marginL = 10
+    const marginR = 10
     const contentW = pageW - marginL - marginR
 
     // ========== KOP SURAT ==========
     // Header bar
-    doc.setFillColor(15, 76, 129) // #0F4C81
-    doc.rect(0, 0, pageW, 8, 'F')
+    doc.setFillColor(15, 76, 129)
+    doc.rect(0, 0, pageW, 6, 'F')
 
-    let y = 12
+    let y = 9
 
     // Logo
     const logoPath = path.join(process.cwd(), 'public', 'logo-pancacita.png')
@@ -95,92 +99,92 @@ export async function GET(req: Request) {
     try {
       const logoBuf = await readFile(logoPath)
       const logoBase64 = 'data:image/png;base64,' + logoBuf.toString('base64')
-      doc.addImage(logoBase64, 'PNG', marginL, y, 16, 16)
+      doc.addImage(logoBase64, 'PNG', marginL, y, 14, 14)
       logoAdded = true
     } catch { /* fallback */ }
     if (!logoAdded) {
       doc.setFillColor(15, 76, 129)
-      doc.circle(marginL + 8, y + 8, 8, 'F')
-      doc.setFontSize(7)
+      doc.circle(marginL + 7, y + 7, 7, 'F')
+      doc.setFontSize(6)
       doc.setTextColor(255, 255, 255)
       doc.setFont('helvetica', 'bold')
-      doc.text('BPSDM', marginL + 8, y + 7, { align: 'center' })
-      doc.setFontSize(5)
-      doc.text('ACEH', marginL + 8, y + 11, { align: 'center' })
+      doc.text('BPSDM', marginL + 7, y + 6, { align: 'center' })
+      doc.setFontSize(4.5)
+      doc.text('ACEH', marginL + 7, y + 9, { align: 'center' })
     }
 
     // Institution name
     doc.setTextColor(15, 76, 129)
-    doc.setFontSize(13)
+    doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
     doc.text('PEMERINTAH ACEH', pageW / 2, y + 2, { align: 'center' })
-    doc.setFontSize(11)
-    doc.text(instansiNama.toUpperCase(), pageW / 2, y + 8, { align: 'center' })
-    doc.setFontSize(8)
+    doc.setFontSize(9)
+    doc.text(instansiNama.toUpperCase(), pageW / 2, y + 7, { align: 'center' })
+    doc.setFontSize(6.5)
     doc.setFont('helvetica', 'normal')
-    doc.text('BIDANG PENGEMBANGAN DAN SERTIFIKASI KOMPETENSI TEKNIS INTI', pageW / 2, y + 13, { align: 'center' })
-    doc.setFontSize(7)
-    doc.text(instansiAlamat, pageW / 2, y + 17, { align: 'center' })
+    doc.text('BIDANG PENGEMBANGAN DAN SERTIFIKASI KOMPETENSI TEKNIS INTI', pageW / 2, y + 11, { align: 'center' })
+    doc.setFontSize(6)
+    doc.text(instansiAlamat, pageW / 2, y + 14.5, { align: 'center' })
 
-    y += 22
+    y += 19
     // Double line
     doc.setDrawColor(15, 76, 129)
-    doc.setLineWidth(0.8)
+    doc.setLineWidth(0.6)
     doc.line(marginL, y, pageW - marginR, y)
-    doc.setLineWidth(0.3)
-    doc.line(marginL, y + 1, pageW - marginR, y + 1)
+    doc.setLineWidth(0.2)
+    doc.line(marginL, y + 0.8, pageW - marginR, y + 0.8)
 
-    y += 8
+    y += 6
 
     // ========== TITLE ==========
     doc.setFillColor(15, 76, 129)
-    doc.roundedRect(marginL, y, contentW, 10, 2, 2, 'F')
+    doc.roundedRect(marginL, y, contentW, 8, 2, 2, 'F')
     doc.setTextColor(255, 255, 255)
-    doc.setFontSize(12)
+    doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.text('REKAP KEHADIRAN PESERTA', pageW / 2, y + 6.5, { align: 'center' })
-    y += 15
+    doc.text('REKAP KEHADIRAN PESERTA', pageW / 2, y + 5.5, { align: 'center' })
+    y += 12
 
     // ========== INFO PELATIHAN ==========
     const lokasi = angkatan.lokasi || 'Banda Aceh'
     const tglMulaiStr = angkatan.tanggalMulai.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
     const tglSelesaiStr = angkatan.tanggalSelesai.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
 
-    doc.setFontSize(9)
+    doc.setFontSize(8)
     doc.setTextColor(30, 41, 59)
     doc.setFont('helvetica', 'bold')
     doc.text('Nama Pelatihan', marginL, y)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${angkatan.pelatihan.nama}`, marginL + 35, y)
-    y += 5.5
+    doc.text(`: ${angkatan.pelatihan.nama}`, marginL + 28, y)
+    y += 4.5
 
     doc.setFont('helvetica', 'bold')
     doc.text('Angkatan', marginL, y)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${angkatan.namaAngkatan}`, marginL + 35, y)
-    y += 5.5
+    doc.text(`: ${angkatan.namaAngkatan}`, marginL + 28, y)
+    y += 4.5
 
     doc.setFont('helvetica', 'bold')
     doc.text('Periode', marginL, y)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${tglMulaiStr} s.d ${tglSelesaiStr}`, marginL + 35, y)
-    y += 5.5
+    doc.text(`: ${tglMulaiStr} s.d ${tglSelesaiStr}`, marginL + 28, y)
+    y += 4.5
 
     doc.setFont('helvetica', 'bold')
     doc.text('Lokasi', marginL, y)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${lokasi}`, marginL + 35, y)
-    y += 5.5
+    doc.text(`: ${lokasi}`, marginL + 28, y)
+    y += 4.5
 
     doc.setFont('helvetica', 'bold')
     doc.text('Metode', marginL, y)
     doc.setFont('helvetica', 'normal')
     const metodeLabel: Record<string, string> = { TATAP_MUKA: 'Tatap Muka', DARING: 'Daring', BLENDED: 'Blended' }
-    doc.text(`: ${metodeLabel[angkatan.metode] || angkatan.metode}`, marginL + 35, y)
-    y += 8
+    doc.text(`: ${metodeLabel[angkatan.metode] || angkatan.metode}`, marginL + 28, y)
+    y += 6
 
     // ========== MATRIX TABLE ==========
-    // Build header: No | Nama | NIP | date headers... | Keterangan
+    // Header: No | Nama | NIP | Instansi | date headers... | Keterangan
     const dateHeaders = dates.map((d) => {
       const dt = new Date(d + 'T00:00:00')
       const dayName = dt.toLocaleDateString('id-ID', { weekday: 'short' })
@@ -188,7 +192,7 @@ export async function GET(req: Request) {
       return `${dayName}\n${dayNum}`
     })
 
-    const headerRow = ['No.', 'Nama Peserta', 'NIP', ...dateHeaders, 'Keterangan']
+    const headerRow = ['No.', 'Nama Peserta', 'NIP', 'Instansi', ...dateHeaders, 'Keterangan']
 
     // Build body rows
     const bodyRows = angkatan.peserta.map((pa, i) => {
@@ -196,6 +200,7 @@ export async function GET(req: Request) {
         String(i + 1),
         pa.peserta.nama,
         pa.peserta.nip,
+        pa.peserta.instansi || pa.peserta.unitKerja || '-',
       ]
       // Matrix cells
       for (const d of dates) {
@@ -217,20 +222,23 @@ export async function GET(req: Request) {
       return row
     })
 
-    // Column styles
+    // Column styles — compact for F4 Portrait
     const colStyles: Record<number, object> = {
-      0: { cellWidth: 8, halign: 'center', valign: 'middle', fontStyle: 'bold' },
-      1: { cellWidth: 40 },
-      2: { cellWidth: 32 },
+      0: { cellWidth: 7, halign: 'center', valign: 'middle', fontStyle: 'bold' },
+      1: { cellWidth: 32 },
+      2: { cellWidth: 24 },
+      3: { cellWidth: 28 },
     }
-    // Date columns
-    const dateColW = dates.length > 0 ? Math.min(16, (contentW - 8 - 40 - 32 - 40) / dates.length) : 16
+    // Date columns — split remaining width
+    const fixedW = 7 + 32 + 24 + 28 + 22 // No + Nama + NIP + Instansi + Keterangan
+    const availForDates = contentW - fixedW
+    const dateColW = dates.length > 0 ? Math.min(14, availForDates / dates.length) : 14
     for (let i = 0; i < dates.length; i++) {
-      colStyles[3 + i] = { cellWidth: dateColW, halign: 'center', valign: 'middle' }
+      colStyles[4 + i] = { cellWidth: dateColW, halign: 'center', valign: 'middle' }
     }
-    // Keterangan column takes remaining space
-    const keteranganW = contentW - 8 - 40 - 32 - (dates.length * dateColW)
-    colStyles[3 + dates.length] = { cellWidth: Math.max(keteranganW, 30) }
+    // Keterangan column takes remaining
+    const keteranganW = contentW - 7 - 32 - 24 - 28 - (dates.length * dateColW)
+    colStyles[4 + dates.length] = { cellWidth: Math.max(keteranganW, 22) }
 
     autoTable(doc, {
       startY: y,
@@ -239,15 +247,15 @@ export async function GET(req: Request) {
       headStyles: {
         fillColor: [15, 76, 129],
         textColor: [255, 255, 255],
-        fontSize: 6.5,
+        fontSize: 5.5,
         fontStyle: 'bold',
-        cellPadding: { top: 2, bottom: 2, left: 1.5, right: 1.5 },
+        cellPadding: { top: 1.5, bottom: 1.5, left: 1, right: 1 },
         halign: 'center',
         valign: 'middle',
       },
       bodyStyles: {
-        fontSize: 7,
-        cellPadding: { top: 3, bottom: 3, left: 1.5, right: 1.5 },
+        fontSize: 6,
+        cellPadding: { top: 2, bottom: 2, left: 1, right: 1 },
         textColor: [0, 0, 0],
         lineColor: [0, 0, 0],
         lineWidth: 0.1,
@@ -262,44 +270,21 @@ export async function GET(req: Request) {
       theme: 'grid',
     })
 
-    // ========== LEGENDA ==========
+    // ========== LEGENDA (1 baris) ==========
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable?.finalY || y
-    let ly = finalY + 6
+    let ly = finalY + 5
 
-    doc.setFontSize(7)
+    doc.setFontSize(6)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(71, 85, 105)
-    doc.text('Keterangan:', marginL, ly)
-    ly += 4
+    doc.text('Keterangan: H = Hadir, S = Sakit, I = Izin, A = Alpa, - = Belum diisi', marginL, ly)
 
-    const legends = [
-      { code: 'H', label: 'Hadir', color: [25, 87, 55] },
-      { code: 'S', label: 'Sakit', color: [180, 83, 9] },
-      { code: 'I', label: 'Izin', color: [37, 99, 235] },
-      { code: 'A', label: 'Alpa', color: [220, 38, 38] },
-      { code: '-', label: 'Belum diisi', color: [148, 163, 184] },
-    ]
-
-    let lx = marginL
-    for (const leg of legends) {
-      doc.setFillColor(...(leg.color as [number, number, number]))
-      doc.roundedRect(lx, ly - 2.5, 3.5, 3.5, 0.5, 0.5, 'F')
-      doc.setTextColor(30, 41, 59)
-      doc.text(`${leg.code} = ${leg.label}`, lx + 5, ly)
-      lx += doc.getTextWidth(`${leg.code} = ${leg.label}`) + 12
-    }
-
-    // ========== SIGNATURE BLOCK ==========
-    let sy = finalY + 22
-    if (sy > pageH - 50) {
+    // ========== SIGNATURE — HANYA PENYELENGGARA ==========
+    let sy = finalY + 16
+    if (sy > pageH - 40) {
       doc.addPage()
       sy = 20
     }
-
-    const signColW = contentW / 3
-    const signX1 = marginL + signColW / 2
-    const signX2 = marginL + signColW + signColW / 2
-    const signX3 = marginL + signColW * 2 + signColW / 2
 
     const now = new Date()
     const tglCetak = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -307,31 +292,25 @@ export async function GET(req: Request) {
     doc.setFontSize(8)
     doc.setTextColor(30, 41, 59)
     doc.setFont('helvetica', 'normal')
-    doc.text(`Banda Aceh, ${tglCetak}`, signX3, sy, { align: 'right' })
+    doc.text(`Banda Aceh, ${tglCetak}`, pageW - marginR, sy, { align: 'right' })
     sy += 4
-
     doc.setFont('helvetica', 'bold')
-    doc.text('Peserta', signX1, sy, { align: 'center' })
-    doc.text('Widyaiswara / DTO', signX2, sy, { align: 'center' })
-    doc.text('Penyelenggara', signX3, sy, { align: 'center' })
+    doc.text('Penyelenggara,', pageW - marginR, sy, { align: 'right' })
     sy += 22
-
     doc.setFont('helvetica', 'normal')
-    doc.text('(........................................)', signX1, sy, { align: 'center' })
-    doc.text('(........................................)', signX2, sy, { align: 'center' })
-    doc.text('(........................................)', signX3, sy, { align: 'center' })
+    doc.text('(........................................)', pageW - marginR, sy, { align: 'right' })
 
     // ========== PAGE FOOTER ==========
     const pageCount = doc.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
       doc.setDrawColor(15, 76, 129)
-      doc.setLineWidth(0.3)
-      doc.line(marginL, pageH - 10, pageW - marginR, pageH - 10)
-      doc.setFontSize(6.5)
+      doc.setLineWidth(0.2)
+      doc.line(marginL, pageH - 8, pageW - marginR, pageH - 8)
+      doc.setFontSize(6)
       doc.setTextColor(148, 163, 184)
-      doc.text(`SIKOMPETENSI — ${instansiSingkat}`, marginL, pageH - 6)
-      doc.text(`Halaman ${i} dari ${pageCount}`, pageW - marginR, pageH - 6, { align: 'right' })
+      doc.text(`SIKOMPETENSI — ${instansiSingkat}`, marginL, pageH - 5)
+      doc.text(`Halaman ${i} dari ${pageCount}`, pageW - marginR, pageH - 5, { align: 'right' })
     }
 
     const pdfBuf = Buffer.from(doc.output('arraybuffer'))
