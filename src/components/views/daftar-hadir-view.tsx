@@ -56,13 +56,26 @@ const STATUS_COLORS: Record<string, string> = {
 }
 const EMPTY_CELL = 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
 
+/** Format a Date or ISO string to "YYYY-MM-DD" using LOCAL timezone (bukan UTC) */
+function toLocalDateStr(input: Date | string): string {
+  const d = typeof input === 'string' ? new Date(input) : input
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function generateDates(start: string, end: string): string[] {
   const out: string[] = []
+  // Parse dengan T00:00:00 supaya konsisten, lalu format ke local
   const s = new Date(start + 'T00:00:00')
-  const e = new Date(end + 'T00:00:00')
+  const e = new Date(end + 'T23:59:59')
   if (isNaN(s.getTime()) || isNaN(e.getTime())) return out
   const cur = new Date(s)
-  while (cur <= e) { out.push(cur.toISOString().slice(0, 10)); cur.setDate(cur.getDate() + 1) }
+  while (cur <= e) {
+    out.push(toLocalDateStr(cur))
+    cur.setDate(cur.getDate() + 1)
+  }
   return out
 }
 
@@ -128,20 +141,39 @@ export function DaftarHadirView() {
       ])
       const peserta = pesertaRes.ok ? await pesertaRes.json() : []
       setPesertaList(peserta)
+
+      // Pisah kehadiran handling dari peserta supaya error kehadiran
+      // tidak merusak data peserta yang sudah di-set
       if (kehadiranRes.ok) {
-        const kehadiranData: KehadiranRecord[] = await kehadiranRes.json()
-        const map: Record<string, string> = {}
-        for (const rec of kehadiranData) {
-          map[`${rec.pesertaId}_${rec.tanggal.toISOString().slice(0, 10)}`] = rec.statusKehadiran
+        try {
+          const kehadiranData: KehadiranRecord[] = await kehadiranRes.json()
+          const map: Record<string, string> = {}
+          for (const rec of kehadiranData) {
+            // rec.tanggal dari JSON adalah string, bukan Date object.
+            // Gunakan toLocalDateStr() yang handle string & Date.
+            const localDate = toLocalDateStr(rec.tanggal)
+            map[`${rec.pesertaId}_${localDate}`] = rec.statusKehadiran
+          }
+          setKehadiranMap(map)
+        } catch (innerErr) {
+          console.error('Error parsing kehadiran data:', innerErr)
+          setKehadiranMap({})
         }
-        setKehadiranMap(map)
-      } else { setKehadiranMap({}) }
+      } else {
+        setKehadiranMap({})
+      }
+
       const found = angkatanOptions.find((a) => a.id === angkatanId)
       if (found) {
         setSelectedAngkatanData(found)
         setAllDates(generateDates(found.tanggalMulai, found.tanggalSelesai))
       }
-    } catch { setPesertaList([]); setKehadiranMap({}); setAllDates([]) }
+    } catch (err) {
+      console.error('fetchMatrix error:', err)
+      setPesertaList([])
+      setKehadiranMap({})
+      setAllDates([])
+    }
     setLoading(false)
   }, [angkatanOptions])
 
