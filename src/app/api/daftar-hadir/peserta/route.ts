@@ -19,6 +19,7 @@ export async function GET(req: Request) {
 
     const result = pesertaAngkatan.map((pa, i) => ({
       no: i + 1,
+      pesertaId: pa.pesertaId,
       nama: pa.peserta.nama,
       nip: pa.peserta.nip,
       instansi: pa.peserta.instansi || pa.peserta.unitKerja || '-',
