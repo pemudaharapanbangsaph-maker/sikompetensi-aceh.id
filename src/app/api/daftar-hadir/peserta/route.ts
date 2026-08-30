@@ -12,7 +12,10 @@ export async function GET(req: Request) {
     if (!angkatanId) return NextResponse.json({ error: 'angkatanId wajib diisi' }, { status: 400 })
 
     const pesertaAngkatan = await db.pesertaAngkatan.findMany({
-      where: { angkatanId },
+      where: {
+        angkatanId,
+        peserta: { deleted: false },
+      },
       include: { peserta: true },
       orderBy: { peserta: { nama: 'asc' } },
     })
@@ -20,9 +23,9 @@ export async function GET(req: Request) {
     const result = pesertaAngkatan.map((pa, i) => ({
       no: i + 1,
       pesertaId: pa.pesertaId,
-      nama: pa.peserta.nama,
-      nip: pa.peserta.nip,
-      instansi: pa.peserta.instansi || pa.peserta.unitKerja || '-',
+      nama: pa.peserta?.nama || '-',
+      nip: pa.peserta?.nip || '-',
+      instansi: pa.peserta?.instansi || pa.peserta?.unitKerja || '-',
     }))
 
     return NextResponse.json(result)
