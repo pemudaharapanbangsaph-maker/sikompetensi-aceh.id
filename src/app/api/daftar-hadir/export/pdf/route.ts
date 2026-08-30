@@ -4,14 +4,24 @@ import { getSession } from '@/lib/auth'
 import { readFile } from 'fs/promises'
 import path from 'path'
 
+/** Format Date ke "YYYY-MM-DD" menggunakan LOCAL timezone */
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function generateDates(start: Date, end: Date): string[] {
   const out: string[] = []
   const s = new Date(start)
   const e = new Date(end)
   if (isNaN(s.getTime()) || isNaN(e.getTime())) return out
+  // Set end ke akhir hari supaya include tanggal terakhir
+  e.setHours(23, 59, 59, 999)
   const cur = new Date(s)
   while (cur <= e) {
-    out.push(cur.toISOString().slice(0, 10))
+    out.push(toLocalDateStr(cur))
     cur.setDate(cur.getDate() + 1)
   }
   return out
@@ -58,7 +68,8 @@ export async function GET(req: Request) {
 
     const kehadiranMap: Record<string, { status: string; keterangan: string | null }> = {}
     for (const rec of kehadiranRecords) {
-      const key = `${rec.pesertaId}_${rec.tanggal.toISOString().slice(0, 10)}`
+      // rec.tanggal dari Prisma adalah Date object — pakai toLocalDateStr
+      const key = `${rec.pesertaId}_${toLocalDateStr(rec.tanggal)}`
       kehadiranMap[key] = { status: rec.statusKehadiran, keterangan: rec.keterangan }
     }
 
