@@ -88,7 +88,7 @@ export function DaftarHadirView() {
   const [selectedAngkatanData, setSelectedAngkatanData] = useState<AngkatanOption | null>(null)
   const [pesertaList, setPesertaList] = useState<PesertaRow[]>([])
   const [dates, setDates] = useState<string[]>([])
-  const [kehadiranMap, setKehadiranMap] = useState<Record<string, string>>({}) // "pesertaId_tanggal" -> status
+  const [kehadiranMap, setKehadiranMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [loadingExport, setLoadingExport] = useState<'pdf' | 'xls' | null>(null)
   const [saving, setSaving] = useState(false)
@@ -115,7 +115,7 @@ export function DaftarHadirView() {
         fetch(`/api/daftar-hadir/peserta?angkatanId=${angkatanId}`),
         fetch(`/api/angkatan/${angkatanId}/kehadiran`),
       ])
-      
+
       const peserta = pesertaRes.ok ? await pesertaRes.json() : []
       setPesertaList(peserta)
 
@@ -131,7 +131,6 @@ export function DaftarHadirView() {
         setKehadiranMap({})
       }
 
-      // Generate date range
       const found = angkatanOptions.find((a) => a.id === angkatanId)
       if (found) {
         setSelectedAngkatanData(found)
@@ -164,7 +163,7 @@ export function DaftarHadirView() {
       const current = prev[key] || ''
       const idx = STATUS_CYCLE.indexOf(current as typeof STATUS_CYCLE[number])
       const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length]
- const nextMap = { ...prev }
+      const nextMap = { ...prev }
       if (next) {
         nextMap[key] = next
       } else {
@@ -299,7 +298,6 @@ export function DaftarHadirView() {
             </Select>
           </div>
 
-          {/* Info when selected */}
           {selectedAngkatanData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-lg">
               <InfoItem icon={<FileText className="w-4 h-4" />} label="Pelatihan" value={selectedAngkatanData.namaPelatihan} />
