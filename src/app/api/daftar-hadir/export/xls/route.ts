@@ -44,13 +44,11 @@ export async function GET(req: Request) {
     })
     if (!angkatan) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
 
-    // Fetch kehadiran records
     const kehadiranRecords = await db.kehadiran.findMany({
       where: { angkatanId },
       orderBy: [{ tanggal: 'asc' }, { pesertaId: 'asc' }],
     })
 
-    // Build kehadiran map
     const kehadiranMap: Record<string, { status: string; keterangan: string | null }> = {}
     for (const rec of kehadiranRecords) {
       const key = `${rec.pesertaId}_${rec.tanggal.toISOString().slice(0, 10)}`
@@ -59,7 +57,6 @@ export async function GET(req: Request) {
 
     const dates = generateDates(angkatan.tanggalMulai, angkatan.tanggalSelesai)
 
-    // Build header row
     const dateHeaders = dates.map((d) => {
       const dt = new Date(d + 'T00:00:00')
       const dayName = dt.toLocaleDateString('id-ID', { weekday: 'short' })
@@ -69,7 +66,6 @@ export async function GET(req: Request) {
 
     const headers = ['No', 'Nama Peserta', 'NIP', 'Instansi', ...dateHeaders, 'Keterangan']
 
-    // Build data rows
     const rows = angkatan.peserta.map((pa, i) => {
       const row: (string | number)[] = [
         i + 1,
@@ -82,7 +78,6 @@ export async function GET(req: Request) {
         const rec = kehadiranMap[key]
         row.push(rec ? (STATUS_SHORT[rec.status] || rec.status) : '-')
       }
-      // Keterangan
       const keters: string[] = []
       for (const d of dates) {
         const key = `${pa.pesertaId}_${d}`
@@ -96,23 +91,19 @@ export async function GET(req: Request) {
       return row
     })
 
-    // Create workbook with header + rows
     const wsData = [headers, ...rows]
     const wb = XLSX.utils.book_new()
     const ws = XLSX.utils.aoa_to_sheet(wsData)
 
-    // Column widths
     const colWidths = [
       { wch: 5 },  // No
       { wch: 35 }, // Nama
       { wch: 25 }, // NIP
       { wch: 30 }, // Instansi
-      ...dates.map(() => ({ wch: 10 })), // date columns
+      ...dates.map(() => ({ wch: 10 })),
       { wch: 35 }, // Keterangan
     ]
     ws['!cols'] = colWidths
-
-    // Freeze panes: freeze first 4 columns and header row
     ws['!freeze'] = { xSplit: 4, ySplit: 1 }
 
     XLSX.utils.book_append_sheet(wb, ws, 'Rekap Kehadiran')
