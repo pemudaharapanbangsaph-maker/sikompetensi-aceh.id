@@ -16,6 +16,13 @@ function generateDates(start: Date, end: Date): string[] {
   return out
 }
 
+const STATUS_SHORT: Record<string, string> = {
+  HADIR: 'H',
+  SAKIT: 'S',
+  IZIN: 'I',
+  ALPA: 'A',
+}
+
 export async function GET(req: Request) {
   try {
     const session = await getSession()
@@ -60,15 +67,20 @@ export async function GET(req: Request) {
       return `${dayName} ${dayNum}`
     })
 
-    const headers = ['No', 'Nama Peserta', 'NIP', ...dateHeaders, 'Keterangan']
+    const headers = ['No', 'Nama Peserta', 'NIP', 'Instansi', ...dateHeaders, 'Keterangan']
 
     // Build data rows
     const rows = angkatan.peserta.map((pa, i) => {
-      const row: (string | number)[] = [i + 1, pa.peserta.nama, pa.peserta.nip]
+      const row: (string | number)[] = [
+        i + 1,
+        pa.peserta.nama,
+        pa.peserta.nip,
+        pa.peserta.instansi || pa.peserta.unitKerja || '-',
+      ]
       for (const d of dates) {
         const key = `${pa.pesertaId}_${d}`
         const rec = kehadiranMap[key]
-        row.push(rec ? rec.status : '-')
+        row.push(rec ? (STATUS_SHORT[rec.status] || rec.status) : '-')
       }
       // Keterangan
       const keters: string[] = []
@@ -94,13 +106,14 @@ export async function GET(req: Request) {
       { wch: 5 },  // No
       { wch: 35 }, // Nama
       { wch: 25 }, // NIP
+      { wch: 30 }, // Instansi
       ...dates.map(() => ({ wch: 10 })), // date columns
       { wch: 35 }, // Keterangan
     ]
     ws['!cols'] = colWidths
 
-    // Freeze panes: freeze first 3 columns and header row
-    ws['!freeze'] = { xSplit: 3, ySplit: 1 }
+    // Freeze panes: freeze first 4 columns and header row
+    ws['!freeze'] = { xSplit: 4, ySplit: 1 }
 
     XLSX.utils.book_append_sheet(wb, ws, 'Rekap Kehadiran')
 
