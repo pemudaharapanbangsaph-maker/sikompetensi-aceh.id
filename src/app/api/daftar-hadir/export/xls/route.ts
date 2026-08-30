@@ -32,6 +32,12 @@ export async function GET(req: Request) {
     const angkatanId = searchParams.get('angkatanId')
     if (!angkatanId) return NextResponse.json({ error: 'angkatanId wajib diisi' }, { status: 400 })
 
+    // Parse optional days filter (comma-separated JS day numbers, e.g. "4" = Kamis)
+    const daysParam = searchParams.get('days')
+    const allowedDays: Set<number> | null = daysParam
+      ? new Set(daysParam.split(',').map(Number))
+      : null
+
     const angkatan = await db.angkatan.findUnique({
       where: { id: angkatanId },
       include: {
@@ -55,7 +61,14 @@ export async function GET(req: Request) {
       kehadiranMap[key] = { status: rec.statusKehadiran, keterangan: rec.keterangan }
     }
 
-    const dates = generateDates(angkatan.tanggalMulai, angkatan.tanggalSelesai)
+    // Generate all dates, then filter by day if specified
+    let dates = generateDates(angkatan.tanggalMulai, angkatan.tanggalSelesai)
+    if (allowedDays && allowedDays.size > 0) {
+      dates = dates.filter((d) => {
+        const dt = new Date(d + 'T00:00:00')
+        return allowedDays.has(dt.getDay())
+      })
+    }
 
     const dateHeaders = dates.map((d) => {
       const dt = new Date(d + 'T00:00:00')
