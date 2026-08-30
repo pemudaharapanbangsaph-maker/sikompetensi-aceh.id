@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 
+/** Format Date ke "YYYY-MM-DD" menggunakan LOCAL timezone */
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export async function GET() {
   try {
     const session = await getSession()
@@ -22,8 +30,8 @@ export async function GET() {
       namaAngkatan: a.namaAngkatan,
       namaPelatihan: a.pelatihan.nama,
       kategori: a.pelatihan.kategori,
-      tanggalMulai: a.tanggalMulai.toISOString().slice(0, 10),
-      tanggalSelesai: a.tanggalSelesai.toISOString().slice(0, 10),
+      tanggalMulai: toLocalDateStr(a.tanggalMulai),
+      tanggalSelesai: toLocalDateStr(a.tanggalSelesai),
       lokasi: a.lokasi || '',
       jumlahPeserta: a._count.peserta,
     }))
