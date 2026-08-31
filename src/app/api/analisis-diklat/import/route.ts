@@ -31,6 +31,11 @@ const STATUS_MAP: Record<string, string> = {
 
 const REQUIRED_COLUMNS = ['Outcome', 'Nama Pelatihan']
 
+// --- Helper: cek apakah nama mengandung "uji kompetensi" ---
+function isUjiKompetensi(nama: string): boolean {
+  return /uji\s+kompetensi/i.test(nama)
+}
+
 // --- Helper: generate kode pelatihan otomatis dari counter ---
 async function generateKodePelatihan(): Promise<string> {
   const all = await db.pelatihan.findMany({
@@ -47,6 +52,7 @@ async function generateKodePelatihan(): Promise<string> {
 }
 
 // --- Helper: sinkronisasi satu item AnalisisDiklat → Pelatihan + Angkatan default ---
+// Jika nama mengandung "uji kompetensi", TIDAK disinkronkan
 async function syncOneToPelatihan(analisisId: string, data: {
   namaPelatihan: string
   kategori: string
@@ -60,6 +66,8 @@ async function syncOneToPelatihan(analisisId: string, data: {
   outcome: string
 }, userId?: string) {
   if (data.status !== 'AKTIF') return
+  // Skip sync jika ini Uji Kompetensi — punya menu sendiri
+  if (isUjiKompetensi(data.namaPelatihan)) return
 
   const durasiHari = data.durasiHari > 0 ? data.durasiHari : Math.max(1, Math.ceil(data.durasiJP / 8))
   const deskripsi = [
