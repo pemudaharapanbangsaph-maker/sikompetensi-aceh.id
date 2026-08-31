@@ -3,14 +3,14 @@
   "version": "0.2.1",
   "private": true,
   "scripts": {
-  "dev": "next dev",
-  "build": "npm install --include=dev && prisma generate && next build --webpack && mkdir -p public/_next && cp -r .next/static public/_next/static",
-  "start": "node server.mjs",
-  "lint": "next lint",
-  "db:push": "prisma db push",
-  "db:seed": "tsx prisma/seed.ts",
-  "db:studio": "prisma studio"
-},
+    "dev": "next dev",
+    "build": "prisma generate && next build --webpack",
+    "start": "node server.mjs",
+    "lint": "eslint .",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -93,7 +93,7 @@
     "typescript": "^5",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
-    "xlsx": "^0.18.5",
+    "xlsx": "^0.18.0",
     "z-ai-web-dev-sdk": "^0.0.18",
     "zod": "^4.0.2",
     "zustand": "^5.0.6"
