@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 
+// --- Helper: cek apakah nama mengandung "uji kompetensi" ---
+function isUjiKompetensi(nama: string): boolean {
+  return /uji\s+kompetensi/i.test(nama)
+}
+
 // --- Helper: sinkronisasi AnalisisDiklat → Pelatihan (update saja, angkatan sudah ada) ---
 async function syncToPelatihan(analisisId: string, data: {
   namaPelatihan: string
@@ -15,6 +20,9 @@ async function syncToPelatihan(analisisId: string, data: {
   status: string
   outcome: string
 }) {
+  // Skip sync jika ini Uji Kompetensi — punya menu sendiri
+  if (isUjiKompetensi(data.namaPelatihan)) return
+
   const analisisItem = await db.analisisDiklatItem.findUnique({
     where: { id: analisisId },
     select: { pelatihanId: true },
@@ -64,7 +72,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         tanggalPelaksanaan: body.tanggalPelaksanaan ? new Date(body.tanggalPelaksanaan) : body.tanggalPelaksanaan === null ? null : undefined,
       },
     })
-    // Sinkronisasi ke Pelatihan
+    // Sinkronisasi ke Pelatihan — otomatis skip untuk Uji Kompetensi
     await syncToPelatihan(item.id, {
       namaPelatihan: item.namaPelatihan,
       kategori: item.kategori,
@@ -96,9 +104,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     // Cek dan nonaktifkan Pelatihan yang terlink sebelum hapus
     const analisisItem = await db.analisisDiklatItem.findUnique({
       where: { id },
-      select: { pelatihanId: true },
+      select: { pelatihanId: true, namaPelatihan: true },
     })
-    if (analisisItem?.pelatihanId) {
+    // Skip deaktivasi pelatihan jika ini Uji Kompetensi
+    if (analisisItem?.pelatihanId && !isUjiKompetensi(analisisItem.namaPelatihan)) {
       await db.pelatihan.update({
         where: { id: analisisItem.pelatihanId },
         data: { status: 'NONAKTIF' },
