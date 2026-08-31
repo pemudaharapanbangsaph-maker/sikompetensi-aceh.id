@@ -3,13 +3,12 @@
   "version": "0.2.1",
   "private": true,
   "scripts": {
-  "build": "prisma generate && prisma db push && next build --webpack"
-}
-    "start": "node server.mjs",
-    "lint": "eslint .",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+  "build": "prisma generate && prisma db push && next build --webpack",
+  "start": "node server.mjs",
+  "lint": "eslint .",
+  "db:push": "prisma db push",
+  "db:seed": "tsx prisma/seed.ts",
+  "db:studio": "prisma studio"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
