@@ -7,6 +7,11 @@ import { parseListParams, buildWhere } from '@/lib/api-helpers'
 
 const ALLOWED_SORT = ['outcome', 'namaPelatihan', 'programPrioritasRPJMA', 'sasaranRPJMA', 'prioritas', 'kategori', 'tahunPelaksanaan', 'createdAt', 'updatedAt']
 
+// --- Helper: cek apakah nama mengandung "uji kompetensi" ---
+function isUjiKompetensi(nama: string): boolean {
+  return /uji\s+kompetensi/i.test(nama)
+}
+
 // --- Helper: generate kode pelatihan otomatis dari counter ---
 async function generateKodePelatihan(): Promise<string> {
   const all = await db.pelatihan.findMany({
@@ -23,6 +28,7 @@ async function generateKodePelatihan(): Promise<string> {
 }
 
 // --- Helper: sinkronisasi AnalisisDiklat → Pelatihan + Angkatan default ---
+// Jika nama mengandung "uji kompetensi", TIDAK disinkronkan ke pelatihan
 async function syncToPelatihan(analisisId: string, data: {
   namaPelatihan: string
   kategori: string
@@ -35,6 +41,9 @@ async function syncToPelatihan(analisisId: string, data: {
   status: string
   outcome: string
 }, userId?: string): Promise<string | null> {
+  // Skip sync jika ini Uji Kompetensi — punya menu sendiri
+  if (isUjiKompetensi(data.namaPelatihan)) return null
+
   const analisisItem = await db.analisisDiklatItem.findUnique({
     where: { id: analisisId },
     select: { pelatihanId: true },
@@ -113,7 +122,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const params = parseListParams(new URL(req.url).searchParams)
-    const { page, pageSize, search, sortBy, sortOrder, tahun, prioritas, kategori, ...rest } = params
+    const { page, pageSize, search, sortBy, sortOrder, tahun, prioritas, kategori, tipe, ...rest } = params
     const filters: Record<string, string | number | undefined> = { prioritas, kategori }
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined && v !== '') filters[k] = v as string
@@ -125,6 +134,12 @@ export async function GET(req: Request) {
     )
     if (tahun !== undefined && tahun !== '') {
       where.tahunPelaksanaan = Number(tahun)
+    }
+    // Filter tipe: "uji_kompetensi" = nama mengandung "uji kompetensi", "pelatihan" = selain itu
+    if (tipe === 'uji_kompetensi') {
+      where.namaPelatihan = { ...((where.namaPelatihan as object) || {}), contains: 'uji kompetensi', mode: 'insensitive' }
+    } else if (tipe === 'pelatihan') {
+      where.namaPelatihan = { ...((where.namaPelatihan as object) || {}), not: { contains: 'uji kompetensi' }, mode: 'insensitive' }
     }
     const safeSortBy = (sortBy && ALLOWED_SORT.includes(sortBy as string)) ? sortBy as string : 'createdAt'
     const [data, total] = await Promise.all([
@@ -182,6 +197,7 @@ export async function POST(req: Request) {
         dibuatOleh: session.user.id,
       },
     })
+    // Sinkronisasi ke Pelatihan — otomatis skip untuk Uji Kompetensi
     await syncToPelatihan(item.id, {
       namaPelatihan: item.namaPelatihan,
       kategori: item.kategori,
