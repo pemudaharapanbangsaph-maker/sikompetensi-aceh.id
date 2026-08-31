@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
   "build": "prisma generate && prisma db push && next build --webpack"
-},
+}
     "start": "node server.mjs",
     "lint": "eslint .",
     "db:push": "prisma db push",
