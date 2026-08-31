@@ -10,7 +10,7 @@ export async function GET() {
     // Gunakan prisma db push untuk membuat semua tabel berdasarkan schema
     // --accept-data-loss karena ini setup awal
     try {
-      execSync('npx prisma db push --accept-data-loss 2>&1', {
+      execSync('./node_modules/.bin/prisma db push --accept-data-loss 2>&1', {
         stdio: 'pipe',
         timeout: 60000,
       })
@@ -27,7 +27,7 @@ export async function GET() {
 
     // Regenerate Prisma Client untuk memastikan types up to date
     try {
-      execSync('npx prisma generate 2>&1', {
+      execSync('./node_modules/.bin/prisma generate 2>&1', {
         stdio: 'pipe',
         timeout: 30000,
       })
