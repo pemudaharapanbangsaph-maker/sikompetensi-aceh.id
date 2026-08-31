@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
   "dev": "next dev",
-  "build": "npm install --include=dev && prisma generate && next build --webpack && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public",
-  "start": "node .next/standalone/server.js",
+  "build": "npm install --include=dev && prisma generate && next build --webpack && mkdir -p _next && cp -r .next/static _next/static",
+  "start": "next start",
   "lint": "next lint",
   "db:push": "prisma db push",
   "db:seed": "tsx prisma/seed.ts",
