@@ -125,7 +125,7 @@ function BackupMainView() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Buat Backup Sekarang</h3>
-                <p className="text-sm text-white/80 mt-0.5">File database (.db) akan disalin ke folder backups</p>
+                <p className="text-sm text-white/80 mt-0.5">File database (.sql) akan disalin ke folder backups</p>
               </div>
             </div>
             <Button onClick={handleCreate} disabled={creating} size="lg" className="bg-white text-[#0F4C81] hover:bg-white/90 h-11">
@@ -185,8 +185,8 @@ function BackupRestoreView() {
     const file = e.target.files?.[0]
     if (!file) return
     const name = file.name.toLowerCase()
-    if (!name.endsWith('.db') && !name.endsWith('.sqlite') && !name.endsWith('.sqlite3')) {
-      toast({ title: 'Format Salah', description: 'File harus .db, .sqlite, atau .sqlite3', variant: 'destructive' })
+    if (!name.endsWith('.sql')) {
+      toast({ title: 'Format Salah', description: 'File harus .sql (dump MySQL)', variant: 'destructive' })
       return
     }
     setUploadFile(file)
@@ -228,11 +228,11 @@ function BackupRestoreView() {
           <CardTitle className="text-base flex items-center gap-2">
             <Upload className="w-4 h-4 text-emerald-600" /> Restore dari File Komputer
           </CardTitle>
-          <CardDescription className="text-xs">Upload file database (.db / .sqlite) dari komputer</CardDescription>
+          <CardDescription className="text-xs">Upload file SQL dump (.sql) dari komputer</CardDescription>
         </CardHeader>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <input ref={fileInputRef} type="file" accept=".db,.sqlite,.sqlite3" className="hidden" onChange={handleUploadChange} />
+            <input ref={fileInputRef} type="file" accept=".sql" className="hidden" onChange={handleUploadChange} />
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="border-emerald-600 text-emerald-600 hover:bg-emerald-50">
               <Upload className="w-4 h-4" /> Pilih File Database
             </Button>
