@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
-import { copyFileSync, mkdirSync, existsSync, statSync } from 'fs'
+import { mkdirSync, existsSync, statSync, writeFileSync, unlinkSync } from 'fs'
 import path from 'path'
+import { execSync } from 'child_process'
 
 const BACKUP_DIR = path.join(process.cwd(), 'db', 'backups')
-
-function getDbPath(): string {
-  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-  const match = dbUrl.match(/file:(.+)/)
-  let dbPath = match ? match[1] : './db/custom.db'
-  if (dbPath.startsWith('./')) dbPath = path.join(process.cwd(), dbPath.substring(2))
-  return dbPath.split('?')[0]
-}
 
 function ensureBackupDir() {
   if (!existsSync(BACKUP_DIR)) mkdirSync(BACKUP_DIR, { recursive: true })
@@ -22,6 +15,14 @@ function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${bytes} B`
+}
+
+function parseDbUrl(): { host: string; port: string; user: string; password: string; database: string } {
+  const url = process.env.DATABASE_URL || ''
+  // mysql://user:password@host:port/database
+  const match = url.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/)
+  if (!match) throw new Error('DATABASE_URL format tidak valid untuk MySQL')
+  return { host: match[3], port: match[4], user: match[1], password: match[2], database: match[5].split('?')[0] }
 }
 
 function isBackupFileExists(namaFile: string): boolean {
@@ -55,20 +56,31 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     ensureBackupDir()
-    const dbPath = getDbPath()
-    if (!existsSync(dbPath)) {
-      return NextResponse.json({ error: 'File database tidak ditemukan' }, { status: 500 })
-    }
+
+    const dbConfig = parseDbUrl()
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')
     const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
-    const namaFile = `backup_${stamp}.db`
+    const namaFile = `backup_${stamp}.sql`
     const backupPath = path.join(BACKUP_DIR, namaFile)
-    copyFileSync(dbPath, backupPath)
-    const walPath = dbPath + '-wal'
-    const shmPath = dbPath + '-shm'
-    if (existsSync(walPath)) copyFileSync(walPath, backupPath + '-wal')
-    if (existsSync(shmPath)) copyFileSync(shmPath, backupPath + '-shm')
+
+    // Gunakan mysqldump untuk backup
+    const mysqldumpCmd = `mysqldump -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} --single-transaction --routines --triggers 2>/dev/null`
+
+    try {
+      const output = execSync(mysqldumpCmd, { timeout: 120000, encoding: 'utf-8' })
+      writeFileSync(backupPath, output, 'utf-8')
+    } catch (e: any) {
+      // Fallback: coba tanpa routines/triggers
+      try {
+        const fallbackCmd = `mysqldump -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} --single-transaction 2>/dev/null`
+        const output = execSync(fallbackCmd, { timeout: 120000, encoding: 'utf-8' })
+        writeFileSync(backupPath, output, 'utf-8')
+      } catch (e2: any) {
+        return NextResponse.json({ error: 'Gagal backup: mysqldump tidak tersedia. Error: ' + (e2.message || 'unknown') }, { status: 500 })
+      }
+    }
+
     const stats = statSync(backupPath)
     const ukuran = formatFileSize(stats.size)
     const item = await db.backupHistory.create({
