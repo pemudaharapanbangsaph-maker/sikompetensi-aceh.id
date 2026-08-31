@@ -4,12 +4,8 @@ import { dirname, resolve } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  typescript: { ignoreBuildErrors: true },
   reactStrictMode: false,
   webpack: (config) => {
     config.resolve.alias['@'] = resolve(__dirname, 'src')
