@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 2>&1 | tee dev.log",
+    "postinstall": "npm install @tailwindcss/postcss --no-save 2>/dev/null || true",
     "build": "npm install && prisma generate && next build --webpack",
     "start": "next start",
     "lint": "eslint .",
