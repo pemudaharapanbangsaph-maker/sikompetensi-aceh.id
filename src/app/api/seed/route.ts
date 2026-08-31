@@ -1,22 +1,11 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import path from 'path'
-import fs from 'fs'
+import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
 // Token sekali pakai untuk seed — harus diset di env
 const SEED_TOKEN = process.env.SEED_TOKEN
-
-function getDbPath(): string {
-  const dbUrl = process.env.DATABASE_URL || 'file:./db/custom.db'
-  const match = dbUrl.match(/file:(.+)/)
-  let dbPath = match ? match[1] : './db/custom.db'
-  if (dbPath.startsWith('./')) {
-    dbPath = path.join(process.cwd(), dbPath.substring(2))
-  }
-  return dbPath
-}
 
 export async function GET(req: Request) {
   // Cek token seed untuk mencegah akses sembarangan
@@ -29,52 +18,53 @@ export async function GET(req: Request) {
     }
   }
 
-  const dbPath = getDbPath()
-  const flagPath = path.join(path.dirname(dbPath), '.seed-done')
-
-  if (fs.existsSync(flagPath)) {
-    return NextResponse.json({ status: 'already_seeded' })
-  }
-
   try {
-    const Database = (await import('better-sqlite3')).default
-    const db = new Database(dbPath)
-
     const hashedPassword = await bcrypt.hash('admin123', 10)
 
-    // Insert users
-    const insertUser = db.prepare(`INSERT OR IGNORE INTO User (id, username, password, nama, email, role, status, noTelp, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
+    // Cek apakah sudah ada user
+    const existingUsers = await db.user.count()
+    if (existingUsers > 0) {
+      return NextResponse.json({ status: 'already_seeded', message: 'Database sudah memiliki data user' })
+    }
 
+    // Insert users pakai Prisma Client
     const users = [
       { username: 'superadmin', nama: 'Super Administrator', email: 'superadmin@bpsdm.acehprov.go.id', role: 'SUPER_ADMIN' },
       { username: 'admin', nama: 'Admin Bidang Kompetensi', email: 'admin@bpsdm.acehprov.go.id', role: 'ADMIN_BIDANG' },
       { username: 'operator', nama: 'Operator Diklat', email: 'operator@bpsdm.acehprov.go.id', role: 'OPERATOR' },
     ]
     for (const u of users) {
-      insertUser.run(u.username + '_' + Date.now(), u.username, hashedPassword, u.nama, u.email, u.role, 'AKTIF', '0651-12345')
+      await db.user.create({
+        data: {
+          username: u.username,
+          password: hashedPassword,
+          nama: u.nama,
+          email: u.email,
+          role: u.role,
+          status: 'AKTIF',
+          noTelp: '0651-12345',
+        },
+      })
     }
 
     // Insert pengaturan
-    const insertPengaturan = db.prepare(`INSERT OR IGNORE INTO Pengaturan (id, key, value, kategori, updatedAt)
-      VALUES (?, ?, ?, ?, datetime('now'))`)
-    const pengaturan = [
-      { key: 'nama_instansi', value: 'Badan Pengembangan Sumber Daya Manusia Aceh', kategori: 'PROFIL' },
-      { key: 'nama_bidang', value: 'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti', kategori: 'PROFIL' },
-      { key: 'nama_sistem', value: 'Sistem Informasi Kompetensi Teknis', kategori: 'PROFIL' },
-      { key: 'alamat', value: 'Jl. T. Iskandar No. 1, Banda Aceh 23123', kategori: 'PROFIL' },
-      { key: 'telepon', value: '0651-22000', kategori: 'PROFIL' },
-      { key: 'email', value: 'bpsdm@acehprov.go.id', kategori: 'PROFIL' },
-      { key: 'website', value: 'https://bpsdm.acehprov.go.id', kategori: 'PROFIL' },
-      { key: 'session_timeout', value: '30', kategori: 'KEAMANAN' },
-      { key: 'max_login_attempts', value: '5', kategori: 'KEAMANAN' },
-    ]
-    for (const p of pengaturan) {
-      insertPengaturan.run(p.key + '_' + Date.now(), p.key, p.value, p.kategori)
+    const existingPengaturan = await db.pengaturan.count()
+    if (existingPengaturan === 0) {
+      const pengaturan = [
+        { key: 'nama_instansi', value: 'Badan Pengembangan Sumber Daya Manusia Aceh', kategori: 'PROFIL' },
+        { key: 'nama_bidang', value: 'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti', kategori: 'PROFIL' },
+        { key: 'nama_sistem', value: 'Sistem Informasi Kompetensi Teknis', kategori: 'PROFIL' },
+        { key: 'alamat', value: 'Jl. T. Iskandar No. 1, Banda Aceh 23123', kategori: 'PROFIL' },
+        { key: 'telepon', value: '0651-22000', kategori: 'PROFIL' },
+        { key: 'email', value: 'bpsdm@acehprov.go.id', kategori: 'PROFIL' },
+        { key: 'website', value: 'https://bpsdm.acehprov.go.id', kategori: 'PROFIL' },
+        { key: 'session_timeout', value: '30', kategori: 'KEAMANAN' },
+        { key: 'max_login_attempts', value: '5', kategori: 'KEAMANAN' },
+      ]
+      for (const p of pengaturan) {
+        await db.pengaturan.create({ data: p })
+      }
     }
-
-    db.close()
-    fs.writeFileSync(flagPath, new Date().toISOString())
 
     // JANGAN kembalikan password di response!
     return NextResponse.json({
