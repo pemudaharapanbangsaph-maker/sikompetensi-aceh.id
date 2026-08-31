@@ -53,6 +53,11 @@ const FILTER_PRIORITAS = [
   { value: 'RENDAH', label: 'Rendah' },
 ]
 
+const FILTER_TIPE = [
+  { value: 'pelatihan', label: 'Pelatihan' },
+  { value: 'uji_kompetensi', label: 'Uji Kompetensi' },
+]
+
 const METODE_LABEL: Record<string, string> = {
   TATAP_MUKA: 'Tatap Muka',
   DARING: 'Daring',
@@ -99,6 +104,11 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   AKTIF: 'bg-green-100 text-green-700',
   NONAKTIF: 'bg-slate-100 text-slate-500',
+}
+
+/** Cek apakah nama mengandung "uji kompetensi" */
+function isUjiKompetensi(nama: string): boolean {
+  return /uji\s+kompetensi/i.test(nama)
 }
 
 function generateTahunOptions() {
@@ -151,6 +161,7 @@ function AnalisisDiklatTable() {
   const [search, setSearch] = useState('')
   const [filterTahun, setFilterTahun] = useState('')
   const [filterPrioritas, setFilterPrioritas] = useState('')
+  const [filterTipe, setFilterTipe] = useState('')
 
   // dialog state
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -173,6 +184,7 @@ function AnalisisDiklatTable() {
         page, pageSize, search,
         prioritas: filterPrioritas || undefined,
         tahun: filterTahun || undefined,
+        tipe: filterTipe || undefined,
       }
       const res = await api.analisisDiklat.list(params)
       setData(res.data)
@@ -182,15 +194,16 @@ function AnalisisDiklatTable() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search, filterTahun, filterPrioritas, toast])
+  }, [page, pageSize, search, filterTahun, filterPrioritas, filterTipe, toast])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
   const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleFilterTahun = (v: string) => { setFilterTahun(v); setPage(1) }
-  const handleFilterPrioritas = (v: string) => { setFilterPrioritas(v); setPage(1) }
+  const handleFilterTahun = (v: string) => { setFilterTahun(v === 'all' ? '' : v); setPage(1) }
+  const handleFilterPrioritas = (v: string) => { setFilterPrioritas(v === 'all' ? '' : v); setPage(1) }
+  const handleFilterTipe = (v: string) => { setFilterTipe(v === 'all' ? '' : v); setPage(1) }
 
   const openCreate = () => {
     setEditing(null)
@@ -320,7 +333,7 @@ function AnalisisDiklatTable() {
         <CardContent className="p-4 space-y-4">
           {/* Toolbar */}
           <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
-            <div className="flex flex-1 flex-col sm:flex-row gap-2 sm:items-center">
+            <div className="flex flex-1 flex-col sm:flex-row gap-2 sm:items-center flex-wrap">
               <div className="relative flex-1 max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
@@ -330,7 +343,18 @@ function AnalisisDiklatTable() {
                   className="pl-9 h-9"
                 />
               </div>
-              <Select value={filterTahun || 'all'} onValueChange={(v) => handleFilterTahun(v === 'all' ? '' : v)}>
+              <Select value={filterTipe || 'all'} onValueChange={handleFilterTipe}>
+                <SelectTrigger className="h-9 w-full sm:w-40">
+                  <SelectValue placeholder="Tipe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Tipe</SelectItem>
+                  {FILTER_TIPE.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterTahun || 'all'} onValueChange={handleFilterTahun}>
                 <SelectTrigger className="h-9 w-full sm:w-36">
                   <SelectValue placeholder="Tahun" />
                 </SelectTrigger>
@@ -341,7 +365,7 @@ function AnalisisDiklatTable() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={filterPrioritas || 'all'} onValueChange={(v) => handleFilterPrioritas(v === 'all' ? '' : v)}>
+              <Select value={filterPrioritas || 'all'} onValueChange={handleFilterPrioritas}>
                 <SelectTrigger className="h-9 w-full sm:w-36">
                   <SelectValue placeholder="Prioritas" />
                 </SelectTrigger>
@@ -376,8 +400,9 @@ function AnalisisDiklatTable() {
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[160px]">Program Prioritas RPJMA</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[140px]">Sasaran RPJMA</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[120px]">SKPA Sasaran</TableHead>
-                    <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[140px]">Kategori</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[100px]">Tipe</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[160px]">Nama Pelatihan</TableHead>
+                    <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[120px]">Kategori</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide min-w-[120px]">Metode</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-20 text-center">Durasi (JP)</TableHead>
                     <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide w-24 text-center">Lama Hari</TableHead>
@@ -392,76 +417,90 @@ function AnalisisDiklatTable() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
-                        {Array.from({ length: 14 }).map((_, j) => (
+                        {Array.from({ length: 16 }).map((_, j) => (
                           <TableCell key={j}><div className="h-4 bg-slate-100 rounded animate-pulse" /></TableCell>
                         ))}
                       </TableRow>
                     ))
                   ) : data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={14} className="text-center py-12 text-slate-400">
+                      <TableCell colSpan={16} className="text-center py-12 text-slate-400">
                         <FileSpreadsheet className="w-10 h-10 mx-auto mb-2 text-slate-300" />
                         <p>Belum ada data analisis diklat</p>
                         <p className="text-xs mt-1">Klik &quot;Tambah Data&quot; atau impor dari file XLS</p>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    data.map((row, idx) => (
-                      <TableRow key={row.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
-                        <TableCell className="text-sm text-slate-500 text-center tabular-nums">{start + idx}</TableCell>
-                        <TableCell className="text-sm text-slate-700 max-w-[200px]">
-                          <p className="line-clamp-2" title={row.outcome}>{row.outcome || '-'}</p>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-600 max-w-[180px]">
-                          <p className="line-clamp-2" title={row.programPrioritasRPJMA}>{row.programPrioritasRPJMA || '-'}</p>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-600 max-w-[160px]">
-                          <p className="line-clamp-2" title={row.sasaranRPJMA}>{row.sasaranRPJMA || '-'}</p>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-600 max-w-[140px]">
-                          <p className="line-clamp-2" title={row.skpaSasaran}>{row.skpaSasaran || '-'}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', KATEGORI_COLORS[row.kategori] || '')}>
-                            {KATEGORI_LABEL[row.kategori] || row.kategori}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm font-medium text-slate-800 max-w-[180px]">
-                          <p className="line-clamp-2" title={row.namaPelatihan}>{row.namaPelatihan || '-'}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', METODE_COLORS[row.metodePembelajaran] || '')}>
-                            {METODE_LABEL[row.metodePembelajaran] || row.metodePembelajaran}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiJP ? `${row.durasiJP} JP` : '-'}</TableCell>
-                        <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiHari ? `${row.durasiHari} hari` : '-'}</TableCell>
-                        <TableCell className="text-sm text-slate-600 max-w-[160px]">
-                          <p className="line-clamp-2" title={row.targetOutput}>{row.targetOutput || '-'}</p>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', PRIORITAS_COLORS[row.prioritas] || '')}>
-                            {PRIORITAS_LABEL[row.prioritas] || row.prioritas}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.tahunPelaksanaan}</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', STATUS_COLORS[row.status] || '')}>
-                            {STATUS_LABEL[row.status] || row.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => openEdit(row)} title="Edit">
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    data.map((row, idx) => {
+                      const isUK = isUjiKompetensi(row.namaPelatihan)
+                      return (
+                        <TableRow key={row.id} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
+                          <TableCell className="text-sm text-slate-500 text-center tabular-nums">{start + idx}</TableCell>
+                          <TableCell className="text-sm text-slate-700 max-w-[200px]">
+                            <p className="line-clamp-2" title={row.outcome}>{row.outcome || '-'}</p>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-600 max-w-[180px]">
+                            <p className="line-clamp-2" title={row.programPrioritasRPJMA}>{row.programPrioritasRPJMA || '-'}</p>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-600 max-w-[160px]">
+                            <p className="line-clamp-2" title={row.sasaranRPJMA}>{row.sasaranRPJMA || '-'}</p>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-600 max-w-[140px]">
+                            <p className="line-clamp-2" title={row.skpaSasaran}>{row.skpaSasaran || '-'}</p>
+                          </TableCell>
+                          <TableCell>
+                            {isUK ? (
+                              <Badge className="bg-orange-100 text-orange-700 text-xs font-medium px-2 py-0.5 border-0">
+                                Uji Kompetensi
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-[#0F4C81]/10 text-[#0F4C81] text-xs font-medium px-2 py-0.5 border-0">
+                                Pelatihan
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm font-medium text-slate-800 max-w-[180px]">
+                            <p className="line-clamp-2" title={row.namaPelatihan}>{row.namaPelatihan || '-'}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', KATEGORI_COLORS[row.kategori] || '')}>
+                              {KATEGORI_LABEL[row.kategori] || row.kategori}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', METODE_COLORS[row.metodePembelajaran] || '')}>
+                              {METODE_LABEL[row.metodePembelajaran] || row.metodePembelajaran}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiJP ? `${row.durasiJP} JP` : '-'}</TableCell>
+                          <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.durasiHari ? `${row.durasiHari} hari` : '-'}</TableCell>
+                          <TableCell className="text-sm text-slate-600 max-w-[160px]">
+                            <p className="line-clamp-2" title={row.targetOutput}>{row.targetOutput || '-'}</p>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', PRIORITAS_COLORS[row.prioritas] || '')}>
+                              {PRIORITAS_LABEL[row.prioritas] || row.prioritas}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-slate-700 text-center tabular-nums">{row.tahunPelaksanaan}</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="secondary" className={cn('text-xs font-medium px-2 py-0.5', STATUS_COLORS[row.status] || '')}>
+                              {STATUS_LABEL[row.status] || row.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => openEdit(row)} title="Edit">
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -563,6 +602,12 @@ function AnalisisDiklatTable() {
                 onChange={(e) => setForm({ ...form, namaPelatihan: e.target.value })}
                 placeholder="Nama pelatihan"
               />
+              {isUjiKompetensi(form.namaPelatihan || '') && (
+                <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full bg-orange-500" />
+                  Data ini terdeteksi sebagai <strong>Uji Kompetensi</strong> dan tidak akan masuk ke menu Pelatihan.
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label>Metode Pembelajaran</Label>
