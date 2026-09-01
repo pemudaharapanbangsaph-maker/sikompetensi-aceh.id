@@ -4,7 +4,7 @@ import { getSession } from '@/lib/auth'
 import * as fs from 'fs'
 import * as path from 'path'
 
-const PERSISTENT_DIR = '/data/uploads/pendaftaran'
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'pendaftaran')
 
 export async function GET(
   _req: Request,
@@ -25,7 +25,7 @@ export async function GET(
     let filePath = doc.filePath
     if (!fs.existsSync(filePath)) {
       const ext = path.extname(doc.namaFile) || '.pdf'
-      const fallbackPath = path.join(PERSISTENT_DIR, `${id}_${tipe}${ext}`)
+      const fallbackPath = path.join(UPLOAD_DIR, `${id}_${tipe}${ext}`)
       if (fs.existsSync(fallbackPath)) {
         filePath = fallbackPath
         // Update path di DB supaya next time langsung ketemu
