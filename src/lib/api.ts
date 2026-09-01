@@ -37,6 +37,8 @@ export const api = {
     request<{ user: User }>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password, remember }) }),
   logout: () => request<void>('/auth/logout', { method: 'POST' }),
   me: () => request<{ user: User }>('/auth/me'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<void>('/auth/password', { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) }),
 
   // ===== Dashboard =====
   dashboard: () => request<DashboardStats>('/dashboard'),
