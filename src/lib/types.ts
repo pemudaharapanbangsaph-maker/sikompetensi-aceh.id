@@ -174,13 +174,12 @@ export interface DashboardStats {
   totalPelatihan: number
   totalAngkatan: number
   totalPeserta: number
-  totalUjiKompetensi: number
   totalAsesor: number
   totalAnalisis: number
   pelatihanBerjalan: number
-  pesertaLulus: number
-  pesertaTidakLulus: number
-  ujiSelesai: number
+  angkatanSelesai: number
+  pendaftaranPortal: number
+  pendaftaranMenunggu: number
   grafikPelatihanPerBulan: { bulan: string; jumlah: number }[]
   grafikKelulusan: { lulus: number; tidakLulus: number }[]
   grafikKategoriPelatihan: { kategori: string; jumlah: number }[]
