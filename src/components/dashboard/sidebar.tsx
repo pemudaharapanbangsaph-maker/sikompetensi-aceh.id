@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, FileBadge, Mail } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, FileBadge, Mail } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -38,21 +38,9 @@ const menuItems: MenuItem[] = [
   { key: 'kehadiran', label: 'Kehadiran Peserta', icon: ClipboardCheck, view: 'kehadiran', permission: 'pelatihan' },
   { key: 'angkatan', label: 'Data Angkatan', icon: UsersRound, view: 'angkatan', permission: 'pelatihan' },
   {
-    key: 'uji', label: 'Uji Kompetensi', icon: Award, permission: 'uji_kompetensi',
-    children: [
-      { key: 'uji-jadwal', label: 'Jadwal Uji Kompetensi', view: 'uji-jadwal', permission: 'uji_kompetensi' },
-      { key: 'uji-biodata', label: 'Biodata Peserta', view: 'uji-biodata', permission: 'uji_kompetensi' },
-      { key: 'uji-asesor', label: 'Data Asesor', view: 'uji-asesor', permission: 'uji_kompetensi' },
-      { key: 'uji-penilaian', label: 'Penilaian', view: 'uji-penilaian', permission: 'uji_kompetensi' },
-      { key: 'uji-hasil', label: 'Hasil Uji', view: 'uji-hasil', permission: 'uji_kompetensi' },
-      { key: 'uji-rekap', label: 'Rekap Nilai', view: 'uji-rekap', permission: 'uji_kompetensi' },
-    ],
-  },
-  {
     key: 'arsip', label: 'Arsip', icon: Archive, permission: 'laporan',
     children: [
       { key: 'arsip-pelatihan', label: 'Arsip Pelatihan', view: 'arsip-pelatihan', permission: 'laporan' },
-      { key: 'arsip-uji', label: 'Arsip Uji Kompetensi', view: 'arsip-uji', permission: 'laporan' },
       { key: 'arsip-peserta', label: 'Arsip Peserta', view: 'arsip-peserta', permission: 'peserta' },
     ],
   },
@@ -60,7 +48,7 @@ const menuItems: MenuItem[] = [
     key: 'peserta', label: 'Data Peserta', icon: Users, permission: 'peserta',
     children: [
       { key: 'peserta-data', label: 'Data Peserta', view: 'peserta', permission: 'peserta' },
-      { key: 'peserta-riwayat', label: 'Riwayat Pelatihan & Uji', view: 'peserta-riwayat', permission: 'peserta' },
+      { key: 'peserta-riwayat', label: 'Riwayat Pelatihan', view: 'peserta-riwayat', permission: 'peserta' },
     ],
   },
   {
@@ -82,7 +70,6 @@ const menuItems: MenuItem[] = [
     key: 'laporan', label: 'Laporan', icon: FileText, permission: 'laporan',
     children: [
       { key: 'laporan-pelatihan', label: 'Laporan Pelatihan', view: 'laporan-pelatihan', permission: 'laporan' },
-      { key: 'laporan-uji', label: 'Laporan Uji Kompetensi', view: 'laporan-uji', permission: 'laporan' },
       { key: 'laporan-peserta', label: 'Laporan Peserta', view: 'laporan-peserta', permission: 'laporan' },
     ],
   },
@@ -106,7 +93,6 @@ const menuItems: MenuItem[] = [
     key: 'sertifikat', label: 'Sertifikat', icon: FileBadge, permission: 'pelatihan',
     children: [
       { key: 'sertifikat-pelatihan', label: 'Sertifikat Pelatihan', view: 'sertifikat-pelatihan' as ViewKey, permission: 'pelatihan' },
-      { key: 'sertifikat-uji', label: 'Sertifikat Uji Kompetensi', view: 'sertifikat-uji' as ViewKey, permission: 'uji_kompetensi' },
     ],
   },
   { key: 'notifikasi', label: 'Notifikasi Email', icon: Mail, view: 'notifikasi' as ViewKey, permission: 'settings' },
