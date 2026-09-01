@@ -6,7 +6,7 @@ import { getSession, auditLog, hasPermission } from '@/lib/auth'
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
-const LOGO_FILENAME = 'pemda-logo.png'
+const LOGO_FILENAME = 'logo-pancacita.png'
 
 function getDataDir(): string {
   return join(process.cwd(), 'db')
