@@ -1,6 +1,6 @@
 import type {
   User, Peserta, Pelatihan, Angkatan, AnalisisKebutuhan, AnalisisDiklatItem,
-  UjiKompetensi, Asesor, Nilai, Kehadiran, Evaluasi,
+  Kehadiran, Evaluasi,
   AuditLog, BackupHistory, DashboardStats, PaginatedResponse,
   Sertifikat, NotifikasiEmail
 } from './types'
@@ -143,29 +143,6 @@ export const api = {
     },
   },
 
-  ujiKompetensi: {
-    list: (params?: Record<string, string | number | undefined>) =>
-      request<PaginatedResponse<UjiKompetensi>>('/uji-kompetensi?' + (params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)).toString() : '')),
-    listAll: () => request<UjiKompetensi[]>('/uji-kompetensi/all'),
-    get: (id: string) => request<UjiKompetensi & { nilai?: Nilai[] }>(`/uji-kompetensi/${id}`),
-    create: (data: Partial<UjiKompetensi>) => request<UjiKompetensi>('/uji-kompetensi', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Partial<UjiKompetensi>) => request<UjiKompetensi>(`/uji-kompetensi/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    remove: (id: string) => request<void>(`/uji-kompetensi/${id}`, { method: 'DELETE' }),
-    setNilai: (id: string, data: Partial<Nilai> & { pesertaId: string }) =>
-      request<Nilai>(`/uji-kompetensi/${id}/nilai`, { method: 'POST', body: JSON.stringify(data) }),
-    rekapNilai: () => request<any[]>('/uji-kompetensi/rekap'),
-  },
-
-  asesor: {
-    list: (params?: Record<string, string | number | undefined>) =>
-      request<PaginatedResponse<Asesor>>('/asesor?' + (params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)).toString() : '')),
-    listAll: () => request<Asesor[]>('/asesor/all'),
-    get: (id: string) => request<Asesor>(`/asesor/${id}`),
-    create: (data: Partial<Asesor>) => request<Asesor>('/asesor', { method: 'POST', body: JSON.stringify(data) }),
-    update: (id: string, data: Partial<Asesor>) => request<Asesor>(`/asesor/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-    remove: (id: string) => request<void>(`/asesor/${id}`, { method: 'DELETE' }),
-  },
-
   evaluasi: {
     list: (params?: Record<string, string | number | undefined>) =>
       request<PaginatedResponse<Evaluasi>>('/evaluasi?' + (params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)).toString() : '')),
@@ -210,8 +187,6 @@ export const api = {
       window.location.href = `${BASE}/laporan/pelatihan/export?${params.toString()}`
     },
     exportPelatihanXls: () => window.location.href = `${BASE}/laporan/pelatihan/export`,
-    exportUjiKompetensiPdf: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export?format=pdf`,
-    exportUjiKompetensiXls: () => window.location.href = `${BASE}/laporan/uji-kompetensi/export`,
     exportPesertaPdf: () => window.location.href = `${BASE}/laporan/peserta/export?format=pdf`,
     exportPesertaXls: () => window.location.href = `${BASE}/laporan/peserta/export`,
   },
@@ -224,16 +199,8 @@ export const api = {
       ).toString() : ''
       return request<PaginatedResponse<Pelatihan>>(`/arsip/pelatihan${qs}`)
     },
-    ujiKompetensi: (params?: Record<string, string | number | undefined>) => {
-      const qs = params ? '?' + new URLSearchParams(
-        Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
-      ).toString() : ''
-      return request<PaginatedResponse<UjiKompetensi>>(`/arsip/uji-kompetensi${qs}`)
-    },
     exportPelatihanPdf: () => window.location.href = `${BASE}/arsip/pelatihan/export?format=pdf`,
     exportPelatihanXls: () => window.location.href = `${BASE}/arsip/pelatihan/export`,
-    exportUjiKompetensiPdf: () => window.location.href = `${BASE}/arsip/uji-kompetensi/export?format=pdf`,
-    exportUjiKompetensiXls: () => window.location.href = `${BASE}/arsip/uji-kompetensi/export`,
     peserta: (params?: Record<string, string | number | undefined>) => {
       const qs = params ? '?' + new URLSearchParams(
         Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
