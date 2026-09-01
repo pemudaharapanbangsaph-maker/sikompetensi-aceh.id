@@ -4,7 +4,16 @@ import * as fs from 'fs'
 import * as path from 'path'
 import crypto from 'crypto'
 
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'pendaftaran')
+const baseUploadDir = process.env.UPLOAD_DIR?.trim()
+
+if (!baseUploadDir && process.env.NODE_ENV === 'production') {
+  throw new Error('UPLOAD_DIR belum dikonfigurasi')
+}
+
+const UPLOAD_DIR = path.join(
+  baseUploadDir || path.join(process.cwd(), 'uploads-sikompetensi'),
+  'pendaftaran'
+)
 const ALLOWED_TIPE = ['KTP', 'SURAT_TUGAS', 'NPWP', 'REK_BANK']
 const ALLOWED_EXT = ['.pdf']
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
