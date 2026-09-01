@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api } from '@/lib/api'
 import type { Sertifikat } from '@/lib/types'
-import { useNavStore } from '@/store/auth-store'
 import { DataTable, PageHeader, type Column } from '@/components/shared/data-table'
 import { formatTanggal } from '@/components/shared/ui-helpers'
 import { Button } from '@/components/ui/button'
@@ -23,15 +22,7 @@ import { Download, Trash2, Plus, Save, X, FileText, Upload, Award } from 'lucide
 // ===========================================================================
 
 export function SertifikatView() {
-  const { activeView } = useNavStore()
-
-  const jenis = activeView === 'sertifikat-uji' ? 'UJI_KOMPETENSI' : 'PELATIHAN'
-  const title = activeView === 'sertifikat-uji' ? 'Sertifikat Uji Kompetensi' : 'Sertifikat Pelatihan'
-  const description = activeView === 'sertifikat-uji'
-    ? 'Arsip dan kelola sertifikat uji kompetensi dari Srikandi'
-    : 'Arsip dan kelola sertifikat pelatihan dari Srikandi'
-
-  return <SertifikatDataTable jenis={jenis} title={title} description={description} />
+  return <SertifikatDataTable jenis="PELATIHAN" title="Sertifikat Pelatihan" description="Arsip dan kelola sertifikat pelatihan dari Srikandi" />
 }
 
 // ===========================================================================
