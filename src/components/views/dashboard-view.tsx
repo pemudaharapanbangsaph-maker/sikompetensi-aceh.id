@@ -9,9 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  BookOpen, Users, Award, ClipboardList, Activity, TrendingUp,
+  BookOpen, Users, ClipboardList, Activity, TrendingUp,
   Calendar, CheckCircle2, UserCheck, BarChart3, Clock,
-  Plus, ArrowRight, FileCheck, ArrowDownToLine,
+  Plus, ArrowRight, ArrowDownToLine,
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -54,7 +54,6 @@ export function DashboardView() {
   const isEmpty =
     stats.totalPelatihan === 0 &&
     stats.totalPeserta === 0 &&
-    stats.totalUjiKompetensi === 0 &&
     stats.totalAnalisis === 0
 
   return (
@@ -83,19 +82,17 @@ export function DashboardView() {
       ) : (
         <>
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-3 gap-3 lg:gap-4">
         <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={stats.trendPelatihan ?? undefined} onClick={() => setActiveView('pelatihan')} />
         <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.totalAngkatan} angkatan`} icon={Users} color="green" onClick={() => setActiveView('peserta')} />
-        <StatCard title="Uji Kompetensi" value={stats.totalUjiKompetensi} subtitle={`${stats.ujiSelesai} selesai`} icon={Award} color="amber" onClick={() => setActiveView('uji-jadwal')} />
         <StatCard title="Analisis Kebutuhan" value={stats.totalAnalisis} subtitle={`${stats.totalAsesor} asesor`} icon={ClipboardList} color="purple" onClick={() => setActiveView('analisis')} />
       </div>
 
       {/* Secondary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      <div className="grid grid-cols-3 gap-3 lg:gap-4">
         <StatCard title="Pelatihan Berjalan" value={stats.pelatihanBerjalan} icon={Activity} color="blue" onClick={() => setActiveView('angkatan')} />
         <StatCard title="Angkatan Selesai" value={stats.angkatanSelesai} icon={CheckCircle2} color="green" onClick={() => setActiveView('pelatihan-arsip')} />
         <StatCard title="Pendaftaran Portal" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="amber" onClick={() => setActiveView('pendaftaran-list')} />
-        <StatCard title="Uji Kompetensi Selesai" value={stats.ujiSelesai} icon={FileCheck} color="green" onClick={() => setActiveView('uji-hasil')} />
       </div>
 
       {/* Charts */}
@@ -201,13 +198,13 @@ export function DashboardView() {
                   <Calendar className="w-7 h-7 text-slate-300" />
                 </div>
                 <p className="text-sm font-medium text-slate-400">Belum ada jadwal mendatang</p>
-                <p className="text-xs text-slate-300 mt-1">Jadwal pelatihan & uji kompetensi akan tampil di sini</p>
+                <p className="text-xs text-slate-300 mt-1">Jadwal pelatihan akan tampil di sini</p>
               </div>
               ) : stats.jadwalTerdekat.map((j, i) => {
                 const isAngkatan = 'tanggalMulai' in j
                 const tanggal = isAngkatan ? j.tanggalMulai : j.tanggalUji
-                const nama = isAngkatan ? (j.pelatihan?.nama || j.namaAngkatan) : `Uji Kompetensi ${j.kode}`
-                const tipe = isAngkatan ? 'Pelatihan' : 'Uji Kompetensi'
+                const nama = isAngkatan ? (j.pelatihan?.nama || j.namaAngkatan) : j.namaAngkatan
+                const tipe = isAngkatan ? 'Pelatihan' : 'Pelatihan'
                 return (
                   <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100">
                     <div className="w-10 h-10 rounded-lg bg-[#0F4C81]/10 flex flex-col items-center justify-center flex-shrink-0">
