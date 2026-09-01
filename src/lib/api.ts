@@ -1,6 +1,6 @@
 import type {
   User, Peserta, Pelatihan, Angkatan, AnalisisKebutuhan, AnalisisDiklatItem,
-  Kehadiran, Evaluasi,
+  Kehadiran, Evaluasi, UjiKompetensi, Nilai,
   AuditLog, BackupHistory, DashboardStats, PaginatedResponse,
   Sertifikat, NotifikasiEmail
 } from './types'
