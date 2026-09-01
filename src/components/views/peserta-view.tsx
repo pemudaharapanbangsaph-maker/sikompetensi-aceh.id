@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { api } from '@/lib/api'
-import type { Peserta, Angkatan, Nilai, UjiKompetensi, Pelatihan } from '@/lib/types'
+import type { Peserta, Angkatan, Nilai, Pelatihan } from '@/lib/types'
 import { useNavStore } from '@/store/auth-store'
 import { DataTable, StatCard, PageHeader, type Column, type FilterOption } from '@/components/shared/data-table'
 import { StatusBadge, formatTanggal, formatTanggalSingkat } from '@/components/shared/ui-helpers'
@@ -18,7 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, Award, History, ArrowRight, Search, FileText, Download, ClipboardList } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, ArrowRight, Search, FileText, Download, ClipboardList } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -521,16 +521,13 @@ function PesertaRiwayatView() {
     )
   }, [pesertaList, searchTerm])
 
-  // Stats — angkatan yang punya ujiKompetensi dihitung sebagai Uji Kompetensi, sisanya Pelatihan biasa
-  const pelatihanBiasa = riwayat?.angkatan.filter((a) => !a.ujiKompetensi || a.ujiKompetensi.length === 0) || []
-  const angkatanUji = riwayat?.angkatan.filter((a) => a.ujiKompetensi && a.ujiKompetensi.length > 0) || []
+  // Stats — riwayat pelatihan
+  const pelatihanBiasa = riwayat?.angkatan || []
   const totalPelatihan = pelatihanBiasa.length
-  const totalUji = angkatanUji.length
-  const totalLulus = riwayat?.nilai.filter((n) => n.statusKelulusan === 'LULUS').length || 0
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Riwayat Peserta" description="Lihat riwayat pelatihan dan uji kompetensi per peserta">
+      <PageHeader title="Riwayat Peserta" description="Lihat riwayat pelatihan per peserta">
         <Button variant="outline" size="sm" onClick={() => setActiveView('peserta')} className="h-9">
           <ArrowRight className="w-4 h-4" /> Kembali ke Data Peserta
         </Button>
@@ -577,7 +574,7 @@ function PesertaRiwayatView() {
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
             <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            Silakan pilih peserta untuk melihat riwayat pelatihan dan uji kompetensi
+            Silakan pilih peserta untuk melihat riwayat pelatihan
           </CardContent>
         </Card>
       ) : loading ? (
@@ -608,10 +605,8 @@ function PesertaRiwayatView() {
           </Card>
 
           {/* Statcards */}
-          <div className="grid grid-cols-3 gap-3 lg:gap-4">
+          <div className="grid grid-cols-1 gap-3 lg:gap-4 max-w-xs">
             <StatCard title="Total Pelatihan" value={totalPelatihan} icon={GraduationCap} color="blue" />
-            <StatCard title="Total Uji Kompetensi" value={totalUji} icon={Award} color="amber" />
-            <StatCard title="Uji Lulus" value={totalLulus} icon={UserCheck} color="green" />
           </div>
 
           {/* Dokumen Pendaftaran */}
@@ -733,96 +728,6 @@ function PesertaRiwayatView() {
               </CardContent>
             </Card>
 
-            {/* Riwayat Uji Kompetensi (angkatan yang punya ujiKompetensi + nilai penilaian) */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-2 border-b border-slate-100">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#0F4C81]" /> Riwayat Uji Kompetensi
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {angkatanUji.length === 0 && riwayat.nilai.length === 0 ? (
-                  <div className="py-10 text-center text-sm text-slate-400">
-                    <Award className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Belum ada riwayat uji kompetensi
-                  </div>
-                ) : (
-                  <div className="max-h-96 overflow-y-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
-                        <tr>
-                          <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Uji / Skema</th>
-                          <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Tanggal / Angkatan</th>
-                          <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Nilai</th>
-                          <th className="text-center text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {angkatanUji.map((a, i) => {
-                          const uji = a.ujiKompetensi?.[0]
-                          return (
-                            <motion.tr
-                              key={a.id}
-                              initial={{ opacity: 0, x: 6 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.2, delay: i * 0.03 }}
-                              className="hover:bg-slate-50/50"
-                            >
-                              <td className="px-4 py-2.5">
-                                <span className="font-mono text-xs font-semibold text-[#0F4C81]">{uji?.kode || a.pelatihan?.kode || '-'}</span>
-                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{uji?.skemaSertifikasi || a.pelatihan?.nama || '-'}</p>
-                              </td>
-                              <td className="px-4 py-2.5 text-xs text-slate-600">
-                                <p>{uji ? formatTanggalSingkat(uji.tanggalUji) : '-'}</p>
-                                <p className="text-slate-400">{a.namaAngkatan}</p>
-                              </td>
-                              <td className="px-4 py-2.5 text-right">
-                                {a.nilaiAkhir != null ? (
-                                  <span className="font-semibold text-[#0F4C81]">{a.nilaiAkhir}</span>
-                                ) : (
-                                  <span className="text-slate-300">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-2.5 text-center">
-                                <StatusBadge status={a.status} />
-                              </td>
-                            </motion.tr>
-                          )
-                        })}
-                        {riwayat.nilai.map((n, i) => (
-                          <motion.tr
-                            key={n.id}
-                            initial={{ opacity: 0, x: 6 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2, delay: (angkatanUji.length + i) * 0.03 }}
-                            className="hover:bg-slate-50/50"
-                          >
-                            <td className="px-4 py-2.5">
-                              <span className="font-mono text-xs font-semibold text-[#0F4C81]">{n.ujiKompetensi?.kode || '-'}</span>
-                              <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{n.ujiKompetensi?.skemaSertifikasi || '-'}</p>
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-slate-600">
-                              <p>{n.ujiKompetensi ? formatTanggalSingkat(n.ujiKompetensi.tanggalUji) : '-'}</p>
-                              <p className="text-slate-400">Penilaian</p>
-                            </td>
-                            <td className="px-4 py-2.5 text-right">
-                              {n.nilaiAkhir != null ? (
-                                <span className="font-semibold text-[#0F4C81]">{n.nilaiAkhir}</span>
-                              ) : (
-                                <span className="text-slate-300">-</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <StatusBadge status={n.statusKelulusan} />
-                            </td>
-                          </motion.tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
       )}
