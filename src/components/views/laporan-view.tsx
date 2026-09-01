@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { api } from '@/lib/api'
-import type { Angkatan, UjiKompetensi, Peserta } from '@/lib/types'
+import type { Angkatan, Peserta } from '@/lib/types'
 import { useNavStore } from '@/store/auth-store'
 import { DataTable, StatCard, PageHeader, type Column, type FilterOption } from '@/components/shared/data-table'
 import { StatusBadge, formatTanggal, formatTanggalSingkat, kategoriLabel, metodeLabel } from '@/components/shared/ui-helpers'
@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { FileText, FileSpreadsheet, Printer, BookOpen, ClipboardCheck, Users, Award, BarChart3, PieChart as PieIcon, GraduationCap, Building2 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts'
+import { FileText, FileSpreadsheet, Printer, BookOpen, Users, BarChart3, GraduationCap, Building2, CheckCircle2 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 // ===========================================================================
 // CONSTANTS
@@ -31,14 +31,7 @@ const STATUS_ANGKATAN = [
   { value: 'DIBATALKAN', label: 'Dibatalkan' },
 ]
 
-const STATUS_UJI = [
-  { value: 'DIJADWALKAN', label: 'Dijadwalkan' },
-  { value: 'BERLANGSUNG', label: 'Berlangsung' },
-  { value: 'SELESAI', label: 'Selesai' },
-  { value: 'DIBATALKAN', label: 'Dibatalkan' },
-]
 
-const PIE_COLORS = ['#0F4C81', '#198754', '#d97706', '#dc2626', '#7c3aed', '#0891b2']
 
 // ===========================================================================
 // ROOT
@@ -47,7 +40,6 @@ const PIE_COLORS = ['#0F4C81', '#198754', '#d97706', '#dc2626', '#7c3aed', '#089
 export function LaporanView() {
   const { activeView } = useNavStore()
 
-  if (activeView === 'laporan-uji') return <LaporanUjiView />
   if (activeView === 'laporan-peserta') return <LaporanPesertaView />
   return <LaporanPelatihanView />
 }
@@ -66,15 +58,6 @@ function LaporanPelatihanView() {
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Record<string, string>>({})
   const [selectedAngkatan, setSelectedAngkatan] = useState('')
-  const [ujiAngkatanIds, setUjiAngkatanIds] = useState<Set<string>>(new Set())
-
-  // Fetch uji kompetensi angkatan IDs once (to exclude from laporan pelatihan)
-  useEffect(() => {
-    api.ujiKompetensi.listAll().then((list) => {
-      const ids = new Set(list.map((u) => u.angkatanId).filter(Boolean) as string[])
-      setUjiAngkatanIds(ids)
-    }).catch(() => {})
-  }, [])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -98,10 +81,9 @@ function LaporanPelatihanView() {
     fetchData()
   }, [fetchData])
 
-  // Exclude angkatan yang sudah punya uji kompetensi, then apply client-side filters
+  // Apply client-side filters
   const filtered = useMemo(() => {
     return data.filter((a) => {
-      if (ujiAngkatanIds.has(a.id)) return false
       if (selectedAngkatan && a.id !== selectedAngkatan) return false
       if (filters.tahun) {
         const y = new Date(a.tanggalMulai).getFullYear().toString()
@@ -112,7 +94,7 @@ function LaporanPelatihanView() {
       }
       return true
     })
-  }, [data, filters.tahun, filters.kategori, selectedAngkatan, ujiAngkatanIds])
+  }, [data, filters.tahun, filters.kategori, selectedAngkatan])
 
   const tahunOptions = useMemo(() => {
     const set = new Set<string>()
@@ -151,8 +133,8 @@ function LaporanPelatihanView() {
   }
 
   const angkatanOptions = useMemo(() => {
-    return data.filter((a) => !ujiAngkatanIds.has(a.id)).map((a) => ({ value: a.id, label: `${a.namaAngkatan} — ${a.pelatihan?.nama || ''}` }))
-  }, [data, ujiAngkatanIds])
+    return data.map((a) => ({ value: a.id, label: `${a.namaAngkatan} — ${a.pelatihan?.nama || ''}` }))
+  }, [data])
 
   const filterOptions: FilterOption[] = [
     { key: 'tahun', label: 'Tahun', options: tahunOptions },
@@ -209,7 +191,7 @@ function LaporanPelatihanView() {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
         <StatCard title="Total Angkatan" value={stats.totalAngkatan} icon={BookOpen} color="blue" />
         <StatCard title="Total Peserta" value={stats.totalPeserta} icon={Users} color="green" />
-        <StatCard title="Angkatan Selesai" value={stats.selesai} icon={Award} color="amber" />
+        <StatCard title="Angkatan Selesai" value={stats.selesai} icon={CheckCircle2} color="amber" />
       </div>
 
       <Card className="border-slate-200 shadow-sm">
@@ -258,176 +240,7 @@ function LaporanPelatihanView() {
 }
 
 // ===========================================================================
-// SUBTAB 2: LAPORAN UJI KOMPETENSI
-// ===========================================================================
-
-function LaporanUjiView() {
-  const { toast } = useToast()
-  const [data, setData] = useState<UjiKompetensi[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pageSize] = useState(10)
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [filters, setFilters] = useState<Record<string, string>>({})
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, string | number | undefined> = {
-        page, pageSize, search,
-        status: filters.status || undefined,
-      }
-      const res = await api.ujiKompetensi.list(params)
-      setData(res.data)
-      setTotal(res.total)
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, search, filters, toast])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-
-  // tahun filter (client-side)
-  const filtered = useMemo(() => {
-    if (!filters.tahun) return data
-    return data.filter((u) => new Date(u.tanggalUji).getFullYear().toString() === filters.tahun)
-  }, [data, filters.tahun])
-
-  const tahunOptions = useMemo(() => {
-    const set = new Set<string>()
-    data.forEach((u) => set.add(new Date(u.tanggalUji).getFullYear().toString()))
-    return Array.from(set).sort((a, b) => Number(b) - Number(a)).map((t) => ({ value: t, label: t }))
-  }, [data])
-
-  const stats = useMemo(() => {
-    const totalUji = filtered.length
-    const selesai = filtered.filter((u) => u.status === 'SELESAI').length
-    const totalPeserta = filtered.reduce((s, u) => s + (u.jumlahPeserta || 0), 0)
-    return { totalUji, selesai, totalPeserta }
-  }, [filtered])
-
-  const pieData = useMemo(() => {
-    const counts: Record<string, number> = {}
-    filtered.forEach((u) => {
-      counts[u.status] = (counts[u.status] || 0) + 1
-    })
-    return Object.entries(counts).map(([name, value]) => ({ name, value }))
-  }, [filtered])
-
-  const handleSearch = (v: string) => { setSearch(v); setPage(1) }
-  const handleFilter = (k: string, v: string) => {
-    setFilters((prev) => ({ ...prev, [k]: v }))
-    setPage(1)
-  }
-
-  const handleExportPDF = () => {
-    toast({ title: 'Export PDF', description: 'Mengunduh file laporan-uji-kompetensi.pdf...' })
-    api.laporan.exportUjiKompetensiPdf()
-  }
-
-  const handleExportExcel = () => {
-    toast({ title: 'Export Excel', description: 'Mengunduh file laporan-uji-kompetensi.xlsx...' })
-    api.laporan.exportUjiKompetensiXls()
-  }
-
-  const filterOptions: FilterOption[] = [
-    { key: 'tahun', label: 'Tahun', options: tahunOptions },
-    { key: 'status', label: 'Status', options: STATUS_UJI },
-  ]
-
-  const columns: Column<UjiKompetensi>[] = [
-    { key: 'kode', header: 'Kode', render: (r) => <span className="font-mono text-xs font-medium text-slate-900">{r.kode}</span> },
-    { key: 'skemaSertifikasi', header: 'Skema', render: (r) => <span className="text-slate-700 line-clamp-1 max-w-[200px] inline-block">{r.skemaSertifikasi}</span> },
-    { key: 'tanggalUji', header: 'Tanggal', render: (r) => <span className="text-xs text-slate-600">{formatTanggal(r.tanggalUji)}</span> },
-    { key: 'tempat', header: 'Tempat', render: (r) => <span className="text-slate-600 text-xs">{r.tempat}</span> },
-    { key: 'jumlahPeserta', header: 'Peserta', render: (r) => <span className="font-medium">{r.jumlahPeserta}</span> },
-    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
-    {
-      key: 'asesor', header: 'Asesor', render: (r) => (
-        <span className="text-xs text-slate-600">
-          {r.asesor && r.asesor.length > 0
-            ? r.asesor.map((a) => a.nama).join(', ')
-            : '-'}
-        </span>
-      ),
-    },
-  ]
-
-  return (
-    <div className="space-y-4">
-      <PageHeader title="Laporan Uji Kompetensi" description="Rekapitulasi seluruh uji kompetensi yang dilaksanakan">
-        <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-9 no-print">
-          <Printer className="w-4 h-4" /> Export PDF
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportExcel} className="h-9 no-print">
-          <FileSpreadsheet className="w-4 h-4" /> Export Excel
-        </Button>
-      </PageHeader>
-
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-        <StatCard title="Total Uji Kompetensi" value={stats.totalUji} icon={ClipboardCheck} color="blue" />
-        <StatCard title="Uji Selesai" value={stats.selesai} icon={Award} color="green" />
-        <StatCard title="Total Peserta Uji" value={stats.totalPeserta} icon={Users} color="amber" />
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="border-slate-200 shadow-sm lg:col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <PieIcon className="w-4 h-4 text-[#0F4C81]" /> Distribusi Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {pieData.length === 0 ? (
-              <p className="text-center text-slate-400 py-8 text-sm">Belum ada data</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={(entry) => `${entry.value}`}>
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="lg:col-span-2">
-          <DataTable
-            data={filtered}
-            total={filtered.length}
-            page={page}
-            pageSize={pageSize}
-            loading={loading}
-            columns={columns}
-            searchPlaceholder="Cari kode / skema / tempat..."
-            searchValue={search}
-            onSearchChange={handleSearch}
-            onPageChange={setPage}
-            filters={filterOptions}
-            filterValues={filters}
-            onFilterChange={handleFilter}
-            onRefresh={fetchData}
-            rowKey={(r) => r.id}
-            emptyMessage="Belum ada data uji kompetensi"
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ===========================================================================
-// SUBTAB 3: LAPORAN PESERTA
+// SUBTAB 2: LAPORAN PESERTA
 // ===========================================================================
 
 function LaporanPesertaView() {
@@ -523,7 +336,7 @@ function LaporanPesertaView() {
     { key: 'nip', header: 'NIP', render: (r) => <span className="font-mono text-xs text-slate-600">{r.nip}</span> },
     { key: 'unitKerja', header: 'Unit Kerja', render: (r) => <span className="text-slate-700 text-xs">{r.unitKerja || '-'}</span> },
     { key: 'instansi', header: 'Instansi', render: (r) => <span className="text-slate-600 text-xs">{r.instansi || '-'}</span> },
-    { key: 'kegiatan', header: 'Pelatihan/Uji Kompetensi', render: (r) => <span className="text-slate-600 text-xs line-clamp-2 max-w-[250px]">{kegiatanMap[r.id] || '-'}</span> },
+    { key: 'kegiatan', header: 'Pelatihan', render: (r) => <span className="text-slate-600 text-xs line-clamp-2 max-w-[250px]">{kegiatanMap[r.id] || '-'}</span> },
     { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
   ]
 
