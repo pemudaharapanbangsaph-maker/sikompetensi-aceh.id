@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import * as path from 'path'
 import crypto from 'crypto'
 
-const UPLOAD_DIR = '/data/uploads/pendaftaran'
+const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'pendaftaran')
 const ALLOWED_TIPE = ['KTP', 'SURAT_TUGAS', 'NPWP', 'REK_BANK']
 const ALLOWED_EXT = ['.pdf']
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
