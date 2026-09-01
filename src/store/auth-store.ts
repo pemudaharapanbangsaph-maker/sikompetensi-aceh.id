@@ -91,17 +91,16 @@ export type ViewKey =
   | 'dashboard'
   | 'analisis' | 'analisis-input' | 'analisis-prioritas' | 'analisis-rekap'
   | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip' | 'kehadiran' | 'angkatan'
-  | 'uji-jadwal' | 'uji-asesor' | 'uji-biodata' | 'uji-penilaian' | 'uji-hasil' | 'uji-rekap'
-  | 'arsip-pelatihan' | 'arsip-uji' | 'arsip-peserta'
+  | 'arsip-pelatihan' | 'arsip-peserta'
   | 'peserta' | 'peserta-riwayat'
   | 'pendaftaran-list' | 'pendaftaran-dokumen'
   | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-rekap'
-  | 'laporan-pelatihan' | 'laporan-uji' | 'laporan-peserta'
+  | 'laporan-pelatihan' | 'laporan-peserta'
   | 'user-data' | 'user-hak-akses' | 'user-log'
   | 'backup' | 'backup-restore' | 'backup-riwayat'
   | 'settings-profil' | 'settings-logo' | 'settings-login' | 'settings-smtp' | 'settings-audit'
   | 'account-profil' | 'account-keamanan'
-  | 'sertifikat-pelatihan' | 'sertifikat-uji'
+  | 'sertifikat-pelatihan'
   | 'notifikasi'
 
 interface NavigationState {
@@ -119,8 +118,8 @@ export function hasPermission(role: string | undefined, permission: string): boo
   if (!role) return false
   if (role === 'SUPER_ADMIN') return true
   const perms: Record<string, string[]> = {
-    ADMIN_BIDANG: ['dashboard', 'analisis', 'pelatihan', 'uji_kompetensi', 'peserta', 'pendaftaran', 'monitoring', 'laporan', 'backup', 'settings'],
-    OPERATOR: ['dashboard', 'analisis', 'pelatihan', 'uji_kompetensi', 'peserta', 'monitoring', 'laporan'],
+    ADMIN_BIDANG: ['dashboard', 'analisis', 'pelatihan', 'peserta', 'pendaftaran', 'monitoring', 'laporan', 'backup', 'settings'],
+    OPERATOR: ['dashboard', 'analisis', 'pelatihan', 'peserta', 'monitoring', 'laporan'],
   }
   const allowed = perms[role] || []
   return allowed.some((p) => permission.startsWith(p))
