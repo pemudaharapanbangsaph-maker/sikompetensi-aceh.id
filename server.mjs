@@ -1,24 +1,78 @@
-import { createServer } from 'http'
-import { parse } from 'url'
+import http from 'node:http'
+import next from 'next'
+import { parse } from 'node:url'
 
-const PORT = parseInt(process.env.PORT || '3000', 10)
+const dev = false
+const hostname = '0.0.0.0'
+const port = Number(process.env.PORT || 3000)
 
-async function start() {
-  const next = (await import('next')).default
-  const app = next({ dev: false })
-  const handle = app.getRequestHandler()
+const app = next({
+  dev,
+  hostname,
+  port,
+})
 
-  await app.prepare()
+const handle = app.getRequestHandler()
 
-  createServer((req, res) => {
-    const parsedUrl = parse(req.url || '/', true)
-    handle(req, res, parsedUrl)
-  }).listen(PORT, () => {
-    console.log(`> Ready on http://localhost:${PORT}`)
+let server
+
+async function startServer() {
+  try {
+    await app.prepare()
+
+    server = http.createServer(async (req, res) => {
+      try {
+        const parsedUrl = parse(req.url || '/', true)
+        await handle(req, res, parsedUrl)
+      } catch (error) {
+        console.error('Request error:', error)
+
+        if (!res.headersSent) {
+          res.statusCode = 500
+          res.end('Internal Server Error')
+        } else {
+          res.destroy()
+        }
+      }
+    })
+
+    server.on('error', (error) => {
+      console.error('Server error:', error)
+
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${port} sedang digunakan`)
+        process.exit(1)
+      }
+    })
+
+    server.listen(port, hostname, () => {
+      console.log(`Next.js server berjalan di port ${port}`)
+    })
+  } catch (error) {
+    console.error('Gagal menjalankan Next.js:', error)
+    process.exit(1)
+  }
+}
+
+function shutdown(signal) {
+  console.log(`${signal} diterima, menghentikan server...`)
+
+  if (!server) {
+    process.exit(0)
+  }
+
+  server.close((error) => {
+    if (error) {
+      console.error('Gagal menghentikan server:', error)
+      process.exit(1)
+    }
+
+    console.log('Server berhasil dihentikan')
+    process.exit(0)
   })
 }
 
-start().catch((err) => {
-  console.error('Server error:', err)
-  process.exit(1)
-})
+process.on('SIGTERM', () => shutdown('SIGTERM'))
+process.on('SIGINT', () => shutdown('SIGINT'))
+
+startServer()
