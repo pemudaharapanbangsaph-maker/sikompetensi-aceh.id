@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, hasPermission, auditLog } from '@/lib/auth'
+import { ensurePendaftaranEmailColumn } from '@/lib/ensure-schema'
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Pastikan kolom email ada di MySQL (no-op jika sudah / baru saja dibuat)
+    await ensurePendaftaranEmailColumn()
+
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -32,6 +36,7 @@ export async function GET(
       unitKerja: data.unitKerja || '',
       instansi: data.instansi || '',
       nomorHP: data.nomorHP || '',
+      email: data.email || '',
       nomorRekening: data.nomorRekening || '',
       npwp: data.npwp || '',
       analisisDiklatItemId: data.analisisDiklatItemId || '',
@@ -71,9 +76,17 @@ export async function PUT(
     const body = await req.json()
     const {
       nama, nip, pangkatGolongan, jenisKelamin, tempatLahir, tanggalLahir,
-      jabatan, unitKerja, instansi, nomorHP, nomorRekening, npwp,
+      jabatan, unitKerja, instansi, nomorHP, email, nomorRekening, npwp,
       status, catatanAdmin,
     } = body
+
+    // Validasi format email jika dikirim (kosong = hapus/null, khusus admin)
+    if (email !== undefined && email !== null) {
+      const em = String(email).trim()
+      if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+        return NextResponse.json({ error: 'Format email tidak valid (contoh: nama@email.com)' }, { status: 400 })
+      }
+    }
 
     // Validasi status jika dikirim
     if (status && !['MENUNGGU', 'DITERIMA', 'DITOLAK'].includes(status)) {
@@ -102,6 +115,7 @@ export async function PUT(
     if (unitKerja !== undefined) updateData.unitKerja = unitKerja?.trim() || null
     if (instansi !== undefined) updateData.instansi = instansi?.trim() || null
     if (nomorHP !== undefined) updateData.nomorHP = nomorHP?.trim() || null
+    if (email !== undefined) updateData.email = email === null ? null : (String(email).trim() || null)
     if (nomorRekening !== undefined) updateData.nomorRekening = nomorRekening?.trim() || null
     if (npwp !== undefined) updateData.npwp = npwp?.trim() || null
     if (status !== undefined) updateData.status = status
@@ -130,6 +144,7 @@ export async function PUT(
       unitKerja: updated.unitKerja || '',
       instansi: updated.instansi || '',
       nomorHP: updated.nomorHP || '',
+      email: updated.email || '',
       nomorRekening: updated.nomorRekening || '',
       npwp: updated.npwp || '',
       analisisDiklatItemId: updated.analisisDiklatItemId || '',
