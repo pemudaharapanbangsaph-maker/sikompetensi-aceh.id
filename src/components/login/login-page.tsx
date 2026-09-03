@@ -708,7 +708,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   const [pelatihanList, setPelatihanList] = useState<PelatihanOption[]>([])
   const [form, setForm] = useState({
     nama: '', nip: '', jenisKelamin: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
-    jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '', pelatihanId: '',
+    jabatan: '', unitKerja: '', instansi: '', nomorHP: '', email: '', nomorRekening: '', npwp: '', pelatihanId: '',
   })
   const [files, setFiles] = useState<Record<string, File>>({})
   const [error, setError] = useState('')
@@ -743,6 +743,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
     unitKerja: 'Unit kerja wajib diisi',
     instansi: 'Instansi wajib diisi',
     nomorHP: 'No. HP wajib diisi',
+    email: 'Email wajib diisi',
     nomorRekening: 'Nomor rekening wajib diisi',
     npwp: 'NPWP wajib diisi',
     pelatihanId: 'Pilih pelatihan yang diikuti',
@@ -762,6 +763,11 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   // No HP format
   if (showErr('nomorHP') && form.nomorHP.trim() && !/^0\d{8,13}$/.test(form.nomorHP.trim())) {
     fieldErrors.nomorHP = 'Format No. HP tidak valid (contoh: 081234567890)'
+  }
+
+  // Email format
+  if (showErr('email') && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    fieldErrors.email = 'Format email tidak valid (contoh: nama@email.com)'
   }
 
   const errorCount = Object.keys(fieldErrors).length
@@ -968,16 +974,17 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* === SECTION 2: Instansi & Kontak === */}
-            <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && (fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.nomorRekening || fieldErrors.npwp) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
+            <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && (fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.email || fieldErrors.nomorRekening || fieldErrors.npwp) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Building2 className="w-4 h-4 text-[#195737]" /> Instansi & Kontak <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
-                {attempted && !(fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.nomorRekening || fieldErrors.npwp) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                {attempted && !(fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.email || fieldErrors.nomorRekening || fieldErrors.npwp) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 {renderField('unitKerja', 'Unit Kerja', { placeholder: 'Nama unit kerja/OPD' })}
                 {renderField('instansi', 'Instansi', { placeholder: 'Nama instansi/pemerintah', colSpan: true })}
                 {renderField('nomorHP', 'No. HP', { placeholder: '08xxxxxxxxxx' })}
                 {renderField('npwp', 'NPWP', { placeholder: 'Nomor NPWP' })}
+                {renderField('email', 'Email', { type: 'email', placeholder: 'nama@email.com', maxLength: 191, colSpan: true })}
                 {renderField('nomorRekening', 'Nomor REK Bank Aceh', { placeholder: 'Nomor rekening Bank Aceh', colSpan: true })}
               </div>
             </div>
