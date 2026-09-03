@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog } from '@/lib/auth'
-import * as fs from 'fs/promises'
-import * as path from 'path'
+import { safeUnlinkStored } from '@/lib/storage'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -69,10 +68,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const existing = await db.sertifikat.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: 'Sertifikat tidak ditemukan' }, { status: 404 })
 
-    // Hapus file dari disk
+    // Hapus file dari disk (dicari di semua lokasi kandidat, best effort)
     if (existing.file) {
-      const filePath = path.join(process.cwd(), existing.file)
-      try { await fs.unlink(filePath) } catch { /* ignore jika file tidak ada */ }
+      await safeUnlinkStored(existing.file, 'sertifikat')
     }
 
     await db.sertifikat.delete({ where: { id } })
