@@ -70,6 +70,7 @@ export async function GET(req: Request) {
       d.unitKerja || '-',
       d.instansi || '-',
       d.nomorHP || '-',
+      d.email || '-',
       d.analisisDiklatItem?.namaPelatihan || '-',
       d._count.dokumen,
       STATUS_LABEL[d.status] || d.status,
@@ -80,7 +81,7 @@ export async function GET(req: Request) {
       startY: 46,
       head: [[
         'No', 'Nama', 'NIP', 'Pangkat/Gol', 'Jabatan',
-        'Unit Kerja', 'Instansi', 'No. HP', 'Pelatihan', 'Dok', 'Status', 'Tgl Daftar',
+        'Unit Kerja', 'Instansi', 'No. HP', 'Email', 'Pelatihan', 'Dok', 'Status', 'Tgl Daftar',
       ]],
       body: rows,
       headStyles: {
