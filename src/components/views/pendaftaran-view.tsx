@@ -34,6 +34,7 @@ interface PendaftaranItem {
   unitKerja: string
   instansi: string
   nomorHP: string
+  email: string
   nomorRekening: string
   npwp: string
   pelatihan: string
@@ -380,7 +381,7 @@ function PendaftaranDokumenView() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [editForm, setEditForm] = useState({
     nama: '', nip: '', pangkatGolongan: '', tempatLahir: '', tanggalLahir: '',
-    jabatan: '', unitKerja: '', instansi: '', nomorHP: '', nomorRekening: '', npwp: '',
+    jabatan: '', unitKerja: '', instansi: '', nomorHP: '', email: '', nomorRekening: '', npwp: '',
   })
 
   // Preview dokumen dialog
@@ -493,6 +494,7 @@ function PendaftaranDokumenView() {
       unitKerja: data.unitKerja,
       instansi: data.instansi,
       nomorHP: data.nomorHP,
+      email: data.email,
       nomorRekening: data.nomorRekening,
       npwp: data.npwp,
     })
@@ -774,6 +776,7 @@ function PendaftaranDokumenView() {
       title: 'Kontak & Rekening',
       fields: [
         { label: 'No. HP', value: data.nomorHP },
+        { label: 'Email', value: data.email },
         { label: 'No. REK Bank Aceh', value: data.nomorRekening },
         { label: 'NPWP', value: data.npwp },
       ],
@@ -969,6 +972,10 @@ function PendaftaranDokumenView() {
                 <div className="space-y-1.5">
                   <Label>NPWP</Label>
                   <Input value={editForm.npwp} onChange={editSet('npwp')} className="h-10" />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={editForm.email} onChange={editSet('email')} placeholder="nama@email.com" className="h-10" />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Nomor REK Bank Aceh</Label>
