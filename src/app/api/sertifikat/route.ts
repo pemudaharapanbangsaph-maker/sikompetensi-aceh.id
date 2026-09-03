@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog } from '@/lib/auth'
 import { parseListParams, buildWhere } from '@/lib/api-helpers'
+import { getUploadDir } from '@/lib/storage'
 import * as fs from 'fs/promises'
 import * as path from 'path'
 import crypto from 'crypto'
@@ -9,10 +10,6 @@ import crypto from 'crypto'
 const ALLOWED_SORT = ['namaPeserta', 'nomorSertifikat', 'jenis', 'tanggalTerbit', 'createdAt']
 const ALLOWED_EXT = ['.pdf', '.jpg', '.jpeg', '.png']
 const MAX_SIZE = 10 * 1024 * 1024 // 10MB
-
-async function ensureUploadDir() {
-  await fs.mkdir(path.join(process.cwd(), 'uploads', 'sertifikat'), { recursive: true })
-}
 
 export async function GET(req: Request) {
   try {
@@ -65,7 +62,9 @@ export async function POST(req: Request) {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    await ensureUploadDir()
+    // Direktori upload sekarang dipilih oleh resolver yang aman untuk redeploy
+    // (UPLOAD_DIR jika diset -> direktori server.mjs -> process.cwd())
+    const uploadDir = await getUploadDir('sertifikat')
     const fd = await req.formData()
     const file = fd.get('file') as File | null
 
@@ -96,11 +95,12 @@ export async function POST(req: Request) {
     }
 
     const uniqueName = `${crypto.randomUUID()}${ext}`
-    const filePath = path.join(process.cwd(), 'uploads', 'sertifikat', uniqueName)
+    const filePath = path.join(uploadDir, uniqueName)
     const bytes = Buffer.from(await file.arrayBuffer())
     await fs.writeFile(filePath, bytes)
 
     const ukuranKB = (file.size / 1024).toFixed(1)
+    // Format path relatif di database TETAP SAMA (tidak ada perubahan skema/data)
     const storedPath = `uploads/sertifikat/${uniqueName}`
 
     const item = await db.sertifikat.create({
