@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import * as fs from 'fs/promises'
 import * as path from 'path'
-import { resolveStoredFile } from '@/lib/storage'
+import { resolveStoredFileDurable } from '@/lib/storage'
 
 const MIME_MAP: Record<string, string> = {
   '.pdf': 'application/pdf',
@@ -27,9 +27,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!item) return NextResponse.json({ error: 'Sertifikat tidak ditemukan' }, { status: 404 })
     if (!item.file) return NextResponse.json({ error: 'File tidak tersedia' }, { status: 404 })
 
-    // Cari file di semua lokasi kandidat (UPLOAD_DIR, direktori server.mjs, process.cwd())
-    // — sebelumnya hanya process.cwd() sehingga gagal (500) setelah redeploy di Hostinger.
-    const { path: filePath, tried } = resolveStoredFile(item.file, 'sertifikat')
+    // Cari file di semua lokasi kandidat (UPLOAD_DIR, direktori server.mjs, process.cwd(),
+    // dan folder versi deploy LAMA milik Hostinger) — file yang ditemukan di lokasi lama
+    // otomatis disalin ke UPLOAD_DIR agar selamat dari redeploy berikutnya.
+    const { path: filePath, tried } = await resolveStoredFileDurable(item.file, 'sertifikat')
 
     if (!filePath) {
       console.error('sertifikat file tidak ditemukan. Lokasi yang dicoba:', tried)
