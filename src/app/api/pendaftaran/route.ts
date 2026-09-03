@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, hasPermission, auditLog } from '@/lib/auth'
+import { ensurePendaftaranEmailColumn } from '@/lib/ensure-schema'
 
 export async function GET(req: Request) {
   try {
+    // Pastikan kolom email ada di MySQL (no-op jika sudah / baru saja dibuat)
+    await ensurePendaftaranEmailColumn()
+
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!hasPermission(session.user.role, 'peserta:view')) {
@@ -25,6 +29,7 @@ export async function GET(req: Request) {
         { nip: { contains: search } },
         { instansi: { contains: search } },
         { jabatan: { contains: search } },
+        { email: { contains: search } },
       ]
     }
     if (status) where.status = status
@@ -54,6 +59,7 @@ export async function GET(req: Request) {
       unitKerja: d.unitKerja || '',
       instansi: d.instansi || '',
       nomorHP: d.nomorHP || '',
+      email: d.email || '',
       nomorRekening: d.nomorRekening || '',
       npwp: d.npwp || '',
       pelatihan: d.analisisDiklatItem?.namaPelatihan || '',
