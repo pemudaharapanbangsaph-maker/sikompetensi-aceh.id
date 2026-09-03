@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { ensurePendaftaranEmailColumn } from '@/lib/ensure-schema'
 import { generateUploadToken } from './upload-dokumen/route'
 
 export async function POST(req: Request) {
   try {
+    // Pastikan kolom email ada di MySQL (no-op jika sudah / baru saja dibuat)
+    await ensurePendaftaranEmailColumn()
+
     const body = await req.json()
-    const { nama, nip, pangkatGolongan, jenisKelamin, tempatLahir, tanggalLahir, jabatan, unitKerja, instansi, nomorHP, nomorRekening, npwp, pelatihanId } = body
+    const { nama, nip, pangkatGolongan, jenisKelamin, tempatLahir, tanggalLahir, jabatan, unitKerja, instansi, nomorHP, email, nomorRekening, npwp, pelatihanId } = body
 
     // Validasi wajib
     if (!nama?.trim()) return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
     if (!nip?.trim()) return NextResponse.json({ error: 'NIP wajib diisi' }, { status: 400 })
     if (!/^[\d]{18}$/.test(nip.trim())) return NextResponse.json({ error: 'Format NIP tidak valid (18 digit)' }, { status: 400 })
+    if (!email?.trim()) return NextResponse.json({ error: 'Email wajib diisi' }, { status: 400 })
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return NextResponse.json({ error: 'Format email tidak valid (contoh: nama@email.com)' }, { status: 400 })
 
     // Cek NIP sudah terdaftar
     const existing = await db.pendaftaranPortal.findUnique({ where: { nip: nip.trim() } })
@@ -42,6 +48,7 @@ export async function POST(req: Request) {
         unitKerja: unitKerja?.trim() || null,
         instansi: instansi?.trim() || null,
         nomorHP: nomorHP?.trim() || null,
+        email: email.trim(),
         nomorRekening: nomorRekening?.trim() || null,
         npwp: npwp?.trim() || null,
         analisisDiklatItemId: pelatihanId || null,
@@ -67,6 +74,9 @@ export async function POST(req: Request) {
 // Cek status pendaftaran berdasarkan NIP
 export async function GET(req: Request) {
   try {
+    // Pastikan kolom email ada di MySQL (no-op jika sudah / baru saja dibuat)
+    await ensurePendaftaranEmailColumn()
+
     const { searchParams } = new URL(req.url)
     const nip = searchParams.get('nip')?.trim()
     if (!nip) return NextResponse.json({ error: 'NIP wajib diisi' }, { status: 400 })
