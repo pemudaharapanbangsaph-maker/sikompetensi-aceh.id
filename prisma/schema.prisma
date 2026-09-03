@@ -169,6 +169,7 @@ model PendaftaranPortal {
   unitKerja           String?  @db.VarChar(255)
   instansi            String?  @db.VarChar(255)
   nomorHP             String?  @db.VarChar(20)
+  email               String?  @db.VarChar(191) // wajib diisi pada form portal (divalidasi di API)
   nomorRekening       String?  @db.VarChar(50)
   npwp                String?  @db.VarChar(50)
   pelatihanId         String?
