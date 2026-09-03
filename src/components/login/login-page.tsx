@@ -324,8 +324,13 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
           <button
             onClick={onEnter}
             className="w-full flex items-center justify-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
-          > 
+          >
+            <LogIn className="w-5 h-5" />
+            Masuk Portal
+          </button>
+        </div>
       </div>
+    </motion.div>
   )
 }
 
