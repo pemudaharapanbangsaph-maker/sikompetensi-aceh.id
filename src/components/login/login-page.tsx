@@ -187,10 +187,10 @@ export function LoginPage() {
               </div>
               <p className="text-amber-300/90 text-[10px] font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
               <h2 className="text-white text-lg sm:text-xl font-bold mt-3 leading-relaxed max-w-sm mx-auto">
-                Membangun ASN Aceh yang profesional dan berintegritas
+                Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
               </h2>
               <p className="text-white/50 text-xs mt-3 max-w-xs mx-auto leading-relaxed">
-                Satu pintu untuk mengelola analisis kebutuhan diklat, pelatihan, dan sertifikasi kompetensi teknis aparatur sipil negara di Aceh.
+                Satu pintu untuk pengembangan kompetensi, pelatihan, dan sertifikasi ASN Pemerintah Aceh.
               </p>
             </div>
             <AnimatePresence>
@@ -280,15 +280,14 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
           <div className="w-4 h-px bg-[#195737]/40" />
         </div>
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
-          Membangun ASN Aceh{' '}
-          <span className="text-slate-900">yang kompeten &</span>
+          Mewujudkan ASN Aceh{' '}
+          <span className="text-slate-900">yang Kompeten, Profesional &</span>
           <br />
-          <span className="text-[#195737]">berintegritas.</span>
+          <span className="text-[#195737]">Berintegritas.</span>
         </h1>
         <p className="text-slate-500 text-sm sm:text-base mt-6 leading-relaxed max-w-lg">
-          Sikompetensi Aceh menyatukan pembelajaran formal, sosial, dan berbasis pengalaman
-          dalam satu ekosistem. Satu akun untuk seluruh aplikasi pengembangan kompetensi
-          ASN Pemerintah Aceh.
+          Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
+          berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
         </p>
         <div className="flex flex-wrap gap-3 mt-10">
           <button
