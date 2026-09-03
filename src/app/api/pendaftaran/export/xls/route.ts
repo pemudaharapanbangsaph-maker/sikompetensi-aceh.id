@@ -38,6 +38,7 @@ export async function GET(req: Request) {
       'Unit Kerja': d.unitKerja || '',
       'Instansi': d.instansi || '',
       'No. HP': d.nomorHP || '',
+      'Email': d.email || '',
       'No. REK Bank Aceh': d.nomorRekening || '',
       'NPWP': d.npwp || '',
       'Pelatihan': d.analisisDiklatItem?.namaPelatihan || '',
@@ -56,7 +57,7 @@ export async function GET(req: Request) {
     // Column widths
     ws['!cols'] = [
       { wch: 5 }, { wch: 25 }, { wch: 20 }, { wch: 14 }, { wch: 16 }, { wch: 14 },
-      { wch: 24 }, { wch: 28 }, { wch: 28 }, { wch: 16 }, { wch: 22 }, { wch: 22 },
+      { wch: 24 }, { wch: 28 }, { wch: 28 }, { wch: 16 }, { wch: 28 }, { wch: 22 }, { wch: 22 },
       { wch: 35 }, { wch: 14 }, { wch: 16 }, { wch: 6 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 },
     ]
 
