@@ -205,6 +205,7 @@ export async function GET(
       ['Unit Kerja', p.unitKerja || '-'],
       ['Instansi', p.instansi || '-'],
       ['No. HP', p.nomorHP || '-'],
+      ['Email', p.email || '-'],
       ['NPWP', p.npwp || '-'],
       ['No. Rekening', p.nomorRekening || '-'],
     ]
