@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { createReadStream, statSync, unlinkSync } from 'fs'
 import { resolveBackupFile } from '@/lib/backup-files'
-import { ensureBackupHistoryTable } from '@/lib/ensure-schema'
+// Repo berbasis mysql2 — bebas Prisma (baca catatan src/lib/backup-repo.ts)
+import { getBackupHistoryById, deleteBackupHistory } from '@/lib/backup-repo'
 
 // GET = Download file backup (.sql lama atau .zip baru)
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -13,10 +13,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!hasPermission(session.user.role, 'backup:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
-    await ensureBackupHistoryTable()
     const { id } = await params
-    const item = await db.backupHistory.findUnique({ where: { id } })
+    const item = await getBackupHistoryById(id)
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
 
     // Cari di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups folder
@@ -54,16 +52,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (!hasPermission(session.user.role, 'backup:create')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
-    await ensureBackupHistoryTable()
     const { id } = await params
-    const item = await db.backupHistory.findUnique({ where: { id } })
+    const item = await getBackupHistoryById(id)
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
     const { path: filePath } = resolveBackupFile(item.namaFile)
     if (filePath) {
       try { unlinkSync(filePath) } catch { /* abaikan bila sudah tidak ada */ }
     }
-    await db.backupHistory.delete({ where: { id } })
+    await deleteBackupHistory(id)
     await auditLog(session, 'DELETE', 'BACKUP', `Hapus backup: ${item.namaFile}`, req)
     return NextResponse.json({ success: true })
   } catch (e) {
