@@ -101,7 +101,7 @@ export function getStorageRoots(): string[] {
  * (versi terbaru lebih dulu). Hanya dipakai ketika kandidat utama tidak menemukan
  * file — menyelamatkan file yang terupload ke folder versi sebelumnya.
  */
-export function versionSiblingRoots(): string[] {
+function versionSiblingRoots(): string[] {
   const out: string[] = []
   const anchors: (string | null)[] = [getServerDir(), process.cwd()]
   for (const anchor of anchors) {
@@ -255,36 +255,6 @@ export function getWriteRoot(): string {
   const serverDir = getServerDir()
   if (serverDir) return serverDir
   return process.cwd()
-}
-
-/**
- * Direktori ROOT APLIKASI (folder yang berisi package.json + prisma/schema.prisma).
- * Dipakai untuk menemukan node_modules/prisma (self-heal Prisma client) —
- * aman terhadap process.cwd() yang aneh di shared hosting.
- */
-export function getAppRoot(): string | null {
-  const seen = new Set<string>()
-  const candidates: (string | null)[] = [getServerDir(), process.cwd()]
-  for (const c of candidates) {
-    let dir = c
-    // naik maksimal 4 level (cwd bisa berada di dalam subfolder aplikasi)
-    for (let i = 0; dir && i < 5; i++) {
-      const norm = path.resolve(dir)
-      if (seen.has(norm)) break
-      seen.add(norm)
-      try {
-        if (fs.existsSync(path.join(norm, 'package.json')) && fs.existsSync(path.join(norm, 'prisma', 'schema.prisma'))) {
-          return norm
-        }
-      } catch {
-        /* lanjut kandidat berikutnya */
-      }
-      const parent = path.dirname(norm)
-      if (parent === norm) break
-      dir = parent
-    }
-  }
-  return null
 }
 
 /**
