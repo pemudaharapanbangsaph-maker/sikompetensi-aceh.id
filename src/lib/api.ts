@@ -170,7 +170,7 @@ export const api = {
     create: () => request<BackupHistory>('/backup', { method: 'POST' }),
     remove: (id: string) => request<void>(`/backup/${id}`, { method: 'DELETE' }),
     download: (id: string) => { window.location.href = `${BASE}/backup/${id}` },
-    restore: (id: string) => request<{ success: boolean; message: string }>(`/backup/${id}/restore`, { method: 'POST' }),
+    restore: (id: string) => request<{ success: boolean; message: string }>(`/backup/${id}`, { method: 'POST' }),
     uploadRestore: (file: File) => {
       const fd = new FormData()
       fd.append('file', file)
