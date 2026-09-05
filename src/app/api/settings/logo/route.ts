@@ -15,7 +15,7 @@ async function ensureColumnSize() {
   if (_migrated) return
   try {
     await db.$executeRawUnsafe(
-      'ALTER TABLE Pengaturan MODIFY COLUMN value MEDIUMTEXT'
+     
     )
     console.log('[Logo] Kolom Pengaturan.value di-upgrade ke MEDIUMTEXT')
   } catch {
