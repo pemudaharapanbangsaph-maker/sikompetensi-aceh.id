@@ -174,13 +174,14 @@ export function Topbar() {
   }, [])
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-4 gap-3 shadow-sm">
+    <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 shadow-sm">
       {/* Mobile menu */}
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden"
+        className="lg:hidden h-10 w-10 -ml-2"
         onClick={() => setMobileSidebarOpen(true)}
+        aria-label="Buka menu"
       >
         <Menu className="w-5 h-5" />
       </Button>
@@ -191,13 +192,14 @@ export function Topbar() {
         size="icon"
         className="hidden lg:flex"
         onClick={toggleSidebar}
+        aria-label="Kembangkan/ciutkan sidebar"
       >
         {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
       </Button>
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-base lg:text-lg font-bold text-slate-900 truncate">{title.title}</h1>
+        <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 truncate">{title.title}</h1>
         <p className="text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
       </div>
 
@@ -283,7 +285,7 @@ export function Topbar() {
       {/* Notifications */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="ghost" size="icon" className="relative h-10 w-10 sm:h-9 sm:w-9" aria-label="Notifikasi">
             <Bell className="w-5 h-5 text-slate-600" />
           </Button>
         </DropdownMenuTrigger>
@@ -300,7 +302,7 @@ export function Topbar() {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <button className="flex items-center gap-2 p-1.5 pr-2.5 sm:px-2 sm:py-1.5 rounded-lg hover:bg-slate-100 active:bg-slate-100 transition-colors min-h-[40px]" aria-label="Menu pengguna">
             <Avatar className="w-8 h-8 border border-slate-200">
               <AvatarFallback className="bg-[#0F4C81] text-white text-xs font-semibold">
                 {initials}
