@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { api } from '@/lib/api'
 import type { BackupHistory, User } from '@/lib/types'
-import { useNavStore } from '@/store/auth-store'
+import { useNavStore, useAuthStore, hasPermission } from '@/store/auth-store'
 import { DataTable, StatCard, PageHeader, type Column } from '@/components/shared/data-table'
 import { StatusBadge, formatDateTime } from '@/components/shared/ui-helpers'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -43,6 +43,8 @@ function BackupMainView() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const role = useAuthStore((s) => s.user?.role)
+  const canViewUsers = hasPermission(role, 'users:view')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -54,16 +56,20 @@ function BackupMainView() {
   useEffect(() => { fetchData() }, [fetchData])
 
   useEffect(() => {
+    // Daftar user hanya bisa diakses SUPER_ADMIN (users:view) — tanpa ini
+    // browser mencatat error 403 di console tiap kali halaman backup dibuka
+    // oleh ADMIN_BIDANG (nama "Dibuat Oleh" memang kosong untuk role itu).
+    if (!canViewUsers) return
     let cancelled = false
     api.users.list({ page: 1, pageSize: 1000 }).then(r => { if (!cancelled) setUsers(r.data) }).catch(() => {})
     return () => { cancelled = true }
-  }, [])
+  }, [canViewUsers])
 
   const handleCreate = async () => {
     setCreating(true)
     try {
       await api.backup.create()
-      toast({ title: 'Berhasil', description: 'Backup database berhasil dibuat (file .db asli)' })
+      toast({ title: 'Berhasil', description: 'Backup lengkap berhasil dibuat (.zip: database + file upload)' })
       fetchData()
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) }
     finally { setCreating(false) }
@@ -337,6 +343,8 @@ function BackupRiwayatView() {
   const [loading, setLoading] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState<EnrichedBackup | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const role = useAuthStore((s) => s.user?.role)
+  const canViewUsers = hasPermission(role, 'users:view')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -348,10 +356,14 @@ function BackupRiwayatView() {
   useEffect(() => { fetchData() }, [fetchData])
 
   useEffect(() => {
+    // Daftar user hanya bisa diakses SUPER_ADMIN (users:view) — tanpa ini
+    // browser mencatat error 403 di console tiap kali halaman dibuka
+    // oleh ADMIN_BIDANG (nama "Dibuat Oleh" memang kosong untuk role itu).
+    if (!canViewUsers) return
     let cancelled = false
     api.users.list({ page: 1, pageSize: 1000 }).then(r => { if (!cancelled) setUsers(r.data) }).catch(() => {})
     return () => { cancelled = true }
-  }, [])
+  }, [canViewUsers])
 
   const handleDelete = async () => {
     if (!deleteTarget) return
