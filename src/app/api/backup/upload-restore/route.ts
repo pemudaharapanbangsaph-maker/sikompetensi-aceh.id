@@ -6,6 +6,7 @@ import path from 'path'
 import { mkdirSync } from 'fs'
 import { execSync } from 'child_process'
 import { getBackupDir, applyBackupZip } from '@/lib/backup-files'
+import { ensureBackupHistoryTable } from '@/lib/ensure-schema'
 
 function parseDbUrl(): { host: string; port: string; user: string; password: string; database: string } {
   const url = process.env.DATABASE_URL || ''
@@ -14,13 +15,20 @@ function parseDbUrl(): { host: string; port: string; user: string; password: str
   return { host: match[3], port: match[4], user: match[1], password: match[2], database: match[5].split('?')[0] }
 }
 
+// Import dump besar butuh waktu & output buffer lebih besar dari default Node
+// (default: maxBuffer 1MB, timeout 120s — import besar akan TERPUTUS di tengah
+// jalan dan database bisa tertinggal setengah-restore). 10 menit + 256MB aman.
+const IMPORT_OPTS = { timeout: 600000, encoding: 'utf-8', maxBuffer: 256 * 1024 * 1024 } as const
+
 export async function POST(req: Request) {
   try {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!hasPermission(session.user.role, 'backup:create')) {
+    if (!hasPermission(session.user.role, 'backup:restore')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
+    await ensureBackupHistoryTable()
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 })
@@ -47,7 +55,19 @@ export async function POST(req: Request) {
         }
         const dbConfig = parseDbUrl()
         const mysqlCmd = `mysql -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} 2>&1`
-        execSync(mysqlCmd, { input: sql, timeout: 120000, encoding: 'utf-8' })
+        try {
+          execSync(mysqlCmd, { ...IMPORT_OPTS, input: sql })
+        } catch (e: any) {
+          return NextResponse.json(
+            {
+              error:
+                'Gagal restore: ' + (e?.message || 'unknown') +
+                '. PERHATIAN: bila import terputus di tengah jalan, sebagian tabel mungkin belum lengkap — ' +
+                'ulangi restore (atau gunakan backup lain) sampai berhasil.',
+            },
+            { status: 500 }
+          )
+        }
         restoredFileCount = restoredFiles.length
 
         await auditLog(session, 'RESTORE', 'BACKUP', `Restore database + ${restoredFileCount} file upload dari upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`, req)
@@ -72,7 +92,19 @@ export async function POST(req: Request) {
       const dbConfig = parseDbUrl()
       const sqlContent = buffer.toString('utf-8')
       const mysqlCmd = `mysql -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} 2>&1`
-      execSync(mysqlCmd, { input: sqlContent, timeout: 120000, encoding: 'utf-8' })
+      try {
+        execSync(mysqlCmd, { ...IMPORT_OPTS, input: sqlContent })
+      } catch (e: any) {
+        return NextResponse.json(
+          {
+            error:
+              'Gagal restore: ' + (e?.message || 'unknown') +
+              '. PERHATIAN: bila import terputus di tengah jalan, sebagian tabel mungkin belum lengkap — ' +
+              'ulangi restore (atau gunakan backup lain) sampai berhasil.',
+          },
+          { status: 500 }
+        )
+      }
 
       await auditLog(session, 'RESTORE', 'BACKUP', `Restore database dari upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`, req)
       try { await unlink(tmpPath) } catch { /* ignore */ }
