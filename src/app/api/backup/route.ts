@@ -5,6 +5,7 @@ import { writeFileSync, statSync } from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import { buildBackupZip, ensureBackupDir, resolveBackupFile } from '@/lib/backup-files'
+import { ensureBackupHistoryTable } from '@/lib/ensure-schema'
 
 function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -20,6 +21,11 @@ function parseDbUrl(): { host: string; port: string; user: string; password: str
   return { host: match[3], port: match[4], user: match[1], password: match[2], database: match[5].split('?')[0] }
 }
 
+// execSync bawaan Node membatasi output child process (maxBuffer) hanya 1MB —
+// dump database yang lebih besar membuat execSync melempar "maxBuffer exceeded"
+// dan backup gagal. 256MB aman untuk dump besar.
+const EXEC_OPTS = { timeout: 120000, encoding: 'utf-8', maxBuffer: 256 * 1024 * 1024 } as const
+
 export async function GET() {
   try {
     const session = await getSession()
@@ -27,17 +33,32 @@ export async function GET() {
     if (!hasPermission(session.user.role, 'backup:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    const data = await db.backupHistory.findMany({ orderBy: { createdAt: 'desc' } })
-    const enriched = data.map(b => ({
-      ...b,
-      // cek file backup di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups
-      // lama di folder aplikasi / versi deploy sebelumnya)
-      fileExists: resolveBackupFile(b.namaFile).path !== null,
-    }))
+    let data
+    try {
+      data = await db.backupHistory.findMany({ orderBy: { createdAt: 'desc' } })
+    } catch (listErr) {
+      // Tabel/kolom BackupHistory bermasalah (mis. efek restore lama) →
+      // pulihkan otomatis lalu ulangi sekali.
+      console.error('backup list error (percobaan 1):', listErr)
+      await ensureBackupHistoryTable()
+      data = await db.backupHistory.findMany({ orderBy: { createdAt: 'desc' } })
+    }
+    const enriched = data.map(b => {
+      let fileExists = false
+      try {
+        // cek file backup di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups
+        // lama di folder aplikasi / versi deploy sebelumnya)
+        fileExists = resolveBackupFile(b.namaFile).path !== null
+      } catch {
+        fileExists = false // jangan sampai satu baris buruk mematikan seluruh daftar
+      }
+      return { ...b, fileExists }
+    })
     return NextResponse.json(enriched)
   } catch (e) {
     console.error('backup list error:', e)
-    return NextResponse.json({ error: 'Gagal memuat data backup' }, { status: 500 })
+    // sertakan alasan aslinya agar mudah didiagnosis dari toast UI
+    return NextResponse.json({ error: 'Gagal memuat data backup: ' + (e as Error).message }, { status: 500 })
   }
 }
 
@@ -48,6 +69,8 @@ export async function POST(req: Request) {
     if (!hasPermission(session.user.role, 'backup:create')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
+    await ensureBackupHistoryTable()
     const backupDir = await ensureBackupDir()
 
     const dbConfig = parseDbUrl()
@@ -61,12 +84,12 @@ export async function POST(req: Request) {
     let sqlDump = ''
     const mysqldumpCmd = `mysqldump -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} --single-transaction --routines --triggers 2>/dev/null`
     try {
-      sqlDump = execSync(mysqldumpCmd, { timeout: 120000, encoding: 'utf-8' })
+      sqlDump = execSync(mysqldumpCmd, EXEC_OPTS)
     } catch {
       // Fallback: coba tanpa routines/triggers
       try {
         const fallbackCmd = `mysqldump -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} --single-transaction 2>/dev/null`
-        sqlDump = execSync(fallbackCmd, { timeout: 120000, encoding: 'utf-8' })
+        sqlDump = execSync(fallbackCmd, EXEC_OPTS)
       } catch (e2: any) {
         return NextResponse.json({ error: 'Gagal backup: mysqldump tidak tersedia. Error: ' + (e2.message || 'unknown') }, { status: 500 })
       }
@@ -91,6 +114,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ ...item, fileCount })
   } catch (e) {
     console.error('backup create error:', e)
-    return NextResponse.json({ error: 'Gagal membuat backup' }, { status: 500 })
+    return NextResponse.json({ error: 'Gagal membuat backup: ' + (e as Error).message }, { status: 500 })
   }
 }
