@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 
-// GET: return all Pengaturan records as { [key]: value }
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// GET: mengambil semua pengaturan kecuali data logo
 export async function GET() {
   try {
     const session = await getSession()
@@ -12,22 +13,26 @@ export async function GET() {
     if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401 },
       )
     }
 
     if (!hasPermission(session.user.role, 'settings:view')) {
       return NextResponse.json(
         { error: 'Forbidden' },
-        { status: 403 }
+        { status: 403 },
       )
     }
 
     const rows = await db.pengaturan.findMany({
-      // Sesuaikan nama key dengan database Anda
       where: {
         key: {
-          notIn: ['logo', 'logo_base64', 'logo_data'],
+          notIn: [
+            'logo',
+            'logo_base64',
+            'logo_data',
+            'logo_content_type',
+          ],
         },
       },
       select: {
@@ -52,37 +57,78 @@ export async function GET() {
 
     return NextResponse.json(
       { error: 'Gagal memuat pengaturan' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
 
-// PUT: body is { key: value } object; upsert each. Add audit log.
+// PUT: menyimpan pengaturan biasa
 export async function PUT(req: Request) {
   try {
     const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 },
+      )
+    }
+
     if (!hasPermission(session.user.role, 'settings:update')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 },
+      )
     }
+
     const body = await req.json()
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return NextResponse.json({ error: 'Body harus berupa objek key-value' }, { status: 400 })
+
+    if (
+      !body ||
+      typeof body !== 'object' ||
+      Array.isArray(body)
+    ) {
+      return NextResponse.json(
+        { error: 'Body harus berupa objek key-value' },
+        { status: 400 },
+      )
     }
+
     const keys = Object.keys(body)
+
     await Promise.all(
       keys.map((key) =>
         db.pengaturan.upsert({
           where: { key },
-          update: { value: String(body[key]) },
-          create: { key, value: String(body[key]) },
-        })
-      )
+          update: {
+            value: String(body[key]),
+          },
+          create: {
+            key,
+            value: String(body[key]),
+          },
+        }),
+      ),
     )
-    await auditLog(session, 'UPDATE', 'PENGATURAN', `Ubah pengaturan: ${keys.join(', ')}`, req)
-    return NextResponse.json({ success: true, updated: keys.length })
-  } catch (e) {
-    console.error('settings update error:', e)
-    return NextResponse.json({ error: 'Gagal menyimpan pengaturan' }, { status: 500 })
+
+    await auditLog(
+      session,
+      'UPDATE',
+      'PENGATURAN',
+      `Ubah pengaturan: ${keys.join(', ')}`,
+      req,
+    )
+
+    return NextResponse.json({
+      success: true,
+      updated: keys.length,
+    })
+  } catch (error) {
+    console.error('settings update error:', error)
+
+    return NextResponse.json(
+      { error: 'Gagal menyimpan pengaturan' },
+      { status: 500 },
+    )
   }
 }
