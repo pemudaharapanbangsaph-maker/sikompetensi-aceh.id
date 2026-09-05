@@ -169,7 +169,7 @@ export function LoginPage() {
         </AnimatePresence>
       ) : (
         /* ===== SPLIT SCREEN: LANDING / LOGIN ===== */
-        <div className="flex-1 flex flex-col lg:flex-row">
+        <div className="flex-1 min-w-0 flex flex-col lg:flex-row">
           {/* ===== LEFT PANEL (Green Branding) ===== */}
           <div className="login-bg relative z-10 overflow-hidden lg:w-[45%] flex flex-col">
             <div className="login-bg-pattern absolute inset-0 z-0" />
