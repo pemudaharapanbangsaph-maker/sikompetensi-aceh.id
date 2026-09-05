@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { writeFileSync, statSync } from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
 import { buildBackupZip, ensureBackupDir, resolveBackupFile } from '@/lib/backup-files'
-import { ensureBackupHistoryTable } from '@/lib/ensure-schema'
+// Repo berbasis mysql2 — TIDAK bergantung pada Prisma Client (lihat catatan di
+// src/lib/backup-repo.ts: "Cannot read properties of undefined (reading 'findMany')"
+// terjadi ketika model tidak termuat di client hasil prisma generate).
+import { listBackupHistory, createBackupHistory } from '@/lib/backup-repo'
 
 function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -33,16 +35,9 @@ export async function GET() {
     if (!hasPermission(session.user.role, 'backup:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    let data
-    try {
-      data = await db.backupHistory.findMany({ orderBy: { createdAt: 'desc' } })
-    } catch (listErr) {
-      // Tabel/kolom BackupHistory bermasalah (mis. efek restore lama) →
-      // pulihkan otomatis lalu ulangi sekali.
-      console.error('backup list error (percobaan 1):', listErr)
-      await ensureBackupHistoryTable()
-      data = await db.backupHistory.findMany({ orderBy: { createdAt: 'desc' } })
-    }
+    // mysql2 langsung ke DATABASE_URL — bebas Prisma; tabel dibuat/dilengkapi
+    // otomatis bila belum ada (idempotent, lihat backup-repo.ts).
+    const data = await listBackupHistory()
     const enriched = data.map(b => {
       let fileExists = false
       try {
@@ -69,8 +64,6 @@ export async function POST(req: Request) {
     if (!hasPermission(session.user.role, 'backup:create')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
-    await ensureBackupHistoryTable()
     const backupDir = await ensureBackupDir()
 
     const dbConfig = parseDbUrl()
@@ -107,8 +100,8 @@ export async function POST(req: Request) {
     const stats = statSync(backupPath)
     const ukuran = formatFileSize(stats.size)
     const catatan = `Termasuk ${fileCount} file upload (sertifikat/surat tugas/dokumen pendaftar)` + (missing.length ? `. PERHATIAN: ${missing.length} file tercatat di DB tapi tidak ditemukan di server.` : '')
-    const item = await db.backupHistory.create({
-      data: { namaFile, ukuran, tipe: 'MANUAL', status: 'BERHASIL', dibuatOleh: session.user.id, catatan },
+    const item = await createBackupHistory({
+      namaFile, ukuran, tipe: 'MANUAL', status: 'BERHASIL', dibuatOleh: session.user.id, catatan,
     })
     await auditLog(session, 'BACKUP', 'BACKUP', `Backup database + ${fileCount} file upload: ${namaFile} (${ukuran})`, req)
     return NextResponse.json({ ...item, fileCount })
