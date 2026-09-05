@@ -260,7 +260,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 lg:flex-1 relative flex items-center px-6 sm:px-12 lg:px-16 py-12 bg-[#FFFEF9] overflow-hidden"
+      className="flex-1 min-w-0 relative flex items-center px-5 sm:px-12 lg:px-16 py-8 sm:py-12 bg-[#FFFEF9] overflow-hidden"
     >
       <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2/3 h-2/3 opacity-[0.04] pointer-events-none hidden lg:block">
         <svg viewBox="0 0 400 500" fill="none" className="w-full h-full text-amber-800">
@@ -282,14 +282,14 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
           Mewujudkan ASN Aceh{' '}
           <span className="text-slate-900">yang Kompeten, Profesional &</span>
-          <br />
+          <br className="hidden sm:block" />
           <span className="text-[#195737]">Berintegritas.</span>
         </h1>
         <p className="text-slate-500 text-sm sm:text-base mt-6 leading-relaxed max-w-lg">
           Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
           berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
         </p>
-        <div className="flex flex-wrap gap-3 mt-10">
+        <div className="flex flex-col gap-3 mt-8 sm:mt-10">
           <button
             onClick={onEnter}
             className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
