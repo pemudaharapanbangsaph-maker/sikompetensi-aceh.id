@@ -33,9 +33,11 @@
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
-import { db } from '@/lib/db'
 import { resolveStoredFile, getStorageRoots, getWriteRoot, versionSiblingRoots } from '@/lib/storage'
 import { createZip, readZip, type ZipEntry } from '@/lib/backup-zip'
+// Daftar file via mysql2 — bebas Prisma (dulu db.sertifikat.findMany dll.;
+// lihat catatan src/lib/backup-repo.ts mengapa kini tidak memakai Prisma).
+import { listSertifikatFilePaths, listSuratTugasFilePaths, listDokumenPendaftaranPaths } from '@/lib/backup-repo'
 
 export const SQL_ENTRY_NAME = 'database.sql'
 const MANIFEST_ENTRY_NAME = 'manifest.json'
@@ -125,21 +127,21 @@ async function collectUploadEntries(): Promise<{ entries: ZipEntry[]; missing: s
   }
 
   // --- Sertifikat ---
-  const sertifikatList = (await db.sertifikat.findMany({ select: { file: true } })) as { file: string | null }[]
+  const sertifikatList = (await listSertifikatFilePaths()).map((file) => ({ file }))
   for (const s of sertifikatList) {
     const rel = normalizeToRelative(s.file)
     if (rel) await pushIfFound(s.file, `${FILES_PREFIX}${rel}`)
   }
 
   // --- Surat Tugas ---
-  const suratList = (await db.suratTugas.findMany({ select: { file: true } })) as { file: string | null }[]
+  const suratList = (await listSuratTugasFilePaths()).map((file) => ({ file }))
   for (const s of suratList) {
     const rel = normalizeToRelative(s.file)
     if (rel) await pushIfFound(s.file, `${FILES_PREFIX}${rel}`)
   }
 
   // --- Dokumen pendaftar portal (path absolut di bawah UPLOAD_DIR) ---
-  const dokList = (await db.dokumenPendaftaran.findMany({ select: { filePath: true } })) as { filePath: string }[]
+  const dokList = (await listDokumenPendaftaranPaths()).map((filePath) => ({ filePath }))
   for (const d of dokList) {
     if (!d.filePath) continue
     const rel = normalizeDokumenPath(d.filePath)
