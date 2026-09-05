@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         await auditLog(session, 'RESTORE', 'BACKUP', `Restore database + ${restoredFileCount} file upload dari upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`, req)
         return NextResponse.json({
           success: true,
-          message: `Database & ${restoredFileCount} file upload (sertifikat/surat tugas/dokumen pendaftar) berhasil direstore dari file ${file.name}. Halaman akan dimuat ulang otomatis.`,
+          message: `Database & ${restoredFileCount} file upload (sertifikat/dokumen pendaftar) berhasil direstore dari file ${file.name}. Halaman akan dimuat ulang otomatis.`,
           restoredFileCount,
         })
       } catch (execError) {
