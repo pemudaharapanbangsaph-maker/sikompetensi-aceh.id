@@ -6,9 +6,9 @@ import {
   hasPermission,
 } from "@/lib/auth";
 import { getWriteRoot } from "@/lib/storage";
-import { existsSync } from "fs";
+import * as fs from "fs";
 import * as fsp from "fs/promises";
-import path from "path";
+import * as path from "path";
 import { execFileSync } from "child_process";
 
 export const runtime = "nodejs";
@@ -43,9 +43,9 @@ function getBackupPath(fileName: string): string {
   const backupDir = path.resolve(getBackupDir());
   const safeName = getSafeFileName(fileName);
   const backupPath = path.resolve(backupDir, safeName);
-  const backupPrefix = `${backupDir}${path.sep}`;
+  const prefix = `${backupDir}${path.sep}`;
 
-  if (!backupPath.startsWith(backupPrefix)) {
+  if (!backupPath.startsWith(prefix)) {
     throw new Error("Path backup tidak valid");
   }
 
@@ -65,9 +65,9 @@ function getFilesBackupPath(fileName: string): string {
     `${baseName}.files`
   );
 
-  const backupPrefix = `${backupDir}${path.sep}`;
+  const prefix = `${backupDir}${path.sep}`;
 
-  if (!filesPath.startsWith(backupPrefix)) {
+  if (!filesPath.startsWith(prefix)) {
     throw new Error("Path file backup tidak valid");
   }
 
@@ -81,19 +81,17 @@ function parseDbUrl(): {
   password: string;
   database: string;
 } {
-  const rawUrl = String(process.env.DATABASE_URL || "").trim();
+  const rawUrl = String(
+    process.env.DATABASE_URL || ""
+  ).trim();
 
   if (!rawUrl) {
-    throw new Error("DATABASE_URL belum dikonfigurasi");
+    throw new Error(
+      "DATABASE_URL belum dikonfigurasi"
+    );
   }
 
-  let parsed: URL;
-
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new Error("DATABASE_URL tidak valid");
-  }
+  const parsed = new URL(rawUrl);
 
   if (parsed.protocol !== "mysql:") {
     throw new Error(
@@ -120,64 +118,32 @@ function parseDbUrl(): {
   };
 }
 
-async function copyDirectory(
-  sourceDir: string,
-  targetDir: string
-): Promise<void> {
-  if (!existsSync(sourceDir)) {
-    return;
-  }
-
-  await fsp.mkdir(targetDir, {
-    recursive: true,
-  });
-
-  const entries = await fsp.readdir(sourceDir, {
-    withFileTypes: true,
-  });
-
-  for (const entry of entries) {
-    const sourcePath = path.join(sourceDir, entry.name);
-    const targetPath = path.join(targetDir, entry.name);
-
-    if (entry.isDirectory()) {
-      await copyDirectory(sourcePath, targetPath);
-      continue;
-    }
-
-    if (entry.isFile()) {
-      await fsp.copyFile(sourcePath, targetPath);
-    }
-  }
-}
-
 function restoreDatabase(
   backupPath: string
 ): void {
-  const dbConfig = parseDbUrl();
-
-  const sqlContent = require("fs").readFileSync(
+  const config = parseDbUrl();
+  const sqlContent = fs.readFileSync(
     backupPath,
     "utf8"
   );
 
   const environment = {
     ...process.env,
-    MYSQL_PWD: dbConfig.password,
+    MYSQL_PWD: config.password,
   };
 
   execFileSync(
     "mysql",
     [
       "--host",
-      dbConfig.host,
+      config.host,
       "--port",
-      dbConfig.port,
+      config.port,
       "--user",
-      dbConfig.user,
+      config.user,
       "--default-character-set=utf8mb4",
       "--binary-mode=1",
-      dbConfig.database,
+      config.database,
     ],
     {
       input: sqlContent,
@@ -188,21 +154,189 @@ function restoreDatabase(
   );
 }
 
-async function restoreUploadedFiles(
-  fileBackupPath: string
-): Promise<boolean> {
-  if (!existsSync(fileBackupPath)) {
-    return false;
+function isInside(
+  parent: string,
+  child: string
+): boolean {
+  const parentPath = path.resolve(parent);
+  const childPath = path.resolve(child);
+  const prefix = `${parentPath}${path.sep}`;
+
+  return (
+    childPath === parentPath ||
+    childPath.startsWith(prefix)
+  );
+}
+
+async function copyDirectory(
+  sourceDir: string,
+  targetDir: string
+): Promise<number> {
+  if (!fs.existsSync(sourceDir)) {
+    return 0;
   }
 
+  const stat = await fsp.stat(sourceDir);
+
+  if (!stat.isDirectory()) {
+    return 0;
+  }
+
+  await fsp.mkdir(targetDir, {
+    recursive: true,
+  });
+
+  const entries = await fsp.readdir(
+    sourceDir,
+    {
+      withFileTypes: true,
+    }
+  );
+
+  let copiedCount = 0;
+
+  for (const entry of entries) {
+    const sourcePath = path.join(
+      sourceDir,
+      entry.name
+    );
+
+    const targetPath = path.join(
+      targetDir,
+      entry.name
+    );
+
+    if (!isInside(sourceDir, sourcePath)) {
+      continue;
+    }
+
+    if (entry.isDirectory()) {
+      copiedCount += await copyDirectory(
+        sourcePath,
+        targetPath
+      );
+      continue;
+    }
+
+    if (entry.isFile()) {
+      await fsp.mkdir(
+        path.dirname(targetPath),
+        {
+          recursive: true,
+        }
+      );
+
+      await fsp.copyFile(
+        sourcePath,
+        targetPath
+      );
+
+      copiedCount++;
+    }
+  }
+
+  return copiedCount;
+}
+
+async function restoreUploadedFiles(
+  fileBackupPath: string
+): Promise<{
+  restored: boolean;
+  copiedCount: number;
+  targetRoot: string;
+}> {
   const targetRoot = getWriteRoot();
 
-  // Backup dibuat dari UPLOAD_DIR dan berisi folder uploads/.
-  // Menyalin ke targetRoot akan menghasilkan:
-  // <UPLOAD_DIR>/uploads/...
-  await copyDirectory(fileBackupPath, targetRoot);
+  if (!fs.existsSync(fileBackupPath)) {
+    return {
+      restored: false,
+      copiedCount: 0,
+      targetRoot,
+    };
+  }
 
-  return true;
+  const entries = await fsp.readdir(
+    fileBackupPath,
+    {
+      withFileTypes: true,
+    }
+  );
+
+  if (entries.length === 0) {
+    return {
+      restored: false,
+      copiedCount: 0,
+      targetRoot,
+    };
+  }
+
+  let copiedCount = 0;
+
+  /*
+   * Format baru:
+   *
+   * backup_x.files/uploads/sertifikat/file.pdf
+   *
+   * Hasil:
+   *
+   * UPLOAD_DIR/uploads/sertifikat/file.pdf
+   */
+  const uploadsDirectory = path.join(
+    fileBackupPath,
+    "uploads"
+  );
+
+  if (fs.existsSync(uploadsDirectory)) {
+    copiedCount += await copyDirectory(
+      uploadsDirectory,
+      path.join(targetRoot, "uploads")
+    );
+  }
+
+  /*
+   * Format lama:
+   *
+   * backup_x.files/sertifikat/file.pdf
+   *
+   * Hasil:
+   *
+   * UPLOAD_DIR/uploads/sertifikat/file.pdf
+   */
+  const sertifikatDirectory = path.join(
+    fileBackupPath,
+    "sertifikat"
+  );
+
+  if (fs.existsSync(sertifikatDirectory)) {
+    copiedCount += await copyDirectory(
+      sertifikatDirectory,
+      path.join(
+        targetRoot,
+        "uploads",
+        "sertifikat"
+      )
+    );
+  }
+
+  /*
+   * Jika format backup langsung berisi file/folder lain,
+   * salin sebagai fallback ke UPLOAD_DIR.
+   */
+  if (
+    !fs.existsSync(uploadsDirectory) &&
+    !fs.existsSync(sertifikatDirectory)
+  ) {
+    copiedCount += await copyDirectory(
+      fileBackupPath,
+      path.join(targetRoot, "uploads")
+    );
+  }
+
+  return {
+    restored: copiedCount > 0,
+    copiedCount,
+    targetRoot,
+  };
 }
 
 export async function POST(
@@ -223,7 +357,12 @@ export async function POST(
       );
     }
 
-    if (!hasPermission(session.user.role, "backup:create")) {
+    if (
+      !hasPermission(
+        session.user.role,
+        "backup:create"
+      )
+    ) {
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
@@ -232,9 +371,10 @@ export async function POST(
 
     const { id } = await params;
 
-    const item = await db.backupHistory.findUnique({
-      where: { id },
-    });
+    const item =
+      await db.backupHistory.findUnique({
+        where: { id },
+      });
 
     if (!item) {
       return NextResponse.json(
@@ -243,9 +383,11 @@ export async function POST(
       );
     }
 
-    const backupPath = getBackupPath(item.namaFile);
+    const backupPath = getBackupPath(
+      item.namaFile
+    );
 
-    if (!existsSync(backupPath)) {
+    if (!fs.existsSync(backupPath)) {
       return NextResponse.json(
         {
           error:
@@ -255,32 +397,47 @@ export async function POST(
       );
     }
 
-    // Restore database terlebih dahulu.
     restoreDatabase(backupPath);
 
-    // Setelah database berhasil, restore file upload dan sertifikat.
-    const fileBackupPath = getFilesBackupPath(
-      item.namaFile
-    );
+    const fileBackupPath =
+      getFilesBackupPath(item.namaFile);
 
-    const filesRestored = await restoreUploadedFiles(
-      fileBackupPath
-    );
+    const filesResult =
+      await restoreUploadedFiles(
+        fileBackupPath
+      );
+
+    if (!filesResult.restored) {
+      await auditLog(
+        session,
+        "RESTORE",
+        "BACKUP",
+        `Restore database tanpa file upload: ${item.namaFile}`,
+        req
+      );
+
+      return NextResponse.json({
+        success: true,
+        filesRestored: false,
+        filesCopied: 0,
+        message:
+          "Database berhasil direstore, tetapi file upload tidak ditemukan atau folder backup file kosong.",
+      });
+    }
 
     await auditLog(
       session,
       "RESTORE",
       "BACKUP",
-      `Restore database${filesRestored ? " dan file upload" : ""} dari: ${item.namaFile}`,
+      `Restore database dan ${filesResult.copiedCount} file upload dari: ${item.namaFile}`,
       req
     );
 
     return NextResponse.json({
       success: true,
-      filesRestored,
-      message: filesRestored
-        ? "Database dan file upload berhasil direstore."
-        : "Database berhasil direstore. File upload tidak ditemukan pada backup tersebut.",
+      filesRestored: true,
+      filesCopied: filesResult.copiedCount,
+      message: `Database dan ${filesResult.copiedCount} file upload berhasil direstore.`,
     });
   } catch (error) {
     console.error(
@@ -291,7 +448,9 @@ export async function POST(
     return NextResponse.json(
       {
         error:
-          "Restore gagal. Pastikan file backup, DATABASE_URL, dan program MySQL tersedia.",
+          error instanceof Error
+            ? error.message
+            : "Restore gagal dilakukan",
       },
       { status: 500 }
     );
