@@ -1,6 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import {
+  createElement,
+  useEffect,
+  useState,
+} from 'react'
+
 import { useUIStore } from '@/store/auth-store'
 
 interface LogoPancaCitaProps {
@@ -30,7 +35,10 @@ export function LogoPancaCita({
 
   const remoteLogoSrc = getLogoSrc(logoVersion)
 
-  const [src, setSrc] = useState<string>(remoteLogoSrc)
+  const [src, setSrc] = useState<string>(
+    remoteLogoSrc,
+  )
+
   const [hasFailed, setHasFailed] = useState(false)
 
   useEffect(() => {
@@ -47,7 +55,14 @@ export function LogoPancaCita({
     setSrc(DEFAULT_LOGO_SRC)
   }
 
-  return (
-    [image removed]
-  )
+  return createElement('img', {
+    src,
+    alt: 'Logo Pemerintah Aceh',
+    width: size,
+    height: Math.round(size / 0.672),
+    className: `object-contain ${className ?? ''}`,
+    onError: handleImageError,
+    loading: 'eager',
+    decoding: 'async',
+  })
 }
