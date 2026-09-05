@@ -1,291 +1,423 @@
-import * as fs from 'fs'
-import * as fsp from 'fs/promises'
-import * as path from 'path'
-
-/**
- * Resolver jalur file upload yang aman untuk shared hosting (mis. Hostinger / Passenger).
- *
- * MASALAH YANG DISELESAIKAN (1):
- * Route lama membangun path absolut file dengan `path.join(process.cwd(), pathRelatif)`,
- * sedangkan database hanya menyimpan path RELATIF (mis. `uploads/sertifikat/uuid.pdf`).
- * Setelah redeploy / restart di Hostinger, `process.cwd()` pada proses yang berjalan
- * TIDAK selalu sama dengan direktori saat file diupload (Passenger dapat menjalankan
- * aplikasi dari direktori kerja yang berbeda). Akibatnya file yang benar-benar ada di
- * server tidak ditemukan -> fs.readFile melempar error -> HTTP 500 saat download,
- * padahal file terlihat ada di File Manager.
- *
- * MASALAH YANG DISELESAIKAN (2) — deploy ber-versi Hostinger ("hbuilds"):
- * Setiap deploy Hostinger membuat folder versi BARU:
- *   /home/uXXXX/domains/<domain>/hbuilds/versions/<uuid>/nodejs
- * File yang kebetulan terupload ke folder VERSI LAMA (mis. upload terjadi saat kode
- * lama masih aktif, atau env UPLOAD_DIR belum terbaca oleh proses) akan "hilang"
- * bagi aplikasi setelah redeploy berikutnya — padahal fisiknya masih ada di folder
- * versi lama yang disimpan Hostinger untuk rollback.
- * Solusi:
- *   a. Kandidat pencarian kini IKUT memindai folder versi-versi LAMA
- *      (saudara dari direktori aplikasi saat ini).
- *   b. resolveStoredFileDurable() menyalin file yang ditemukan di lokasi
- *      tidak-persisten ke UPLOAD_DIR (best effort) sehingga file selamat
- *      selamanya meski Hostinger menghapus folder versi lama.
- *
- * STRATEGI (100% kompatibel mundur, TIDAK mengubah format data di database):
- * - BACA  : cari file pada beberapa direktori dasar kandidat, berurutan:
- *     1. path tersimpan apa adanya jika absolut (gaya route portal pendaftaran)
- *     2. UPLOAD_DIR (env opsional) + path relatif  -> lokasi persisten di luar app
- *     3. direktori entrypoint server (server.mjs) + path relatif  -> anchor stabil
- *     4. process.cwd() + path relatif  -> perilaku lama
- *     5. BARU: folder versi deploy LAMA (hbuilds/versions/<uuid-lain>/...) + path relatif
- *     6. fallback: <root>/<moduleDir>/<nama file> untuk semua root di atas
- * - TULIS : UPLOAD_DIR (jika diset) -> direktori server.mjs -> process.cwd().
- *   Jika pilihan jatuh ke folder versi deploy (UPLOAD_DIR tidak terbaca), dicatat
- *   peringatan jelas di log server agar mudah didiagnosis.
- *   Path relatif yang disimpan ke database TETAP `uploads/<moduleDir>/<file>`.
- *
- * variabel env:
- * - UPLOAD_DIR (opsional): direktori persisten di luar folder aplikasi, contoh di
- *   Hostinger: /home/u123456789/uploads-sikompetensi
- *   (nama yang sama persis dengan yang dipakai route portal/pendaftaran/upload-dokumen)
- */
-
-const UPLOAD_DIR = process.env.UPLOAD_DIR?.trim() || ''
-
-/** Pola folder versi Hostinger: .../hbuilds/versions/<uuid>[/nodejs] */
-const VERSIONED_DEPLOY_RE = /hbuilds\/versions\/[^/]+/
-
-function unique<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr))
-}
-
-function isFile(p: string): boolean {
-  try {
-    return fs.statSync(p).isFile()
-  } catch {
-    return false
-  }
-}
-
-/**
- * Direktori tempat file entrypoint (server.mjs / next) dijalankan.
- * Hanya dianggap valid jika di dalamnya ada package.json (menandakan direktori aplikasi,
- * bukan direktori internal node_modules/.bin saat mode development).
- */
-function getServerDir(): string | null {
-  try {
-    const entry = process.argv?.[1]
-    if (!entry) return null
-    const dir = path.dirname(path.isAbsolute(entry) ? entry : path.resolve(entry))
-    if (fs.existsSync(path.join(dir, 'package.json'))) return dir
-    return null
-  } catch {
-    return null
-  }
-}
-
-/** Daftar direktori dasar kandidat saat MEMBACA file upload. */
-export function getStorageRoots(): string[] {
-  const roots: (string | null)[] = [
-    UPLOAD_DIR || null,
-    getServerDir(),
-    process.cwd() || null,
-  ]
-  return unique(roots.filter((r): r is string => Boolean(r)))
-}
-
-/**
- * Folder versi deploy LAMA milik Hostinger (hbuilds/versions/<uuid-lain>/nodejs).
- *
- * Contoh: aplikasi berjalan di
- *   /home/u1/domains/x.com/hbuilds/versions/v-BARU/nodejs
- * maka kandidat tambahan yang dikembalikan antara lain
- *   /home/u1/domains/x.com/hbuilds/versions/v-LAMA/nodejs
- * (versi terbaru lebih dulu). Hanya dipakai ketika kandidat utama tidak menemukan
- * file — menyelamatkan file yang terupload ke folder versi sebelumnya.
- */
-function versionSiblingRoots(): string[] {
-  const out: string[] = []
-  const anchors: (string | null)[] = [getServerDir(), process.cwd()]
-  for (const anchor of anchors) {
-    if (!anchor) continue
-    const norm = String(anchor).replace(/\\/g, '/')
-    const m = norm.match(/^(.*\/hbuilds\/versions\/)([^/]+)(?:\/nodejs)?\/?$/)
-    if (!m || !m[1] || !m[2]) continue
-    const versionsRoot = m[1]
-    let entries: string[]
-    try {
-      entries = fs.readdirSync(versionsRoot)
-    } catch {
-      continue
-    }
-    const sibs: { dir: string; mtime: number }[] = []
-    for (const e of entries) {
-      if (!e || e === m[2]) continue
-      const nodejsDir = `${versionsRoot}${e}/nodejs`
-      const plainDir = `${versionsRoot}${e}`
-      let dir: string | null = null
-      try {
-        if (fs.statSync(nodejsDir).isDirectory()) dir = nodejsDir
-      } catch {
-        /* coba bentuk tanpa /nodejs */
-      }
-      if (!dir) {
-        try {
-          if (fs.statSync(plainDir).isDirectory()) dir = plainDir
-        } catch {
-          continue
-        }
-      }
-      if (!dir) continue
-      let mtime = 0
-      try {
-        mtime = fs.statSync(dir).mtimeMs
-      } catch {
-        /* abaikan */
-      }
-      sibs.push({ dir, mtime })
-    }
-    sibs.sort((a, b) => b.mtime - a.mtime) // versi lama terbaru dicoba lebih dulu
-    for (const s of sibs.slice(0, 30)) out.push(s.dir)
-  }
-  return unique(out)
-}
+import * as fs from "fs";
+import * as fsp from "fs/promises";
+import * as path from "path";
 
 export interface ResolvedFile {
-  /** Path absolut file yang ditemukan (null jika tidak ditemukan). */
-  path: string | null
-  /** Semua path absolut yang sudah dicoba — dipakai untuk pesan diagnosa. */
-  tried: string[]
+  path: string | null;
+  tried: string[];
+}
+
+function getConfiguredUploadDir(): string | null {
+  const value = String(process.env.UPLOAD_DIR || "").trim();
+
+  return value ? path.resolve(value) : null;
+}
+
+function unique<T>(items: T[]): T[] {
+  return Array.from(new Set(items));
+}
+
+function isFile(filePath: string): boolean {
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+function isDirectory(directoryPath: string): boolean {
+  try {
+    return fs.statSync(directoryPath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function normalizeRelativePath(value: string): string {
+  return String(value || "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "");
+}
+
+function getServerDir(): string | null {
+  try {
+    const entry = process.argv?.[1];
+
+    if (!entry) {
+      return null;
+    }
+
+    const directory = path.dirname(
+      path.isAbsolute(entry) ? entry : path.resolve(entry)
+    );
+
+    return isDirectory(directory) ? directory : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Cari file upload di semua lokasi kandidat.
- * @param storedPath  path yang tersimpan di database (relatif maupun absolut)
- * @param moduleDir   nama subfolder modul (mis. 'sertifikat', 'surat-tugas')
- *                    untuk kandidat fallback <root>/<moduleDir>/<nama file>
+ * Root utama untuk mencari file lama.
  */
-export function resolveStoredFile(storedPath: string, moduleDir?: string): ResolvedFile {
-  const tried: string[] = []
-  const norm = String(storedPath || '').trim().replace(/\\/g, '/')
+export function getStorageRoots(): string[] {
+  const roots = [
+    getConfiguredUploadDir(),
+    getServerDir(),
+    process.cwd(),
+  ].filter((value): value is string => Boolean(value));
 
-  if (!norm) return { path: null, tried }
+  return unique(roots);
+}
 
-  // 1) Path absolut tersimpan apa adanya
-  if (path.isAbsolute(norm)) {
-    tried.push(norm)
-    if (isFile(norm)) return { path: norm, tried: unique(tried) }
+/**
+ * Mencari folder deployment Hostinger versi lama.
+ */
+function versionSiblingRoots(): string[] {
+  const result: string[] = [];
+  const anchors = [getServerDir(), process.cwd()];
+
+  for (const anchor of anchors) {
+    if (!anchor) {
+      continue;
+    }
+
+    const normalized = anchor.replace(/\\/g, "/");
+
+    const match = normalized.match(
+      /^(.*\/hbuilds\/versions\/)([^/]+)(?:\/nodejs)?\/?$/
+    );
+
+    if (!match) {
+      continue;
+    }
+
+    const versionsRoot = match[1];
+    const currentVersion = match[2];
+
+    let entries: string[];
+
+    try {
+      entries = fs.readdirSync(versionsRoot);
+    } catch {
+      continue;
+    }
+
+    const candidates: Array<{
+      directory: string;
+      modified: number;
+    }> = [];
+
+    for (const entry of entries) {
+      if (!entry || entry === currentVersion) {
+        continue;
+      }
+
+      const nodeDirectory = path.join(versionsRoot, entry, "nodejs");
+      const plainDirectory = path.join(versionsRoot, entry);
+
+      let directory: string | null = null;
+
+      if (isDirectory(nodeDirectory)) {
+        directory = nodeDirectory;
+      } else if (isDirectory(plainDirectory)) {
+        directory = plainDirectory;
+      }
+
+      if (!directory) {
+        continue;
+      }
+
+      let modified = 0;
+
+      try {
+        modified = fs.statSync(directory).mtimeMs;
+      } catch {
+        // Abaikan jika waktu folder tidak dapat dibaca.
+      }
+
+      candidates.push({
+        directory,
+        modified,
+      });
+    }
+
+    candidates.sort((a, b) => b.modified - a.modified);
+
+    for (const candidate of candidates.slice(0, 30)) {
+      result.push(candidate.directory);
+    }
   }
 
-  const rel = norm.replace(/^\/+/, '')
-  const baseName = path.basename(rel)
+  return unique(result);
+}
 
-  if (rel) {
-    const primaryRoots = getStorageRoots()
+/**
+ * Mencari file berdasarkan path yang tersimpan di database.
+ */
+export function resolveStoredFile(
+  storedPath: string,
+  moduleDir?: string
+): ResolvedFile {
+  const tried: string[] = [];
+  const normalized = String(storedPath || "")
+    .trim()
+    .replace(/\\/g, "/");
 
-    // 2-4) <root utama> + path relatif
-    for (const root of primaryRoots) {
-      const p = path.join(root, rel)
-      tried.push(p)
-      if (isFile(p)) return { path: p, tried: unique(tried) }
+  if (!normalized) {
+    return {
+      path: null,
+      tried,
+    };
+  }
+
+  // Dukungan untuk path absolut lama.
+  if (path.isAbsolute(normalized)) {
+    tried.push(normalized);
+
+    if (isFile(normalized)) {
+      return {
+        path: normalized,
+        tried: unique(tried),
+      };
     }
+  }
 
-    // 5) BARU: folder versi deploy LAMA (hbuilds/versions/*) + path relatif —
-    //    menyelamatkan file yang terupload ke folder versi sebelumnya.
-    const siblingRoots = versionSiblingRoots()
-    for (const root of siblingRoots) {
-      const p = path.join(root, rel)
-      tried.push(p)
-      if (isFile(p)) return { path: p, tried: unique(tried) }
+  const relativePath = normalizeRelativePath(normalized);
+
+  if (!relativePath) {
+    return {
+      path: null,
+      tried: unique(tried),
+    };
+  }
+
+  const fileName = path.basename(relativePath);
+  const primaryRoots = getStorageRoots();
+
+  // Lokasi utama.
+  for (const root of primaryRoots) {
+    const candidate = path.join(root, relativePath);
+
+    tried.push(candidate);
+
+    if (isFile(candidate)) {
+      return {
+        path: candidate,
+        tried: unique(tried),
+      };
     }
+  }
 
-    // 6) Fallback: <root>/<moduleDir>/<nama file> (root utama + versi lama)
-    if (moduleDir) {
-      for (const root of [...primaryRoots, ...siblingRoots]) {
-        const p = path.join(root, moduleDir, baseName)
-        tried.push(p)
-        if (isFile(p)) return { path: p, tried: unique(tried) }
+  // Folder deployment versi lama.
+  const oldVersionRoots = versionSiblingRoots();
+
+  for (const root of oldVersionRoots) {
+    const candidate = path.join(root, relativePath);
+
+    tried.push(candidate);
+
+    if (isFile(candidate)) {
+      return {
+        path: candidate,
+        tried: unique(tried),
+      };
+    }
+  }
+
+  // Format lama: <root>/<moduleDir>/<filename>.
+  if (moduleDir) {
+    const cleanModuleDir = normalizeRelativePath(moduleDir);
+
+    for (const root of [...primaryRoots, ...oldVersionRoots]) {
+      const candidate = path.join(
+        root,
+        cleanModuleDir,
+        fileName
+      );
+
+      tried.push(candidate);
+
+      if (isFile(candidate)) {
+        return {
+          path: candidate,
+          tried: unique(tried),
+        };
       }
     }
   }
 
-  return { path: null, tried: unique(tried) }
+  return {
+    path: null,
+    tried: unique(tried),
+  };
 }
 
 /**
- * Cari file upload LALU (bila ditemukan di lokasi tidak-persisten) salin otomatis
- * ke UPLOAD_DIR supaya selamat dari redeploy / pembersihan folder versi lama.
- * - Best effort: kalau penyalinan gagal, file tetap dilayani dari lokasi asal.
- * - Tidak mengubah data database sama sekali.
- * Dipakai oleh route download (sertifikat & surat tugas).
+ * Memindahkan file lama ke UPLOAD_DIR jika ditemukan.
  */
-export async function resolveStoredFileDurable(storedPath: string, moduleDir?: string): Promise<ResolvedFile> {
-  const res = resolveStoredFile(storedPath, moduleDir)
-  if (!res.path || !UPLOAD_DIR) return res
+export async function resolveStoredFileDurable(
+  storedPath: string,
+  moduleDir?: string
+): Promise<ResolvedFile> {
+  const result = resolveStoredFile(storedPath, moduleDir);
+  const uploadDir = getConfiguredUploadDir();
 
-  // Sudah berada di lokasi persisten? Tidak perlu migrasi.
-  const persisted = res.path === UPLOAD_DIR || res.path.startsWith(UPLOAD_DIR + path.sep)
-  if (persisted) return res
+  if (!result.path || !uploadDir) {
+    return result;
+  }
+
+  const persistentRoot = `${path.resolve(uploadDir)}${path.sep}`;
+  const currentPath = path.resolve(result.path);
+
+  // File sudah berada di storage persisten.
+  if (
+    currentPath === path.resolve(uploadDir) ||
+    currentPath.startsWith(persistentRoot)
+  ) {
+    return result;
+  }
 
   try {
-    const norm = String(storedPath || '').trim().replace(/\\/g, '/')
-    let targetRel: string
-    if (!path.isAbsolute(norm) && norm.replace(/^\/+/, '')) {
-      targetRel = norm.replace(/^\/+/, '')
-    } else if (moduleDir) {
-      targetRel = `${moduleDir}/${path.basename(res.path)}`
-    } else {
-      targetRel = path.basename(res.path)
+    const normalized = normalizeRelativePath(storedPath);
+
+    const targetRelativePath =
+      normalized && !path.isAbsolute(normalized)
+        ? normalized
+        : path.join(
+            normalizeRelativePath(moduleDir || "general"),
+            path.basename(result.path)
+          );
+
+    const target = path.resolve(uploadDir, targetRelativePath);
+    const storageRoot = path.resolve(uploadDir);
+    const storagePrefix = `${storageRoot}${path.sep}`;
+
+    // Perlindungan path traversal.
+    if (
+      target !== storageRoot &&
+      !target.startsWith(storagePrefix)
+    ) {
+      throw new Error("Target file berada di luar UPLOAD_DIR");
     }
-    const target = path.join(UPLOAD_DIR, targetRel)
-    if (target === res.path) return res
+
     if (!isFile(target)) {
-      await fsp.mkdir(path.dirname(target), { recursive: true })
-      await fsp.copyFile(res.path, target)
-      console.log(`[storage] File upload ditemukan di lokasi lama & dimigrasi otomatis ke lokasi persisten: ${target}`)
-    }
-    return { path: target, tried: unique([...res.tried, target]) }
-  } catch (e) {
-    // Best effort — kalau gagal menyalin, tetap layani dari lokasi asal.
-    console.warn('[storage] Migrasi file ke UPLOAD_DIR gagal (tetap dipakai lokasi asal):', e)
-    return res
-  }
-}
+      await fsp.mkdir(path.dirname(target), {
+        recursive: true,
+      });
 
-/** Direktori dasar untuk MENULIS file upload baru. */
-export function getWriteRoot(): string {
-  if (UPLOAD_DIR) return UPLOAD_DIR
-  const serverDir = getServerDir()
-  if (serverDir) return serverDir
-  return process.cwd()
+      await fsp.copyFile(result.path, target);
+
+      console.log(
+        `[storage] File lama dimigrasikan ke storage persisten: ${target}`
+      );
+    }
+
+    return {
+      path: target,
+      tried: unique([...result.tried, target]),
+    };
+  } catch (error) {
+    console.warn(
+      "[storage] Migrasi file ke UPLOAD_DIR gagal:",
+      error instanceof Error ? error.message : String(error)
+    );
+
+    // Tetap gunakan file lama jika proses migrasi gagal.
+    return result;
+  }
 }
 
 /**
- * Pastikan direktori upload ada dan kembalikan path absolutnya.
- * (menggantikan ensureUploadDir() lama yang memakai process.cwd() mentah)
+ * Root untuk menyimpan file baru.
+ * Tidak memakai process.cwd() sebagai fallback.
  */
-export async function getUploadDir(moduleDir: string): Promise<string> {
-  const root = getWriteRoot()
-  if (!UPLOAD_DIR && VERSIONED_DEPLOY_RE.test(String(root).replace(/\\/g, '/'))) {
-    console.warn(
-      `[storage] PERINGATAN: upload baru ditulis ke folder versi deploy (${root}) ` +
-        'karena env UPLOAD_DIR tidak terbaca oleh proses ini. File berisiko tidak ditemukan ' +
-        'setelah redeploy berikutnya — pastikan UPLOAD_DIR terisi di Hostinger (Environment Variables).'
-    )
+export function getWriteRoot(): string {
+  const uploadDir = getConfiguredUploadDir();
+
+  if (!uploadDir) {
+    throw new Error(
+      "UPLOAD_DIR belum terbaca. Upload dibatalkan agar file tidak tersimpan di folder deployment."
+    );
   }
-  const dir = path.join(root, 'uploads', moduleDir)
-  await fsp.mkdir(dir, { recursive: true })
-  return dir
+
+  return uploadDir;
 }
 
-/** Path relatif yang disimpan ke database — format TIDAK berubah. */
-export function storedRelativePath(moduleDir: string, fileName: string): string {
-  return `uploads/${moduleDir}/${fileName}`
+/**
+ * Membuat folder upload persisten.
+ *
+ * Contoh:
+ * UPLOAD_DIR=/home/u359423429/uploads-sikompetensi
+ * moduleDir=sertifikat
+ *
+ * Hasil:
+ * /home/u359423429/uploads-sikompetensi/uploads/sertifikat
+ */
+export async function getUploadDir(
+  moduleDir: string
+): Promise<string> {
+  const cleanModuleDir = normalizeRelativePath(moduleDir);
+
+  if (
+    !cleanModuleDir ||
+    cleanModuleDir.includes("..") ||
+    path.isAbsolute(cleanModuleDir)
+  ) {
+    throw new Error("Nama folder upload tidak valid");
+  }
+
+  const root = getWriteRoot();
+  const directory = path.resolve(
+    root,
+    "uploads",
+    cleanModuleDir
+  );
+
+  const rootPrefix = `${path.resolve(root)}${path.sep}`;
+
+  if (
+    directory !== path.resolve(root) &&
+    !directory.startsWith(rootPrefix)
+  ) {
+    throw new Error("Folder upload berada di luar UPLOAD_DIR");
+  }
+
+  await fsp.mkdir(directory, {
+    recursive: true,
+  });
+
+  return directory;
 }
 
-/** Hapus file upload (best effort) di lokasi manapun ditemukan. */
-export async function safeUnlinkStored(storedPath: string, moduleDir?: string): Promise<void> {
+/**
+ * Format path relatif yang disimpan ke database.
+ */
+export function storedRelativePath(
+  moduleDir: string,
+  fileName: string
+): string {
+  const cleanModuleDir = normalizeRelativePath(moduleDir);
+  const cleanFileName = path.basename(fileName);
+
+  return `uploads/${cleanModuleDir}/${cleanFileName}`;
+}
+
+/**
+ * Menghapus file upload dari lokasi yang ditemukan.
+ */
+export async function safeUnlinkStored(
+  storedPath: string,
+  moduleDir?: string
+): Promise<void> {
   try {
-    const { path: p } = resolveStoredFile(storedPath, moduleDir)
-    if (p) await fsp.unlink(p)
+    const result = resolveStoredFile(storedPath, moduleDir);
+
+    if (result.path) {
+      await fsp.unlink(result.path);
+    }
   } catch {
-    /* abaikan — sama seperti perilaku lama */
+    // Penghapusan bersifat best effort.
   }
 }
