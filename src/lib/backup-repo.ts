@@ -338,29 +338,170 @@ export async function deleteBackupHistory(
 // FILE PATHS UNTUK BACKUP
 // ---------------------------------------------------------------------------
 
-async function listFilePaths(
+type TableColumnConfig = {
+  tableNames: string[];
+  columnNames: string[];
+};
+
+function escapeIdentifier(value: string): string {
+  return value.replace(/`/g, "``");
+}
+
+async function findActualTableName(
+  connection: Connection,
+  tableNames: string[]
+): Promise<string | null> {
+  for (const tableName of tableNames) {
+    const [rows] = await connection.execute(
+      `
+        SELECT TABLE_NAME
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND LOWER(TABLE_NAME) = LOWER(?)
+        LIMIT 1
+      `,
+      [tableName]
+    );
+
+    const list = Array.isArray(rows) ? rows : [];
+
+    if (list.length > 0) {
+      const actualName = String(
+        (list[0] as { TABLE_NAME?: string })
+          .TABLE_NAME || ""
+      ).trim();
+
+      if (actualName) {
+        return actualName;
+      }
+    }
+  }
+
+  return null;
+}
+
+async function findActualColumns(
+  connection: Connection,
   tableName: string,
-  columnName: string
+  columnNames: string[]
+): Promise<string[]> {
+  const placeholders = columnNames
+    .map(() => "?")
+    .join(", ");
+
+  const [rows] = await connection.execute(
+    `
+      SELECT COLUMN_NAME
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = ?
+        AND LOWER(COLUMN_NAME) IN (${placeholders})
+    `,
+    [
+      tableName,
+      ...columnNames.map((name) =>
+        name.toLowerCase()
+      ),
+    ]
+  );
+
+  const list = Array.isArray(rows) ? rows : [];
+
+  return list
+    .map((row) =>
+      String(
+        (row as { COLUMN_NAME?: string })
+          .COLUMN_NAME || ""
+      ).trim()
+    )
+    .filter(Boolean);
+}
+
+async function listFilePathsFromConfig(
+  config: TableColumnConfig
 ): Promise<string[]> {
   return withConnection(async (connection) => {
     try {
+      const actualTableName =
+        await findActualTableName(
+          connection,
+          config.tableNames
+        );
+
+      if (!actualTableName) {
+        console.warn(
+          `[backup-repo] Tabel tidak ditemukan: ${config.tableNames.join(
+            ", "
+          )}`
+        );
+
+        return [];
+      }
+
+      const actualColumns =
+        await findActualColumns(
+          connection,
+          actualTableName,
+          config.columnNames
+        );
+
+      if (!actualColumns.length) {
+        console.warn(
+          `[backup-repo] Kolom file tidak ditemukan pada tabel ${actualTableName}. Kandidat: ${config.columnNames.join(
+            ", "
+          )}`
+        );
+
+        return [];
+      }
+
+      const expressions = actualColumns
+        .map(
+          (columnName) =>
+            `SELECT \`${escapeIdentifier(
+              columnName
+            )}\` AS \`storedPath\`
+             FROM \`${escapeIdentifier(
+               actualTableName
+             )}\`
+             WHERE \`${escapeIdentifier(
+               columnName
+             )}\` IS NOT NULL
+               AND TRIM(\`${escapeIdentifier(
+                 columnName
+               )}\`) <> ''`
+        )
+        .join(" UNION ALL ");
+
       const [rows] = await connection.query(
-        `SELECT \`${columnName}\` FROM \`${tableName}\`
-         WHERE \`${columnName}\` IS NOT NULL
-         AND \`${columnName}\` <> ''`
+        expressions
       );
 
-      return (Array.isArray(rows) ? rows : [])
+      const values = (Array.isArray(rows)
+        ? rows
+        : []
+      )
         .map((row) =>
           String(
-            (row as Record<string, unknown>)[columnName] || ""
+            (row as { storedPath?: unknown })
+              .storedPath || ""
           ).trim()
         )
         .filter(Boolean);
+
+      console.log(
+        `[backup-repo] ${values.length} path file ditemukan dari ${actualTableName}`
+      );
+
+      return values;
     } catch (error) {
-      console.warn(
-        `[backup-repo] Gagal membaca file dari tabel ${tableName}:`,
-        error instanceof Error ? error.message : String(error)
+      console.error(
+        `[backup-repo] Gagal membaca path file dari tabel ${config.tableNames.join(
+          ", "
+        )}:`,
+        error instanceof Error
+          ? error.message
+          : String(error)
       );
 
       return [];
@@ -368,34 +509,108 @@ async function listFilePaths(
   });
 }
 
-export async function listSertifikatFilePaths(): Promise<string[]> {
-  return listFilePaths("Sertifikat", "file");
+export async function listSertifikatFilePaths(): Promise<
+  string[]
+> {
+  return listFilePathsFromConfig({
+    tableNames: [
+      "Sertifikat",
+      "sertifikat",
+      "sertifikats",
+    ],
+    columnNames: [
+      "file",
+      "filePath",
+      "file_path",
+      "fileName",
+      "file_name",
+      "path",
+      "url",
+    ],
+  });
 }
 
-export async function listSuratTugasFilePaths(): Promise<string[]> {
-  return listFilePaths("SuratTugas", "file");
+export async function listSuratTugasFilePaths(): Promise<
+  string[]
+> {
+  return listFilePathsFromConfig({
+    tableNames: [
+      "SuratTugas",
+      "suratTugas",
+      "surat_tugas",
+      "surattugas",
+    ],
+    columnNames: [
+      "file",
+      "filePath",
+      "file_path",
+      "fileName",
+      "file_name",
+      "path",
+      "url",
+    ],
+  });
 }
 
-export async function listDokumenPendaftaranPaths(): Promise<string[]> {
-  return listFilePaths("DokumenPendaftaran", "filePath");
+export async function listDokumenPendaftaranPaths(): Promise<
+  string[]
+> {
+  return listFilePathsFromConfig({
+    tableNames: [
+      "DokumenPendaftaran",
+      "dokumenPendaftaran",
+      "dokumen_pendaftaran",
+      "dokumenpendaftaran",
+    ],
+    columnNames: [
+      "filePath",
+      "file_path",
+      "file",
+      "fileName",
+      "file_name",
+      "path",
+      "url",
+    ],
+  });
 }
 
-/**
- * Semua path file yang tercatat di database.
- */
-export async function listAllUploadFilePaths(): Promise<string[]> {
-  const [sertifikat, suratTugas, dokumenPendaftaran] =
-    await Promise.all([
-      listSertifikatFilePaths(),
-      listSuratTugasFilePaths(),
-      listDokumenPendaftaranPaths(),
-    ]);
+function normalizeStoredPath(
+  value: string
+): string {
+  return String(value || "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "");
+}
 
-  return Array.from(
-    new Set([
-      ...sertifikat,
-      ...suratTugas,
-      ...dokumenPendaftaran,
-    ])
+export async function listAllUploadFilePaths(): Promise<
+  string[]
+> {
+  const [
+    sertifikat,
+    suratTugas,
+    dokumenPendaftaran,
+  ] = await Promise.all([
+    listSertifikatFilePaths(),
+    listSuratTugasFilePaths(),
+    listDokumenPendaftaranPaths(),
+  ]);
+
+  const allPaths = [
+    ...sertifikat,
+    ...suratTugas,
+    ...dokumenPendaftaran,
+  ]
+    .map(normalizeStoredPath)
+    .filter(Boolean);
+
+  const uniquePaths = Array.from(
+    new Set(allPaths)
   );
+
+  console.log(
+    `[backup-repo] Total path file untuk backup: ${uniquePaths.length}`
+  );
+
+  return uniquePaths;
 }
