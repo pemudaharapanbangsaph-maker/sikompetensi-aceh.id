@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
-import { mkdirSync, existsSync, statSync, writeFileSync, unlinkSync } from 'fs'
+import { writeFileSync, statSync } from 'fs'
 import path from 'path'
 import { execSync } from 'child_process'
-
-const BACKUP_DIR = path.join(process.cwd(), 'db', 'backups')
-
-function ensureBackupDir() {
-  if (!existsSync(BACKUP_DIR)) mkdirSync(BACKUP_DIR, { recursive: true })
-}
+import { buildBackupZip, ensureBackupDir, resolveBackupFile } from '@/lib/backup-files'
 
 function formatFileSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -25,10 +20,6 @@ function parseDbUrl(): { host: string; port: string; user: string; password: str
   return { host: match[3], port: match[4], user: match[1], password: match[2], database: match[5].split('?')[0] }
 }
 
-function isBackupFileExists(namaFile: string): boolean {
-  return existsSync(path.join(BACKUP_DIR, namaFile))
-}
-
 export async function GET() {
   try {
     const session = await getSession()
@@ -39,7 +30,9 @@ export async function GET() {
     const data = await db.backupHistory.findMany({ orderBy: { createdAt: 'desc' } })
     const enriched = data.map(b => ({
       ...b,
-      fileExists: isBackupFileExists(b.namaFile),
+      // cek file backup di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups
+      // lama di folder aplikasi / versi deploy sebelumnya)
+      fileExists: resolveBackupFile(b.namaFile).path !== null,
     }))
     return NextResponse.json(enriched)
   } catch (e) {
@@ -55,39 +48,47 @@ export async function POST(req: Request) {
     if (!hasPermission(session.user.role, 'backup:create')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    ensureBackupDir()
+    const backupDir = await ensureBackupDir()
 
     const dbConfig = parseDbUrl()
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')
     const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
-    const namaFile = `backup_${stamp}.sql`
-    const backupPath = path.join(BACKUP_DIR, namaFile)
+    const namaFile = `backup_${stamp}.zip`
+    const backupPath = path.join(backupDir, namaFile)
 
-    // Gunakan mysqldump untuk backup
+    // 1) Dump database dengan mysqldump (pola lama dipertahankan)
+    let sqlDump = ''
     const mysqldumpCmd = `mysqldump -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} --single-transaction --routines --triggers 2>/dev/null`
-
     try {
-      const output = execSync(mysqldumpCmd, { timeout: 120000, encoding: 'utf-8' })
-      writeFileSync(backupPath, output, 'utf-8')
-    } catch (e: any) {
+      sqlDump = execSync(mysqldumpCmd, { timeout: 120000, encoding: 'utf-8' })
+    } catch {
       // Fallback: coba tanpa routines/triggers
       try {
         const fallbackCmd = `mysqldump -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} --single-transaction 2>/dev/null`
-        const output = execSync(fallbackCmd, { timeout: 120000, encoding: 'utf-8' })
-        writeFileSync(backupPath, output, 'utf-8')
+        sqlDump = execSync(fallbackCmd, { timeout: 120000, encoding: 'utf-8' })
       } catch (e2: any) {
         return NextResponse.json({ error: 'Gagal backup: mysqldump tidak tersedia. Error: ' + (e2.message || 'unknown') }, { status: 500 })
       }
     }
 
+    // 2) Gabungkan dump SQL + FILE UPLOAD (sertifikat, surat tugas, dokumen
+    //    pendaftar) ke dalam SATU file zip — inilah yang membuat file fisik
+    //    ikut ter-restore nanti (dulu hanya database yang dibackup).
+    const { buffer, fileCount, missing } = await buildBackupZip(sqlDump)
+
+    // 3) Simpan ke lokasi durable: UPLOAD_DIR/backups (selamat dari redeploy),
+    //    fallback db/backups di folder aplikasi bila UPLOAD_DIR kosong.
+    writeFileSync(backupPath, buffer)
+
     const stats = statSync(backupPath)
     const ukuran = formatFileSize(stats.size)
+    const catatan = `Termasuk ${fileCount} file upload (sertifikat/surat tugas/dokumen pendaftar)` + (missing.length ? `. PERHATIAN: ${missing.length} file tercatat di DB tapi tidak ditemukan di server.` : '')
     const item = await db.backupHistory.create({
-      data: { namaFile, ukuran, tipe: 'MANUAL', status: 'BERHASIL', dibuatOleh: session.user.id },
+      data: { namaFile, ukuran, tipe: 'MANUAL', status: 'BERHASIL', dibuatOleh: session.user.id, catatan },
     })
-    await auditLog(session, 'BACKUP', 'BACKUP', `Backup database: ${namaFile} (${ukuran})`, req)
-    return NextResponse.json(item)
+    await auditLog(session, 'BACKUP', 'BACKUP', `Backup database + ${fileCount} file upload: ${namaFile} (${ukuran})`, req)
+    return NextResponse.json({ ...item, fileCount })
   } catch (e) {
     console.error('backup create error:', e)
     return NextResponse.json({ error: 'Gagal membuat backup' }, { status: 500 })
