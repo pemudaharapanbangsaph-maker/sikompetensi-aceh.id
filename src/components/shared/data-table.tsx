@@ -60,18 +60,18 @@ export function DataTable<T>({
 
   return (
     <Card className="border-slate-200 shadow-sm">
-      <CardContent className="p-4 space-y-4">
+      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         {/* Toolbar */}
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col sm:flex-row gap-2 sm:items-center">
             {onSearchChange && (
-              <div className="relative flex-1 max-w-xs">
+              <div className="relative flex-1 w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
                   value={searchValue || ''}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="pl-9 h-9"
+                  className="pl-9 h-10 sm:h-9 w-full"
                 />
               </div>
             )}
@@ -81,7 +81,7 @@ export function DataTable<T>({
                 value={filterValues[f.key] || 'all'}
                 onValueChange={(v) => onFilterChange?.(f.key, v === 'all' ? '' : v)}
               >
-                <SelectTrigger className={cn('h-9 w-full', f.width || 'sm:w-40')}>
+                <SelectTrigger className={cn('h-10 sm:h-9 w-full', f.width || 'sm:w-40')}>
                   <SelectValue placeholder={f.label} />
                 </SelectTrigger>
                 <SelectContent>
@@ -93,21 +93,27 @@ export function DataTable<T>({
               </Select>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {toolbar}
             {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading} className="h-9">
+              <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading} className="h-9 sm:h-9 flex-shrink-0">
                 <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
                 <span className="hidden sm:inline">Refresh</span>
               </Button>
             )}
             {onAdd && (
-              <Button size="sm" onClick={onAdd} className="h-9 bg-[#0F4C81] hover:bg-[#0a3a63]">
+              <Button size="sm" onClick={onAdd} className="h-9 bg-[#0F4C81] hover:bg-[#0a3a63] flex-1 sm:flex-none justify-center">
                 <Plus className="w-4 h-4" />
                 {addLabel}
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Mobile scroll hint */}
+        <div className="md:hidden flex items-center gap-1.5 text-[11px] text-slate-400 select-none">
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7l-4 4 4 4M16 7l4 4-4 4M5 11h14" /></svg>
+          <span>Geser tabel ke samping untuk melihat semua kolom</span>
         </div>
 
         {/* Table */}
@@ -166,11 +172,11 @@ export function DataTable<T>({
 
         {/* Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-          <p className="text-slate-500 text-xs">
+          <p className="text-slate-500 text-xs text-center sm:text-left">
             Menampilkan <span className="font-medium text-slate-700">{start}-{end}</span> dari <span className="font-medium text-slate-700">{total}</span> data
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page - 1)} disabled={page <= 1 || loading} className="h-8">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page - 1)} disabled={page <= 1 || loading} className="h-9 w-9 sm:h-8 sm:w-8 p-0" aria-label="Halaman sebelumnya">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-1">
@@ -188,14 +194,14 @@ export function DataTable<T>({
                     size="sm"
                     onClick={() => onPageChange?.(p)}
                     disabled={loading}
-                    className={cn('h-8 w-8 p-0', p === page && 'bg-[#0F4C81] hover:bg-[#0a3a63]')}
+                    className={cn('h-9 w-9 sm:h-8 sm:w-8 p-0', p === page && 'bg-[#0F4C81] hover:bg-[#0a3a63]')}
                   >
                     {p}
                   </Button>
                 )
               })}
             </div>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages || loading} className="h-8">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages || loading} className="h-9 w-9 sm:h-8 sm:w-8 p-0" aria-label="Halaman berikutnya">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -267,10 +273,10 @@ export function StatCard({
         onClick && 'cursor-pointer'
       )}
     >
-      <CardContent className="p-5">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
+            <p className="text-[11px] sm:text-xs font-medium text-slate-500 uppercase tracking-wide truncate">{title}</p>
             <p className="text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{displayValue}</p>
             {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
             {trend && (
