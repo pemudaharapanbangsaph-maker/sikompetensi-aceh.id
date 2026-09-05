@@ -70,7 +70,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({
         success: true,
         message:
-          `Database & ${restoredFileCount} file upload (sertifikat/surat tugas/dokumen pendaftar) berhasil direstore dari ${item.namaFile}. ` +
+          `Database & ${restoredFileCount} file upload (sertifikat/dokumen pendaftar) berhasil direstore dari ${item.namaFile}. ` +
           'Halaman akan dimuat ulang otomatis.',
         restoredFileCount,
       })
