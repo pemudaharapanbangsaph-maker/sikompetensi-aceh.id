@@ -1,22 +1,63 @@
+import "server-only";
+
 /**
  * Pemeriksaan schema database yang aman untuk runtime Node.js.
  *
- * Catatan:
- * - Prisma di-load secara dinamis agar tidak ikut masuk ke bundling browser/Edge.
- * - Semua query menggunakan nama tabel/kolom tetap dari aplikasi.
- * - Jika database sedang tidak tersedia, server tidak dihentikan.
+ * PENTING:
+ * - Jangan import file ini dari src/middleware.ts.
+ * - Prisma hanya boleh dipanggil dari route Node.js,
+ *   server action, atau instrumentation server.
+ * - Semua query menggunakan nama tabel dan kolom tetap.
+ * - Jika database tidak tersedia, aplikasi tidak dihentikan.
  */
 
 type DatabaseModule = typeof import("./db");
 
-let dbModulePromise: Promise<DatabaseModule> | null = null;
+let dbModulePromise: Promise<DatabaseModule> | null =
+  null;
 
 async function getDatabase(): Promise<DatabaseModule> {
   if (!dbModulePromise) {
-    dbModulePromise = import("./db");
+    dbModulePromise = import("./db").catch(
+      (error) => {
+        dbModulePromise = null;
+        throw error;
+      }
+    );
   }
 
   return dbModulePromise;
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : String(error);
+}
+
+function isDuplicateError(error: unknown): boolean {
+  const message = getErrorMessage(
+    error
+  ).toLowerCase();
+
+  return (
+    message.includes("duplicate") ||
+    message.includes("already exists")
+  );
+}
+
+function isMissingTableError(error: unknown): boolean {
+  const message = getErrorMessage(
+    error
+  ).toLowerCase();
+
+  return (
+    message.includes("doesn't exist") ||
+    message.includes("does not exist") ||
+    message.includes("unknown table") ||
+    message.includes("table") &&
+      message.includes("not found")
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -24,31 +65,46 @@ async function getDatabase(): Promise<DatabaseModule> {
 // ---------------------------------------------------------------------------
 
 let emailColumnDone = false;
-let emailColumnInflight: Promise<void> | null = null;
+let emailColumnInflight: Promise<void> | null =
+  null;
 
 async function runEnsurePendaftaranEmailColumn(): Promise<void> {
   try {
     const { db } = await getDatabase();
 
-    const columns = (await db.$queryRawUnsafe(
-      "SHOW COLUMNS FROM `PendaftaranPortal` LIKE 'email'"
-    )) as unknown[];
+    const columns =
+      (await db.$queryRawUnsafe(
+        "SHOW COLUMNS FROM `PendaftaranPortal` LIKE 'email'"
+      )) as unknown[];
 
-    if (!Array.isArray(columns) || columns.length === 0) {
-      await db.$executeRawUnsafe(
-        "ALTER TABLE `PendaftaranPortal` ADD COLUMN `email` VARCHAR(191) NULL"
-      );
+    if (
+      Array.isArray(columns) &&
+      columns.length === 0
+    ) {
+      try {
+        await db.$executeRawUnsafe(
+          "ALTER TABLE `PendaftaranPortal` ADD COLUMN `email` VARCHAR(191) NULL"
+        );
 
-      console.log(
-        "[ensure-schema] Kolom email pada PendaftaranPortal berhasil ditambahkan"
-      );
+        console.log(
+          "[ensure-schema] Kolom email pada PendaftaranPortal berhasil ditambahkan"
+        );
+      } catch (error) {
+        if (!isDuplicateError(error)) {
+          throw error;
+        }
+      }
     }
 
     emailColumnDone = true;
   } catch (error) {
+    /*
+     * Jika tabel belum ada atau database sementara
+     * tidak tersedia, jangan menghentikan aplikasi.
+     */
     console.error(
       "[ensure-schema] Gagal memastikan kolom email PendaftaranPortal:",
-      error
+      getErrorMessage(error)
     );
   }
 }
@@ -59,9 +115,12 @@ export function ensurePendaftaranEmailColumn(): Promise<void> {
   }
 
   if (!emailColumnInflight) {
-    emailColumnInflight = runEnsurePendaftaranEmailColumn().finally(() => {
-      emailColumnInflight = null;
-    });
+    emailColumnInflight =
+      runEnsurePendaftaranEmailColumn().finally(
+        () => {
+          emailColumnInflight = null;
+        }
+      );
   }
 
   return emailColumnInflight;
@@ -72,16 +131,26 @@ export function ensurePendaftaranEmailColumn(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 let backupHistoryDone = false;
-let backupHistoryInflight: Promise<void> | null = null;
+let backupHistoryInflight: Promise<void> | null =
+  null;
 
-const BACKUP_HISTORY_COLUMNS: Record<string, string> = {
+const BACKUP_HISTORY_COLUMNS: Record<
+  string,
+  string
+> = {
   id: "`id` VARCHAR(30) NOT NULL",
-  namaFile: "`namaFile` VARCHAR(255) NOT NULL",
-  ukuran: "`ukuran` VARCHAR(50) NOT NULL",
-  tipe: "`tipe` VARCHAR(20) NOT NULL DEFAULT 'MANUAL'",
-  status: "`status` VARCHAR(20) NOT NULL DEFAULT 'BERHASIL'",
-  dibuatOleh: "`dibuatOleh` VARCHAR(30) NULL",
-  catatan: "`catatan` TEXT NULL",
+  namaFile:
+    "`namaFile` VARCHAR(255) NOT NULL",
+  ukuran:
+    "`ukuran` VARCHAR(50) NOT NULL",
+  tipe:
+    "`tipe` VARCHAR(20) NOT NULL DEFAULT 'MANUAL'",
+  status:
+    "`status` VARCHAR(20) NOT NULL DEFAULT 'BERHASIL'",
+  dibuatOleh:
+    "`dibuatOleh` VARCHAR(30) NULL",
+  catatan:
+    "`catatan` TEXT NULL",
   createdAt:
     "`createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)",
 };
@@ -90,14 +159,18 @@ async function runEnsureBackupHistoryTable(): Promise<void> {
   try {
     const { db } = await getDatabase();
 
-    const tables = (await db.$queryRawUnsafe(
-      "SHOW TABLES LIKE 'BackupHistory'"
-    )) as unknown[];
+    const tables =
+      (await db.$queryRawUnsafe(
+        "SHOW TABLES LIKE 'BackupHistory'"
+      )) as unknown[];
 
-    if (!Array.isArray(tables) || tables.length === 0) {
-      const columnDefinitions = Object.values(BACKUP_HISTORY_COLUMNS).join(
-        ", "
-      );
+    if (
+      !Array.isArray(tables) ||
+      tables.length === 0
+    ) {
+      const columnDefinitions = Object.values(
+        BACKUP_HISTORY_COLUMNS
+      ).join(", ");
 
       await db.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS \`BackupHistory\` (
@@ -113,20 +186,34 @@ async function runEnsureBackupHistoryTable(): Promise<void> {
       );
     }
 
-    const existingColumns = (await db.$queryRawUnsafe(
-      "SHOW COLUMNS FROM `BackupHistory`"
-    )) as Array<{ Field?: string }>;
+    const existingColumns =
+      (await db.$queryRawUnsafe(
+        "SHOW COLUMNS FROM `BackupHistory`"
+      )) as Array<{
+        Field?: string;
+      }>;
 
     const existingColumnNames = new Set(
-      (Array.isArray(existingColumns) ? existingColumns : [])
-        .map((column) => String(column?.Field ?? ""))
+      (
+        Array.isArray(existingColumns)
+          ? existingColumns
+          : []
+      )
+        .map((column) =>
+          String(column?.Field ?? "")
+        )
         .filter(Boolean)
     );
 
-    for (const [columnName, definition] of Object.entries(
+    for (const [
+      columnName,
+      definition,
+    ] of Object.entries(
       BACKUP_HISTORY_COLUMNS
     )) {
-      if (existingColumnNames.has(columnName)) {
+      if (
+        existingColumnNames.has(columnName)
+      ) {
         continue;
       }
 
@@ -139,15 +226,11 @@ async function runEnsureBackupHistoryTable(): Promise<void> {
           `[ensure-schema] Kolom ${columnName} pada BackupHistory berhasil ditambahkan`
         );
       } catch (error) {
-        // Jika proses lain sudah menambahkan kolom yang sama,
-        // jangan menghentikan aplikasi.
-        const message =
-          error instanceof Error ? error.message : String(error);
-
-        if (
-          !message.toLowerCase().includes("duplicate") &&
-          !message.toLowerCase().includes("already exists")
-        ) {
+        /*
+         * Jika proses lain sudah menambahkan
+         * kolom yang sama, anggap berhasil.
+         */
+        if (!isDuplicateError(error)) {
           throw error;
         }
       }
@@ -157,7 +240,7 @@ async function runEnsureBackupHistoryTable(): Promise<void> {
   } catch (error) {
     console.error(
       "[ensure-schema] Gagal memastikan tabel BackupHistory:",
-      error
+      getErrorMessage(error)
     );
   }
 }
@@ -168,9 +251,12 @@ export function ensureBackupHistoryTable(): Promise<void> {
   }
 
   if (!backupHistoryInflight) {
-    backupHistoryInflight = runEnsureBackupHistoryTable().finally(() => {
-      backupHistoryInflight = null;
-    });
+    backupHistoryInflight =
+      runEnsureBackupHistoryTable().finally(
+        () => {
+          backupHistoryInflight = null;
+        }
+      );
   }
 
   return backupHistoryInflight;
