@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
-import { existsSync, readFileSync } from 'fs'
-import path from 'path'
+import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
-
-const BACKUP_DIR = path.join(process.cwd(), 'db', 'backups')
+import { resolveBackupFile, applyBackupZip } from '@/lib/backup-files'
 
 function parseDbUrl(): { host: string; port: string; user: string; password: string; database: string } {
   const url = process.env.DATABASE_URL || ''
@@ -24,22 +22,53 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const { id } = await params
     const item = await db.backupHistory.findUnique({ where: { id } })
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
-    const backupPath = path.join(BACKUP_DIR, item.namaFile)
-    if (!existsSync(backupPath)) {
-      return NextResponse.json({ error: 'File backup tidak ditemukan di server' }, { status: 404 })
+
+    // Cari file backup di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups
+    // di folder aplikasi & versi deploy lama) — dulu hanya process.cwd()/db/backups.
+    const { path: backupPath, tried } = resolveBackupFile(item.namaFile)
+    if (!backupPath) {
+      return NextResponse.json(
+        { error: 'File backup tidak ditemukan di server. Lokasi yang dicoba: ' + tried.join(' | ') },
+        { status: 404 }
+      )
     }
 
     const dbConfig = parseDbUrl()
+    let restoredFileCount = 0
+
+    if (item.namaFile.toLowerCase().endsWith('.zip')) {
+      // ===== Backup baru: ZIP berisi database.sql + file upload =====
+      const buf = readFileSync(backupPath)
+      const { sql, restoredFiles } = await applyBackupZip(buf)
+      if (!sql) {
+        return NextResponse.json({ error: 'ZIP backup tidak berisi file .sql — tidak bisa restore database' }, { status: 400 })
+      }
+      // Restore database dulu, lalu file sudah tertulis oleh applyBackupZip
+      const mysqlCmd = `mysql -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} 2>&1`
+      execSync(mysqlCmd, { input: sql, timeout: 120000, encoding: 'utf-8' })
+      restoredFileCount = restoredFiles.length
+
+      await auditLog(session, 'RESTORE', 'BACKUP', `Restore database + ${restoredFileCount} file upload dari: ${item.namaFile}`, req)
+      return NextResponse.json({
+        success: true,
+        message:
+          `Database & ${restoredFileCount} file upload (sertifikat/surat tugas/dokumen pendaftar) berhasil direstore dari ${item.namaFile}. ` +
+          'Halaman akan dimuat ulang otomatis.',
+        restoredFileCount,
+      })
+    }
+
+    // ===== Backup lama (.sql murni) — perilaku asli dipertahankan =====
     const sqlContent = readFileSync(backupPath, 'utf-8')
-    
-    // Gunakan mysql CLI untuk restore
     const mysqlCmd = `mysql -h ${dbConfig.host} -P ${dbConfig.port} -u ${dbConfig.user} -p"${dbConfig.password}" ${dbConfig.database} 2>&1`
     execSync(mysqlCmd, { input: sqlContent, timeout: 120000, encoding: 'utf-8' })
 
-    await auditLog(session, 'RESTORE', 'BACKUP', `Restore database dari: ${item.namaFile}`, req)
+    await auditLog(session, 'RESTORE', 'BACKUP', `Restore database dari: ${item.namaFile} (hanya database, tanpa file upload — backup format lama)`, req)
     return NextResponse.json({
       success: true,
-      message: `Database berhasil direstore dari ${item.namaFile}. Halaman akan dimuat ulang otomatis.`,
+      message:
+        `Database berhasil direstore dari ${item.namaFile} (backup format lama — tidak menyertakan file upload). ` +
+        'Halaman akan dimuat ulang otomatis.',
     })
   } catch (e) {
     console.error('backup restore error:', e)
