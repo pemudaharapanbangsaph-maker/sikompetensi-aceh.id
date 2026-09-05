@@ -3,22 +3,57 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 
 // GET: return all Pengaturan records as { [key]: value }
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     if (!hasPermission(session.user.role, 'settings:view')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      )
     }
-    const rows = await db.pengaturan.findMany()
+
+    const rows = await db.pengaturan.findMany({
+      // Sesuaikan nama key dengan database Anda
+      where: {
+        key: {
+          notIn: ['logo', 'logo_base64', 'logo_data'],
+        },
+      },
+      select: {
+        key: true,
+        value: true,
+      },
+    })
+
     const result: Record<string, string> = {}
-    for (const r of rows) {
-      result[r.key] = r.value
+
+    for (const row of rows) {
+      result[row.key] = row.value
     }
-    return NextResponse.json(result)
-  } catch (e) {
-    console.error('settings get error:', e)
-    return NextResponse.json({ error: 'Gagal memuat pengaturan' }, { status: 500 })
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'private, no-store',
+      },
+    })
+  } catch (error) {
+    console.error('settings get error:', error)
+
+    return NextResponse.json(
+      { error: 'Gagal memuat pengaturan' },
+      { status: 500 }
+    )
   }
 }
 
