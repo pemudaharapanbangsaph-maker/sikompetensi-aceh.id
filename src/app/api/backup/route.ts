@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getSession, auditLog, hasPermission } from "@/lib/auth";
-import { getWriteRoot, resolveStoredFile, resolveStoredFileDurable } from "@/lib/storage";
+import {
+  getSession,
+  auditLog,
+  hasPermission,
+} from "@/lib/auth";
+import {
+  getWriteRoot,
+  resolveStoredFile,
+  resolveStoredFileDurable,
+} from "@/lib/storage";
 import { listAllUploadFilePaths } from "@/lib/backup-repo";
 import * as fs from "fs";
 import * as fsp from "fs/promises";
@@ -12,7 +20,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function getBackupDir(): string {
-  const configuredBackupDir = String(process.env.BACKUP_DIR || "").trim();
+  const configuredBackupDir = String(
+    process.env.BACKUP_DIR || ""
+  ).trim();
 
   return configuredBackupDir
     ? path.resolve(configuredBackupDir)
@@ -48,10 +58,14 @@ function parseDbUrl(): {
   password: string;
   database: string;
 } {
-  const rawUrl = String(process.env.DATABASE_URL || "").trim();
+  const rawUrl = String(
+    process.env.DATABASE_URL || ""
+  ).trim();
 
   if (!rawUrl) {
-    throw new Error("DATABASE_URL belum dikonfigurasi");
+    throw new Error(
+      "DATABASE_URL belum dikonfigurasi"
+    );
   }
 
   let parsed: URL;
@@ -63,13 +77,19 @@ function parseDbUrl(): {
   }
 
   if (parsed.protocol !== "mysql:") {
-    throw new Error("DATABASE_URL harus menggunakan mysql://");
+    throw new Error(
+      "DATABASE_URL harus menggunakan mysql://"
+    );
   }
 
-  const database = decodeURIComponent(parsed.pathname.replace(/^\/+/, ""));
+  const database = decodeURIComponent(
+    parsed.pathname.replace(/^\/+/, "")
+  );
 
   if (!parsed.hostname || !database) {
-    throw new Error("Host atau nama database tidak ditemukan");
+    throw new Error(
+      "Host atau nama database tidak ditemukan"
+    );
   }
 
   return {
@@ -81,12 +101,50 @@ function parseDbUrl(): {
   };
 }
 
-function isBackupFileExists(namaFile: string): boolean {
-  const filePath = path.join(getBackupDir(), path.basename(namaFile));
-  return fs.existsSync(filePath);
+function isBackupFileExists(
+  namaFile: string
+): boolean {
+  const backupDir = path.resolve(getBackupDir());
+  const safeName = path.basename(namaFile);
+  const filePath = path.resolve(
+    backupDir,
+    safeName
+  );
+
+  const backupPrefix = `${backupDir}${path.sep}`;
+
+  return (
+    filePath.startsWith(backupPrefix) &&
+    fs.existsSync(filePath)
+  );
 }
 
-function createDatabaseDump(backupPath: string): void {
+function getFilesBackupPath(
+  namaFile: string
+): string {
+  const backupDir = path.resolve(getBackupDir());
+  const baseName = path.basename(
+    namaFile,
+    path.extname(namaFile)
+  );
+
+  return path.resolve(
+    backupDir,
+    `${baseName}.files`
+  );
+}
+
+function isFilesBackupExists(
+  namaFile: string
+): boolean {
+  return fs.existsSync(
+    getFilesBackupPath(namaFile)
+  );
+}
+
+function createDatabaseDump(
+  backupPath: string
+): void {
   const config = parseDbUrl();
 
   const commonArgs = [
@@ -112,7 +170,12 @@ function createDatabaseDump(backupPath: string): void {
   try {
     execFileSync(
       "mysqldump",
-      [...commonArgs, "--routines", "--triggers", "--events"],
+      [
+        ...commonArgs,
+        "--routines",
+        "--triggers",
+        "--events",
+      ],
       {
         timeout: 120000,
         stdio: ["ignore", "pipe", "pipe"],
@@ -120,75 +183,247 @@ function createDatabaseDump(backupPath: string): void {
       }
     );
   } catch {
+    // Fallback jika routines, triggers, atau events
+    // tidak diizinkan oleh server database.
     try {
-      execFileSync("mysqldump", commonArgs, {
-        timeout: 120000,
-        stdio: ["ignore", "pipe", "pipe"],
-        env: environment,
-      });
-    } catch (secondError) {
+      execFileSync(
+        "mysqldump",
+        commonArgs,
+        {
+          timeout: 120000,
+          stdio: ["ignore", "pipe", "pipe"],
+          env: environment,
+        }
+      );
+    } catch (error) {
       const message =
-        secondError instanceof Error ? secondError.message : String(secondError);
+        error instanceof Error
+          ? error.message
+          : String(error);
 
-      throw new Error(`mysqldump gagal dijalankan: ${message}`);
+      throw new Error(
+        `mysqldump gagal dijalankan: ${message}`
+      );
     }
   }
 }
 
-function normalizeStoredPath(storedPath: string): string {
+async function copyDirectory(
+  sourceDir: string,
+  targetDir: string
+): Promise<number> {
+  if (!fs.existsSync(sourceDir)) {
+    return 0;
+  }
+
+  await fsp.mkdir(targetDir, {
+    recursive: true,
+  });
+
+  const entries = await fsp.readdir(
+    sourceDir,
+    {
+      withFileTypes: true,
+    }
+  );
+
+  let copiedCount = 0;
+
+  for (const entry of entries) {
+    const sourcePath = path.join(
+      sourceDir,
+      entry.name
+    );
+
+    const targetPath = path.join(
+      targetDir,
+      entry.name
+    );
+
+    if (entry.isDirectory()) {
+      copiedCount += await copyDirectory(
+        sourcePath,
+        targetPath
+      );
+
+      continue;
+    }
+
+    if (entry.isFile()) {
+      await fsp.copyFile(
+        sourcePath,
+        targetPath
+      );
+
+      copiedCount++;
+    }
+  }
+
+  return copiedCount;
+}
+
+function normalizeStoredPath(
+  storedPath: string
+): string {
   return String(storedPath || "")
     .trim()
     .replace(/\\/g, "/")
     .replace(/^\/+/, "");
 }
 
+function getSafeBackupTarget(
+  targetDir: string,
+  relativePath: string
+): string {
+  const cleanPath = normalizeStoredPath(
+    relativePath
+  );
+
+  if (
+    !cleanPath ||
+    cleanPath.includes("..") ||
+    path.isAbsolute(cleanPath)
+  ) {
+    throw new Error(
+      `Path file backup tidak valid: ${relativePath}`
+    );
+  }
+
+  const destination = path.resolve(
+    targetDir,
+    cleanPath
+  );
+
+  const targetPrefix = `${path.resolve(
+    targetDir
+  )}${path.sep}`;
+
+  if (!destination.startsWith(targetPrefix)) {
+    throw new Error(
+      `Path file backup berada di luar direktori: ${relativePath}`
+    );
+  }
+
+  return destination;
+}
+
 async function backupUploadedFiles(
   backupDir: string,
   namaFile: string
-): Promise<string | null> {
-  const backupName = path.basename(namaFile, path.extname(namaFile));
-  const targetDir = path.join(backupDir, `${backupName}.files`);
+): Promise<{
+  path: string;
+  copiedCount: number;
+} | null> {
+  const backupName = path.basename(
+    namaFile,
+    path.extname(namaFile)
+  );
 
-  const storedPaths = await listAllUploadFilePaths();
+  const targetDir = path.join(
+    backupDir,
+    `${backupName}.files`
+  );
 
-  if (!storedPaths.length) {
-    return null;
-  }
+  await fsp.mkdir(targetDir, {
+    recursive: true,
+  });
 
   let copiedCount = 0;
 
+  /*
+   * Sumber pertama:
+   * seluruh file yang sudah berada di UPLOAD_DIR.
+   *
+   * Contoh sumber:
+   * /home/u359423429/uploads-sikompetensi/uploads/
+   *
+   * Hasil backup:
+   * /home/u359423429/uploads-sikompetensi/backups/
+   * backup_x.files/uploads/
+   */
+  const persistentUploadsDir = path.join(
+    getWriteRoot(),
+    "uploads"
+  );
+
+  copiedCount += await copyDirectory(
+    persistentUploadsDir,
+    path.join(targetDir, "uploads")
+  );
+
+  /*
+   * Sumber kedua:
+   * path file yang tercatat di database.
+   *
+   * Ini digunakan untuk mencari file lama yang mungkin
+   * masih berada di folder deployment sebelumnya.
+   */
+  let storedPaths: string[] = [];
+
+  try {
+    storedPaths =
+      await listAllUploadFilePaths();
+  } catch (error) {
+    console.warn(
+      "[backup] Gagal membaca path file dari database:",
+      error
+    );
+  }
+
   for (const storedPath of storedPaths) {
-    const normalizedStoredPath = normalizeStoredPath(storedPath);
+    const normalizedStoredPath =
+      normalizeStoredPath(storedPath);
 
     if (!normalizedStoredPath) {
       continue;
     }
 
-    let resolved = await resolveStoredFileDurable(normalizedStoredPath);
+    let resolved =
+      await resolveStoredFileDurable(
+        normalizedStoredPath
+      );
 
     if (!resolved.path) {
-      resolved = resolveStoredFile(normalizedStoredPath);
+      resolved = resolveStoredFile(
+        normalizedStoredPath
+      );
     }
 
-    if (!resolved.path || !fs.existsSync(resolved.path)) {
-      console.warn(`[backup] File tidak ditemukan: ${normalizedStoredPath}`);
+    if (
+      !resolved.path ||
+      !fs.existsSync(resolved.path)
+    ) {
+      console.warn(
+        `[backup] File tidak ditemukan: ${normalizedStoredPath}`
+      );
+
       continue;
     }
 
-    const destination = path.resolve(targetDir, normalizedStoredPath);
-    const targetPrefix = `${path.resolve(targetDir)}${path.sep}`;
+    const destination = getSafeBackupTarget(
+      targetDir,
+      normalizedStoredPath
+    );
 
-    if (!destination.startsWith(targetPrefix)) {
-      console.warn(`[backup] Path dilewati karena tidak valid: ${normalizedStoredPath}`);
-      continue;
+    await fsp.mkdir(
+      path.dirname(destination),
+      {
+        recursive: true,
+      }
+    );
+
+    /*
+     * Jika file sudah disalin saat menyalin seluruh
+     * folder uploads, jangan menyalinnya dua kali.
+     */
+    if (!fs.existsSync(destination)) {
+      await fsp.copyFile(
+        resolved.path,
+        destination
+      );
+
+      copiedCount++;
     }
-
-    await fsp.mkdir(path.dirname(destination), {
-      recursive: true,
-    });
-
-    await fsp.copyFile(resolved.path, destination);
-    copiedCount++;
   }
 
   if (copiedCount === 0) {
@@ -200,9 +435,14 @@ async function backupUploadedFiles(
     return null;
   }
 
-  console.log(`[backup] ${copiedCount} file upload berhasil disalin`);
+  console.log(
+    `[backup] ${copiedCount} file upload berhasil disalin`
+  );
 
-  return targetDir;
+  return {
+    path: targetDir,
+    copiedCount,
+  };
 }
 
 export async function GET() {
@@ -210,30 +450,53 @@ export async function GET() {
     const session = await getSession();
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    if (!hasPermission(session.user.role, "backup:view")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (
+      !hasPermission(
+        session.user.role,
+        "backup:view"
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
     }
 
-    const data = await db.backupHistory.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    const data =
+      await db.backupHistory.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
     const enriched = data.map((backup) => ({
       ...backup,
-      fileExists: isBackupFileExists(backup.namaFile),
+      fileExists: isBackupFileExists(
+        backup.namaFile
+      ),
+      filesBackupExists:
+        isFilesBackupExists(
+          backup.namaFile
+        ),
     }));
 
     return NextResponse.json(enriched);
   } catch (error) {
-    console.error("[backup] Gagal memuat daftar backup:", error);
+    console.error(
+      "[backup] Gagal memuat daftar backup:",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Gagal memuat data backup" },
+      {
+        error: "Gagal memuat data backup",
+      },
       { status: 500 }
     );
   }
@@ -246,17 +509,30 @@ export async function POST(req: Request) {
     const session = await getSession();
 
     if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    if (!hasPermission(session.user.role, "backup:create")) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (
+      !hasPermission(
+        session.user.role,
+        "backup:create"
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Forbidden" },
+        { status: 403 }
+      );
     }
 
-    const backupDir = await ensureBackupDir();
+    const backupDir =
+      await ensureBackupDir();
 
     const now = new Date();
-    const pad = (value: number) => String(value).padStart(2, "0");
+    const pad = (value: number) =>
+      String(value).padStart(2, "0");
 
     const stamp =
       [
@@ -265,37 +541,55 @@ export async function POST(req: Request) {
         pad(now.getDate()),
       ].join("") +
       "_" +
-      [pad(now.getHours()), pad(now.getMinutes()), pad(now.getSeconds())].join("");
+      [
+        pad(now.getHours()),
+        pad(now.getMinutes()),
+        pad(now.getSeconds()),
+      ].join("");
 
-    const namaFile = `backup_${stamp}.sql`;
+    const namaFile =
+      `backup_${stamp}.sql`;
 
-    backupPath = path.join(backupDir, path.basename(namaFile));
+    backupPath = path.join(
+      backupDir,
+      path.basename(namaFile)
+    );
 
     createDatabaseDump(backupPath);
 
     if (!fs.existsSync(backupPath)) {
-      throw new Error("File backup database tidak berhasil dibuat");
+      throw new Error(
+        "File backup database tidak berhasil dibuat"
+      );
     }
 
-    const stats = await fsp.stat(backupPath);
-    const ukuran = formatFileSize(stats.size);
+    const stats =
+      await fsp.stat(backupPath);
 
-    const filesBackupPath = await backupUploadedFiles(backupDir, namaFile);
+    const ukuran =
+      formatFileSize(stats.size);
 
-    const catatan = filesBackupPath
-      ? "Backup database dan file upload berhasil dibuat"
-      : "Backup database berhasil dibuat; folder file upload tidak ditemukan";
+    const filesBackup =
+      await backupUploadedFiles(
+        backupDir,
+        namaFile
+      );
 
-    const item = await db.backupHistory.create({
-      data: {
-        namaFile,
-        ukuran,
-        tipe: "MANUAL",
-        status: "BERHASIL",
-        dibuatOleh: session.user.id,
-        catatan,
-      },
-    });
+    const catatan = filesBackup
+      ? `Backup database dan ${filesBackup.copiedCount} file upload berhasil dibuat`
+      : "Backup database berhasil dibuat; file upload tidak ditemukan";
+
+    const item =
+      await db.backupHistory.create({
+        data: {
+          namaFile,
+          ukuran,
+          tipe: "MANUAL",
+          status: "BERHASIL",
+          dibuatOleh: session.user.id,
+          catatan,
+        },
+      });
 
     await auditLog(
       session,
@@ -305,21 +599,38 @@ export async function POST(req: Request) {
       req
     );
 
-    return NextResponse.json(item);
+    return NextResponse.json({
+      ...item,
+      fileExists: true,
+      filesBackupExists: Boolean(
+        filesBackup
+      ),
+      filesCopied:
+        filesBackup?.copiedCount || 0,
+    });
   } catch (error) {
-    console.error("[backup] Gagal membuat backup:", error);
+    console.error(
+      "[backup] Gagal membuat backup:",
+      error
+    );
 
-    if (backupPath && fs.existsSync(backupPath)) {
+    if (
+      backupPath &&
+      fs.existsSync(backupPath)
+    ) {
       try {
         await fsp.unlink(backupPath);
       } catch {
-        // Abaikan jika file sementara gagal dihapus.
+        // Abaikan jika file gagal dihapus.
       }
     }
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Gagal membuat backup",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Gagal membuat backup",
       },
       { status: 500 }
     );
