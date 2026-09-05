@@ -29,7 +29,11 @@ export async function GET(req: Request) {
     const { jsPDF } = await import('jspdf')
     const autoTable = (await import('jspdf-autotable')).default
 
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    // Kertas F4 / Folio (8.5" x 13" = 215.9 x 330.2 mm) — orientasi landscape
+    // menghasilkan halaman 330.2 mm (lebar) x 215.9 mm (tinggi).
+    // jsPDF menukar sisi otomatis sesuai orientasi, jadi format ditulis [lebar-portrait, tinggi-portrait].
+    const F4 = [215.9, 330.2]
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: F4 })
     const pageW = doc.internal.pageSize.getWidth()
 
     // Header
@@ -55,10 +59,11 @@ export async function GET(req: Request) {
     doc.rect(14, 32, pageW - 28, 10, 'F')
     doc.setTextColor(71, 85, 105)
     doc.setFontSize(8)
+    // posisi disebar merata mengikuti lebar kertas F4 (330.2 mm)
     doc.text(`Total: ${totalAll}`, 18, 39)
-    doc.text(`Menunggu: ${menunggu}`, 70, 39)
-    doc.text(`Diterima: ${diterima}`, 130, 39)
-    doc.text(`Ditolak: ${ditolak}`, 190, 39)
+    doc.text(`Menunggu: ${menunggu}`, 105, 39)
+    doc.text(`Diterima: ${diterima}`, 200, 39)
+    doc.text(`Ditolak: ${ditolak}`, 290, 39)
 
     // Table
     const rows = data.map((d, i) => [
@@ -99,19 +104,25 @@ export async function GET(req: Request) {
       alternateRowStyles: {
         fillColor: [248, 250, 252],
       },
+      // Lebar kolom untuk 13 kolom (0-12) pada kertas F4 landscape:
+      // ruang tersedia = 330.2 - margin kiri 14 - kanan 14 = 302.2 mm.
+      // Total lebar di bawah = 298 mm agar selalu muat (tidak ada kolom tergeser/menimpa).
+      // CATATAN: sebelumnya indeks style bergeser satu setelah kolom Email ditambahkan
+      // (style "10 mm" untuk Dok salah diterapkan ke Pelatihan → teks Pelatihan menimpa).
       columnStyles: {
-        0: { cellWidth: 8, halign: 'center' },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 28 },
-        3: { cellWidth: 16 },
-        4: { cellWidth: 28 },
-        5: { cellWidth: 32 },
-        6: { cellWidth: 32 },
-        7: { cellWidth: 18 },
-        8: { cellWidth: 45 },
-        9: { cellWidth: 10, halign: 'center' },
-        10: { cellWidth: 16, halign: 'center' },
-        11: { cellWidth: 22 },
+        0: { cellWidth: 8, halign: 'center' },   // No
+        1: { cellWidth: 27 },                    // Nama
+        2: { cellWidth: 30 },                    // NIP (18 digit)
+        3: { cellWidth: 15 },                    // Pangkat/Gol
+        4: { cellWidth: 24 },                    // Jabatan
+        5: { cellWidth: 27 },                    // Unit Kerja
+        6: { cellWidth: 27 },                    // Instansi
+        7: { cellWidth: 17 },                    // No. HP
+        8: { cellWidth: 36 },                    // Email
+        9: { cellWidth: 42 },                    // Pelatihan (dulu kejepit 10 mm → menimpa)
+        10: { cellWidth: 9, halign: 'center' },  // Dok
+        11: { cellWidth: 17, halign: 'center' }, // Status
+        12: { cellWidth: 19, halign: 'center' }, // Tgl Daftar
       },
       margin: { left: 14, right: 14 },
     })
