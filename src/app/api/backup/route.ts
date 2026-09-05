@@ -99,7 +99,7 @@ export async function POST(req: Request) {
 
     const stats = statSync(backupPath)
     const ukuran = formatFileSize(stats.size)
-    const catatan = `Termasuk ${fileCount} file upload (sertifikat/surat tugas/dokumen pendaftar)` + (missing.length ? `. PERHATIAN: ${missing.length} file tercatat di DB tapi tidak ditemukan di server.` : '')
+    const catatan = `Termasuk ${fileCount} file upload (sertifikat/dokumen pendaftar)` + (missing.length ? `. PERHATIAN: ${missing.length} file tercatat di DB tapi tidak ditemukan di server.` : '')
     const item = await createBackupHistory({
       namaFile, ukuran, tipe: 'MANUAL', status: 'BERHASIL', dibuatOleh: session.user.id, catatan,
     })
