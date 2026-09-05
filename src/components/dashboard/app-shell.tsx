@@ -108,27 +108,31 @@ export function AppShell() {
 
       {/* Mobile Sidebar (Sheet) */}
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-[#0F4C81]">
-          <Sidebar userRole={user?.role || 'OPERATOR'} />
+        <SheetContent
+          side="left"
+          className="p-0 w-[280px] max-w-[85vw] bg-[#0F4C81] border-r border-white/10"
+        >
+          {/* Selalu tampil penuh (bukan collapsed) di drawer mobile */}
+          <Sidebar userRole={user?.role || 'OPERATOR'} variant="mobile" />
         </SheetContent>
       </Sheet>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
-        <main className="flex-1 p-4 lg:p-6 overflow-x-hidden">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden">
           <div key={activeView} className="animate-fade-in-up">
             <Suspense fallback={<ViewLoader />}>
               {renderView(activeView)}
             </Suspense>
           </div>
         </main>
-        <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
+        <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-2 text-center sm:text-left">
             <span className="font-semibold">Sistem Informasi Kompetensi Teknis</span>
-            <span className="text-blue-200">— BPSDM Aceh</span>
+            <span className="text-blue-200 hidden sm:inline">— BPSDM Aceh</span>
           </div>
-          <div className="text-blue-200">
+          <div className="text-blue-200 text-center">
             © {new Date().getFullYear()} Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
           </div>
         </footer>
