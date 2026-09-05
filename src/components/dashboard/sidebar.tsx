@@ -108,9 +108,12 @@ const menuItems: MenuItem[] = [
   },
 ]
 
-export function Sidebar({ userRole }: { userRole: string }) {
+export function Sidebar({ userRole, variant = 'desktop' }: { userRole: string; variant?: 'desktop' | 'mobile' }) {
   const { activeView, setActiveView } = useNavStore()
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
+  const isMobile = variant === 'mobile'
+  // Di drawer mobile, sidebar SELALU tampil penuh (abaikan state collapsed desktop)
+  const collapsed = isMobile ? false : sidebarCollapsed
 
   const filterMenu = (items: MenuItem[]): MenuItem[] => {
     return items
@@ -124,16 +127,20 @@ export function Sidebar({ userRole }: { userRole: string }) {
   return (
     <aside
       className={cn(
-        'sidebar-transition bg-[#0F4C81] text-white flex flex-col h-screen sticky top-0',
-        sidebarCollapsed ? 'w-[68px]' : 'w-64'
+        'bg-[#0F4C81] text-white flex flex-col',
+        isMobile ? 'h-full w-full' : 'sidebar-transition h-screen sticky top-0',
+        !isMobile && (collapsed ? 'w-[68px]' : 'w-64')
       )}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center gap-2.5 px-4 border-b border-white/10 flex-shrink-0">
+      <div className={cn(
+        'h-16 flex items-center gap-2.5 border-b border-white/10 flex-shrink-0',
+        collapsed ? 'justify-center px-2' : 'px-4'
+      )}>
         <div className="flex-shrink-0">
           <LogoPancaCita size={32} />
         </div>
-        {!sidebarCollapsed && (
+        {!collapsed && (
           <div className="overflow-hidden">
             <p className="text-sm font-bold leading-tight truncate">SIKOMPETENSI</p>
             <p className="text-[10px] text-[#86EFAC] leading-tight truncate">BPSDM Aceh</p>
@@ -150,7 +157,8 @@ export function Sidebar({ userRole }: { userRole: string }) {
               item={item}
               activeView={activeView}
               activeTopKey={activeTopKey}
-              collapsed={sidebarCollapsed}
+              collapsed={collapsed}
+              isMobile={isMobile}
               onSelect={(v) => {
                 setActiveView(v)
                 setMobileSidebarOpen(false)
@@ -161,8 +169,8 @@ export function Sidebar({ userRole }: { userRole: string }) {
       </nav>
 
       {/* Footer */}
-      {!sidebarCollapsed && (
-        <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
+      {!collapsed && (
+        <div className="px-4 py-3 border-t border-white/10 flex-shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <p className="text-[10px] text-blue-200 text-center">PSKTI — System_Internal Use Only</p>
         </div>
       )}
@@ -171,26 +179,29 @@ export function Sidebar({ userRole }: { userRole: string }) {
 }
 
 function SidebarItem({
-  item, activeView, activeTopKey, collapsed, onSelect,
+  item, activeView, activeTopKey, collapsed, isMobile, onSelect,
 }: {
   item: MenuItem
   activeView: ViewKey
   activeTopKey: string
   collapsed: boolean
+  isMobile: boolean
   onSelect: (v: ViewKey) => void
 }) {
   const [open, setOpen] = useState(item.key === activeTopKey)
   const Icon = item.icon
   const isActive = item.view === activeView
   const isParentActive = item.key === activeTopKey
+  const touchCls = isMobile ? 'min-h-[44px] py-3' : 'py-2.5'
 
   if (!item.children || item.children.length === 0) {
     return (
       <button
         onClick={() => item.view && onSelect(item.view)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
-          isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
+          'w-full flex items-center gap-3 px-3 rounded-lg text-sm relative transition-all duration-200 ease-out',
+          touchCls,
+          isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 active:bg-white/20',
           collapsed && 'justify-center px-0'
         )}
         title={collapsed ? item.label : undefined}
@@ -214,8 +225,9 @@ function SidebarItem({
             }
           }}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
-            isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
+            'w-full flex items-center gap-3 px-3 rounded-lg text-sm relative transition-all duration-200 ease-out',
+            touchCls,
+            isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 active:bg-white/20',
             collapsed && 'justify-center px-0'
           )}
           title={collapsed ? item.label : undefined}
@@ -241,8 +253,9 @@ function SidebarItem({
                   key={child.key}
                   onClick={() => child.view && onSelect(child.view)}
                   className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out',
-                    childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10'
+                    'w-full flex items-center gap-2 px-3 rounded-md text-sm transition-all duration-200 ease-out',
+                    isMobile ? 'min-h-[40px] py-2.5' : 'py-2',
+                    childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10 active:bg-white/20'
                   )}
                 >
                   <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-[#22C55E] scale-125' : 'bg-blue-300/50')} />
