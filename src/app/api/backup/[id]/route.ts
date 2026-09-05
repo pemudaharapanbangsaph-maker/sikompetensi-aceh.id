@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { createReadStream, statSync, unlinkSync } from 'fs'
 import { resolveBackupFile } from '@/lib/backup-files'
+import { ensureBackupHistoryTable } from '@/lib/ensure-schema'
 
 // GET = Download file backup (.sql lama atau .zip baru)
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,6 +13,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     if (!hasPermission(session.user.role, 'backup:view')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
+    await ensureBackupHistoryTable()
     const { id } = await params
     const item = await db.backupHistory.findUnique({ where: { id } })
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
@@ -38,7 +41,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     })
   } catch (e) {
     console.error('backup download error:', e)
-    return NextResponse.json({ error: 'Gagal mengunduh backup' }, { status: 500 })
+    // sertakan alasan aslinya agar mudah didiagnosis (toast UI menampilkan pesan ini)
+    return NextResponse.json({ error: 'Gagal mengunduh backup: ' + (e as Error).message }, { status: 500 })
   }
 }
 
@@ -50,6 +54,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     if (!hasPermission(session.user.role, 'backup:create')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
+    await ensureBackupHistoryTable()
     const { id } = await params
     const item = await db.backupHistory.findUnique({ where: { id } })
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
@@ -62,6 +68,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     return NextResponse.json({ success: true })
   } catch (e) {
     console.error('backup delete error:', e)
-    return NextResponse.json({ error: 'Gagal menghapus backup' }, { status: 500 })
+    return NextResponse.json({ error: 'Gagal menghapus backup: ' + (e as Error).message }, { status: 500 })
   }
 }
