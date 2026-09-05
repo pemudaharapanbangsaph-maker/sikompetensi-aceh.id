@@ -30,7 +30,7 @@ export function LogoPancaCita({
 
   const remoteLogoSrc = getLogoSrc(logoVersion)
 
-  const [src, setSrc] = useState(remoteLogoSrc)
+  const [src, setSrc] = useState<string>(remoteLogoSrc)
   const [hasFailed, setHasFailed] = useState(false)
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function LogoPancaCita({
     setHasFailed(false)
   }, [remoteLogoSrc])
 
-  function handleImageError() {
+  const handleImageError = () => {
     if (hasFailed) return
 
     setHasFailed(true)
