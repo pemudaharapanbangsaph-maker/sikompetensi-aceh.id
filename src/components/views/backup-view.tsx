@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { api } from '@/lib/api'
 import type { BackupHistory, User } from '@/lib/types'
-import { useNavStore, useAuthStore, hasPermission } from '@/store/auth-store'
+import { useNavStore } from '@/store/auth-store'
 import { DataTable, StatCard, PageHeader, type Column } from '@/components/shared/data-table'
 import { StatusBadge, formatDateTime } from '@/components/shared/ui-helpers'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -43,8 +43,6 @@ function BackupMainView() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const role = useAuthStore((s) => s.user?.role)
-  const canViewUsers = hasPermission(role, 'users:view')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -56,20 +54,16 @@ function BackupMainView() {
   useEffect(() => { fetchData() }, [fetchData])
 
   useEffect(() => {
-    // Daftar user hanya bisa diakses SUPER_ADMIN (users:view) — tanpa ini
-    // browser mencatat error 403 di console tiap kali halaman backup dibuka
-    // oleh ADMIN_BIDANG (nama "Dibuat Oleh" memang kosong untuk role itu).
-    if (!canViewUsers) return
     let cancelled = false
     api.users.list({ page: 1, pageSize: 1000 }).then(r => { if (!cancelled) setUsers(r.data) }).catch(() => {})
     return () => { cancelled = true }
-  }, [canViewUsers])
+  }, [])
 
   const handleCreate = async () => {
     setCreating(true)
     try {
       await api.backup.create()
-      toast({ title: 'Berhasil', description: 'Backup lengkap berhasil dibuat (.zip: database + file upload)' })
+      toast({ title: 'Berhasil', description: 'Backup database berhasil dibuat (file .db asli)' })
       fetchData()
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) }
     finally { setCreating(false) }
@@ -191,8 +185,8 @@ function BackupRestoreView() {
     const file = e.target.files?.[0]
     if (!file) return
     const name = file.name.toLowerCase()
-    if (!name.endsWith('.sql') && !name.endsWith('.zip')) {
-      toast({ title: 'Format Salah', description: 'File harus .sql (dump MySQL) atau .zip (backup lengkap: database + file upload)', variant: 'destructive' })
+    if (!name.endsWith('.sql')) {
+      toast({ title: 'Format Salah', description: 'File harus .sql (dump MySQL)', variant: 'destructive' })
       return
     }
     setUploadFile(file)
@@ -214,7 +208,7 @@ function BackupRestoreView() {
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Restore Database" description="Pulihkan database & file upload dari file backup" />
+      <PageHeader title="Restore Database" description="Pulihkan database dari file backup" />
       <Card className="border-amber-200 bg-amber-50 shadow-sm">
         <CardContent className="p-4 flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -223,7 +217,7 @@ function BackupRestoreView() {
           <div className="flex-1">
             <h3 className="font-semibold text-amber-900 text-sm">Peringatan: Restore Akan Menimpa Data</h3>
             <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-              <span className="font-semibold">Seluruh data database saat ini akan diganti</span> dengan data dari file backup. Backup format .zip juga memulihkan file upload (sertifikat/surat tugas/dokumen pendaftar) dan akan menimpa file yang sama. Tindakan ini tidak dapat dibatalkan.
+              <span className="font-semibold">Seluruh data database saat ini akan diganti</span> dengan data dari file backup. Tindakan ini tidak dapat dibatalkan.
             </p>
           </div>
         </CardContent>
@@ -234,13 +228,13 @@ function BackupRestoreView() {
           <CardTitle className="text-base flex items-center gap-2">
             <Upload className="w-4 h-4 text-emerald-600" /> Restore dari File Komputer
           </CardTitle>
-          <CardDescription className="text-xs">Upload file backup (.sql dump MySQL atau .zip backup lengkap berisi database + file upload)</CardDescription>
+          <CardDescription className="text-xs">Upload file SQL dump (.sql) dari komputer</CardDescription>
         </CardHeader>
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <input ref={fileInputRef} type="file" accept=".sql,.zip" className="hidden" onChange={handleUploadChange} />
+            <input ref={fileInputRef} type="file" accept=".sql" className="hidden" onChange={handleUploadChange} />
             <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="border-emerald-600 text-emerald-600 hover:bg-emerald-50">
-              <Upload className="w-4 h-4" /> Pilih File Backup
+              <Upload className="w-4 h-4" /> Pilih File Database
             </Button>
             {uploadFile && (
               <span className="text-xs text-slate-600">
@@ -302,7 +296,7 @@ function BackupRestoreView() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-amber-600" /> Konfirmasi Restore</AlertDialogTitle>
             <AlertDialogDescription>
-              Restore database{restoreTarget?.namaFile?.toLowerCase().endsWith('.zip') ? ' + file upload (sertifikat/surat tugas/dokumen pendaftar)' : ''} dari <span className="font-mono font-semibold">{restoreTarget?.namaFile}</span>?
+              Restore database dari <span className="font-mono font-semibold">{restoreTarget?.namaFile}</span>?
               <br /><br /><span className="text-amber-700 font-medium">⚠️ Seluruh data saat ini akan ditimpa!</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -320,7 +314,7 @@ function BackupRestoreView() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-amber-600" /> Upload & Restore</AlertDialogTitle>
             <AlertDialogDescription>
-              Ganti database{uploadFile?.name?.toLowerCase().endsWith('.zip') ? ' + pulihkan file upload (sertifikat/surat tugas/dokumen pendaftar)' : ''} dengan <span className="font-mono font-semibold">{uploadFile?.name}</span> ({uploadFile ? (uploadFile.size / 1024 / 1024).toFixed(2) : '0'} MB)?
+              Ganti database dengan <span className="font-mono font-semibold">{uploadFile?.name}</span> ({uploadFile ? (uploadFile.size / 1024 / 1024).toFixed(2) : '0'} MB)?
               <br /><br /><span className="text-amber-700 font-medium">⚠️ Seluruh data saat ini akan ditimpa!</span>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -343,8 +337,6 @@ function BackupRiwayatView() {
   const [loading, setLoading] = useState(true)
   const [deleteTarget, setDeleteTarget] = useState<EnrichedBackup | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const role = useAuthStore((s) => s.user?.role)
-  const canViewUsers = hasPermission(role, 'users:view')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -356,14 +348,10 @@ function BackupRiwayatView() {
   useEffect(() => { fetchData() }, [fetchData])
 
   useEffect(() => {
-    // Daftar user hanya bisa diakses SUPER_ADMIN (users:view) — tanpa ini
-    // browser mencatat error 403 di console tiap kali halaman dibuka
-    // oleh ADMIN_BIDANG (nama "Dibuat Oleh" memang kosong untuk role itu).
-    if (!canViewUsers) return
     let cancelled = false
     api.users.list({ page: 1, pageSize: 1000 }).then(r => { if (!cancelled) setUsers(r.data) }).catch(() => {})
     return () => { cancelled = true }
-  }, [canViewUsers])
+  }, [])
 
   const handleDelete = async () => {
     if (!deleteTarget) return
