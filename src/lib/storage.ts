@@ -101,7 +101,7 @@ export function getStorageRoots(): string[] {
  * (versi terbaru lebih dulu). Hanya dipakai ketika kandidat utama tidak menemukan
  * file — menyelamatkan file yang terupload ke folder versi sebelumnya.
  */
-function versionSiblingRoots(): string[] {
+export function versionSiblingRoots(): string[] {
   const out: string[] = []
   const anchors: (string | null)[] = [getServerDir(), process.cwd()]
   for (const anchor of anchors) {
