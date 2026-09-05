@@ -38,8 +38,10 @@ export function LogoPancaCita({
     setHasFailed(false)
   }, [remoteLogoSrc])
 
-  const handleImageError = () => {
-    if (hasFailed) return
+  function handleImageError() {
+    if (hasFailed) {
+      return
+    }
 
     setHasFailed(true)
     setSrc(DEFAULT_LOGO_SRC)
