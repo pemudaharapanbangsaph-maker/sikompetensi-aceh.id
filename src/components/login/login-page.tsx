@@ -319,6 +319,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
             Cek Status Pendaftaran
           </button>
         </div>
+      </div>
     </motion.div>
   )
 }
