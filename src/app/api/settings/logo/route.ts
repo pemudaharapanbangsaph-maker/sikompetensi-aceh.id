@@ -64,9 +64,13 @@ export async function GET() {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
         },
       })
-    } catch {
-      // File tidak ada, lanjut fallback
-    }
+    }catch (error) {
+  console.error('Gagal mengambil logo:', error)
+
+  return new Response('Logo tidak dapat dimuat', {
+    status: 500,
+  })
+}
 
     // 3. Fallback: default logo di public/
     try {
@@ -74,9 +78,10 @@ export async function GET() {
       const fileBuffer = await readFile(defaultPath)
       return new NextResponse(fileBuffer, {
         headers: {
-          'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=86400',
-        },
+  'Content-Type': mimeType,
+  'Cache-Control':
+    'public, max-age=300, s-maxage=300, stale-while-revalidate=60',
+},
       })
     } catch {
       // 4. Fallback terakhir: transparent pixel 1x1
