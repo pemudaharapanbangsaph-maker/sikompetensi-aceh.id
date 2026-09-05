@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
 import { readFile } from 'fs/promises'
 import { execSync } from 'child_process'
 import { resolveBackupFile, applyBackupZip } from '@/lib/backup-files'
-import { ensureBackupHistoryTable } from '@/lib/ensure-schema'
+// Repo berbasis mysql2 — bebas Prisma (baca catatan src/lib/backup-repo.ts)
+import { getBackupHistoryById } from '@/lib/backup-repo'
 
 function parseDbUrl(): { host: string; port: string; user: string; password: string; database: string } {
   const url = process.env.DATABASE_URL || ''
@@ -25,10 +25,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!hasPermission(session.user.role, 'backup:restore')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
-    // Belt-and-suspenders: pastikan tabel BackupHistory ada (idempotent, murah)
-    await ensureBackupHistoryTable()
     const { id } = await params
-    const item = await db.backupHistory.findUnique({ where: { id } })
+    const item = await getBackupHistoryById(id)
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
 
     // Cari file backup di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups
