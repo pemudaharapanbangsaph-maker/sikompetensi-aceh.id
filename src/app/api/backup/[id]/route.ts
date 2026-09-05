@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog, hasPermission } from '@/lib/auth'
-import { existsSync, createReadStream, statSync, unlinkSync } from 'fs'
-import path from 'path'
+import { createReadStream, statSync, unlinkSync } from 'fs'
+import { resolveBackupFile } from '@/lib/backup-files'
 
-const BACKUP_DIR = path.join(process.cwd(), 'db', 'backups')
-
-// GET = Download file backup (.sql)
+// GET = Download file backup (.sql lama atau .zip baru)
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await getSession()
@@ -17,15 +15,23 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params
     const item = await db.backupHistory.findUnique({ where: { id } })
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
-    const filePath = path.join(BACKUP_DIR, item.namaFile)
-    if (!existsSync(filePath)) {
-      return NextResponse.json({ error: 'File backup tidak ditemukan di server' }, { status: 404 })
+
+    // Cari di semua lokasi kandidat (UPLOAD_DIR/backups, db/backups folder
+    // aplikasi / versi deploy lama) — dulu hanya process.cwd()/db/backups.
+    const { path: filePath, tried } = resolveBackupFile(item.namaFile)
+    if (!filePath) {
+      return NextResponse.json(
+        { error: 'File backup tidak ditemukan di server. Lokasi yang dicoba: ' + tried.join(' | ') },
+        { status: 404 }
+      )
     }
+
     const stats = statSync(filePath)
     const stream = createReadStream(filePath)
+    const contentType = item.namaFile.toLowerCase().endsWith('.zip') ? 'application/zip' : 'application/sql'
     return new NextResponse(stream as unknown as BodyInit, {
       headers: {
-        'Content-Type': 'application/sql',
+        'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${item.namaFile}"`,
         'Content-Length': String(stats.size),
       },
@@ -47,8 +53,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const { id } = await params
     const item = await db.backupHistory.findUnique({ where: { id } })
     if (!item) return NextResponse.json({ error: 'Backup tidak ditemukan' }, { status: 404 })
-    const filePath = path.join(BACKUP_DIR, item.namaFile)
-    if (existsSync(filePath)) unlinkSync(filePath)
+    const { path: filePath } = resolveBackupFile(item.namaFile)
+    if (filePath) {
+      try { unlinkSync(filePath) } catch { /* abaikan bila sudah tidak ada */ }
+    }
     await db.backupHistory.delete({ where: { id } })
     await auditLog(session, 'DELETE', 'BACKUP', `Hapus backup: ${item.namaFile}`, req)
     return NextResponse.json({ success: true })
