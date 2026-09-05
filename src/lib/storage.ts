@@ -258,6 +258,36 @@ export function getWriteRoot(): string {
 }
 
 /**
+ * Direktori ROOT APLIKASI (folder yang berisi package.json + prisma/schema.prisma).
+ * Dipakai untuk menemukan node_modules/prisma (self-heal Prisma client) —
+ * aman terhadap process.cwd() yang aneh di shared hosting.
+ */
+export function getAppRoot(): string | null {
+  const seen = new Set<string>()
+  const candidates: (string | null)[] = [getServerDir(), process.cwd()]
+  for (const c of candidates) {
+    let dir = c
+    // naik maksimal 4 level (cwd bisa berada di dalam subfolder aplikasi)
+    for (let i = 0; dir && i < 5; i++) {
+      const norm = path.resolve(dir)
+      if (seen.has(norm)) break
+      seen.add(norm)
+      try {
+        if (fs.existsSync(path.join(norm, 'package.json')) && fs.existsSync(path.join(norm, 'prisma', 'schema.prisma'))) {
+          return norm
+        }
+      } catch {
+        /* lanjut kandidat berikutnya */
+      }
+      const parent = path.dirname(norm)
+      if (parent === norm) break
+      dir = parent
+    }
+  }
+  return null
+}
+
+/**
  * Pastikan direktori upload ada dan kembalikan path absolutnya.
  * (menggantikan ensureUploadDir() lama yang memakai process.cwd() mentah)
  */
