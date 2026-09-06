@@ -13,8 +13,6 @@ const AnalisisView = lazy(() => import('@/components/views/analisis-view').then(
 const AnalisisDiklatInputView = lazy(() => import('@/components/views/analisis-diklat-input-view').then(m => ({ default: m.AnalisisDiklatInputView })))
 const PelatihanView = lazy(() => import('@/components/views/pelatihan-view').then(m => ({ default: m.PelatihanView })))
 const AngkatanView = lazy(() => import('@/components/views/angkatan-view').then(m => ({ default: m.AngkatanView })))
-const UjiKompetensiView = lazy(() => import('@/components/views/uji-kompetensi-view').then(m => ({ default: m.UjiKompetensiView })))
-const AsesorView = lazy(() => import('@/components/views/asesor-view').then(m => ({ default: m.AsesorView })))
 const PesertaView = lazy(() => import('@/components/views/peserta-view').then(m => ({ default: m.PesertaView })))
 const MonitoringView = lazy(() => import('@/components/views/monitoring-view').then(m => ({ default: m.MonitoringView })))
 const LaporanView = lazy(() => import('@/components/views/laporan-view').then(m => ({ default: m.LaporanView })))
@@ -23,6 +21,11 @@ const BackupView = lazy(() => import('@/components/views/backup-view').then(m =>
 const SettingsView = lazy(() => import('@/components/views/settings-view').then(m => ({ default: m.SettingsView })))
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
 const ArsipView = lazy(() => import('@/components/views/arsip-view').then(m => ({ default: m.ArsipView })))
+const AccountView = lazy(() => import('@/components/views/account-view').then(m => ({ default: m.AccountView })))
+const SertifikatView = lazy(() => import('@/components/views/sertifikat-view').then(m => ({ default: m.SertifikatView })))
+const NotifikasiView = lazy(() => import('@/components/views/notifikasi-view').then(m => ({ default: m.NotifikasiView })))
+const DaftarHadirView = lazy(() => import('@/components/views/daftar-hadir-view').then(m => ({ default: m.DaftarHadirView })))
+
 
 function ViewLoader() {
   return (
@@ -46,17 +49,10 @@ function renderView(view: string): React.ReactNode {
     case 'pelatihan-arsip':
       return <PelatihanView />
     case 'angkatan':
-    case 'kehadiran':
     case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
-    case 'uji-biodata':
-    case 'uji-jadwal':
-    case 'uji-penilaian':
-    case 'uji-hasil':
-    case 'uji-rekap':
-      return <UjiKompetensiView />
-    case 'uji-asesor':
-      return <AsesorView />
+    case 'kehadiran':
+      return <DaftarHadirView />
     case 'peserta':
     case 'peserta-riwayat':
       return <PesertaView />
@@ -68,11 +64,9 @@ function renderView(view: string): React.ReactNode {
     case 'monitoring-rekap':
       return <MonitoringView />
     case 'laporan-pelatihan':
-    case 'laporan-uji':
     case 'laporan-peserta':
       return <LaporanView />
     case 'arsip-pelatihan':
-    case 'arsip-uji':
     case 'arsip-peserta':
       return <ArsipView />
     case 'user-data':
@@ -86,8 +80,16 @@ function renderView(view: string): React.ReactNode {
     case 'settings-profil':
     case 'settings-logo':
     case 'settings-login':
+    case 'settings-smtp':
     case 'settings-audit':
       return <SettingsView />
+    case 'account-profil':
+    case 'account-keamanan':
+      return <AccountView />
+    case 'sertifikat-pelatihan':
+      return <SertifikatView />
+    case 'notifikasi':
+      return <NotifikasiView />
     default: return <DashboardView />
   }
 }
@@ -106,8 +108,12 @@ export function AppShell() {
 
       {/* Mobile Sidebar (Sheet) */}
       <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64 bg-[#0F4C81]">
-          <Sidebar userRole={user?.role || 'OPERATOR'} />
+        <SheetContent
+          side="left"
+          className="p-0 w-[280px] max-w-[85vw] bg-[#0F4C81] border-r border-white/10"
+        >
+          {/* Selalu tampil penuh (bukan collapsed) di drawer mobile */}
+          <Sidebar userRole={user?.role || 'OPERATOR'} variant="mobile" />
         </SheetContent>
       </Sheet>
 
@@ -121,12 +127,12 @@ export function AppShell() {
             </Suspense>
           </div>
         </main>
-        <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2">
+        <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="flex items-center gap-2 text-center sm:text-left">
             <span className="font-semibold">Sistem Informasi Kompetensi Teknis</span>
-            <span className="text-blue-200">— BPSDM Aceh</span>
+            <span className="text-blue-200 hidden sm:inline">— BPSDM Aceh</span>
           </div>
-          <div className="text-blue-200">
+          <div className="text-blue-200 text-center">
             © {new Date().getFullYear()} Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
           </div>
         </footer>
