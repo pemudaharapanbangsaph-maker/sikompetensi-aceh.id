@@ -4,13 +4,8 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { 
-  ChevronDown, LayoutDashboard, ClipboardList, BookOpen, 
-  Award, Users, BarChart3, FileText, UserCog, 
-  DatabaseBackup, Settings, FileUser, ClipboardCheck, 
-  UsersRound, Archive, X 
-} from 'lucide-react'
-import { LogoPancaCita } from '@/components/shared/logo-pancacita'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive } from 'lucide-react'
+import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
   key: string
@@ -120,7 +115,7 @@ const menuItems: MenuItem[] = [
 
 export function Sidebar({ userRole }: { userRole: string }) {
   const { activeView, setActiveView } = useNavStore()
-  const { sidebarCollapsed, mobileSidebarOpen, setMobileSidebarOpen } = useUIStore()
+  const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
 
   const filterMenu = (items: MenuItem[]): MenuItem[] => {
     return items
@@ -132,89 +127,56 @@ export function Sidebar({ userRole }: { userRole: string }) {
   const activeTopKey = activeView.split('-')[0]
 
   return (
-    <>
-      {/* Backdrop overlay khusus Mobile */}
-      {mobileSidebarOpen && (
-        <div
-          aria-hidden="true"
-          onClick={() => setMobileSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden transition-opacity duration-300"
-        />
+    <aside
+      className={cn(
+        'sidebar-transition bg-[#0F4C81] text-white flex flex-col h-screen sticky top-0',
+        sidebarCollapsed ? 'w-[68px]' : 'w-64'
       )}
-
-      {/* Sidebar Container */}
-      <aside
-        className={cn(
-          'bg-[#0F4C81] text-white flex flex-col h-screen fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 shadow-xl lg:shadow-none transition-all duration-300 ease-in-out',
-          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-          sidebarCollapsed ? 'lg:w-[68px]' : 'lg:w-64',
-          'w-72 max-w-[80vw] lg:max-w-none'
+    >
+      {/* Logo */}
+      <div className="h-14 lg:h-16 flex items-center gap-2.5 px-4 border-b border-white/10 flex-shrink-0">
+        <div className="flex-shrink-0">
+          <LogoPancaCita size={32} />
+        </div>
+        {!sidebarCollapsed && (
+          <div className="overflow-hidden">
+            <p className="text-sm font-bold leading-tight truncate">SIKOMPETENSI</p>
+            <p className="text-[10px] text-[#86EFAC] leading-tight truncate">BPSDM Aceh</p>
+          </div>
         )}
-      >
-        {/* Header / Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 flex-shrink-0">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex-shrink-0">
-              <LogoPancaCita size={32} />
-            </div>
-            {/* Hanya tampilkan teks jika tidak collapsed di Desktop */}
-            <div className={cn('overflow-hidden transition-opacity duration-200', sidebarCollapsed ? 'lg:hidden' : 'block')}>
-              <p className="text-sm font-bold leading-tight truncate tracking-wide">SIKOMPETENSI</p>
-              <p className="text-[10px] text-[#86EFAC] font-medium leading-tight truncate">BPSDM Aceh</p>
-            </div>
-          </div>
+      </div>
 
-          {/* Tombol Tutup Sidebar untuk Mobile */}
-          <button
-            onClick={() => setMobileSidebarOpen(false)}
-            className="lg:hidden p-2 text-blue-200 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Tutup menu"
-          >
-            <X className="w-5 h-5" />
-          </button>
+      {/* Menu */}
+      <nav className="flex-1 overflow-y-auto sidebar-scroll py-3">
+        <div className="space-y-0.5 px-2">
+          {visibleMenu.map((item) => (
+            <SidebarItem
+              key={item.key}
+              item={item}
+              activeView={activeView}
+              activeTopKey={activeTopKey}
+              collapsed={sidebarCollapsed}
+              onSelect={(v) => {
+                setActiveView(v)
+                setMobileSidebarOpen(false)
+              }}
+            />
+          ))}
         </div>
+      </nav>
 
-        {/* Menu Navigation */}
-        <nav className="flex-1 overflow-y-auto sidebar-scroll py-3">
-          <div className="space-y-1 px-2.5">
-            {visibleMenu.map((item) => (
-              <SidebarItem
-                key={item.key}
-                item={item}
-                activeView={activeView}
-                activeTopKey={activeTopKey}
-                collapsed={sidebarCollapsed}
-                onSelect={(v) => {
-                  setActiveView(v)
-                  setMobileSidebarOpen(false)
-                }}
-              />
-            ))}
-          </div>
-        </nav>
-
-        {/* Footer */}
-        <div
-          className={cn(
-            'px-4 py-3 border-t border-white/10 flex-shrink-0 bg-[#0B3C67]/50',
-            sidebarCollapsed ? 'lg:hidden' : 'block'
-          )}
-        >
-          <p className="text-[10px] text-blue-200 text-center font-medium tracking-wider">
-            PSKTI — Internal System
-          </p>
+      {/* Footer */}
+      {!sidebarCollapsed && (
+        <div className="px-4 py-3 border-t border-white/10 flex-shrink-0">
+          <p className="text-[10px] text-blue-200 text-center">PSKTI — System_Internal Use Only</p>
         </div>
-      </aside>
-    </>
+      )}
+    </aside>
   )
 }
 
 function SidebarItem({
-  item,
-  activeView,
-  activeTopKey,
-  collapsed,
-  onSelect,
+  item, activeView, activeTopKey, collapsed, onSelect,
 }: {
   item: MenuItem
   activeView: ViewKey
@@ -232,84 +194,70 @@ function SidebarItem({
       <button
         onClick={() => item.view && onSelect(item.view)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium relative transition-all duration-200 ease-in-out',
-          isActive
-            ? 'bg-white/20 text-white font-semibold shadow-sm'
-            : 'text-blue-100 hover:bg-white/10 hover:text-white',
-          collapsed ? 'lg:justify-center lg:px-0' : 'justify-start'
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
+          isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
+          collapsed && 'justify-center px-0'
         )}
         title={collapsed ? item.label : undefined}
       >
-        {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />
-        )}
+        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
         {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-        <span className={cn('truncate', collapsed ? 'lg:hidden' : 'inline')}>{item.label}</span>
+        {!collapsed && <span className="truncate">{item.label}</span>}
       </button>
     )
   }
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
+    <Collapsible open={open && !collapsed} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
         <button
           onClick={() => {
-            setOpen(!open)
+            if (collapsed) {
+              if (item.children && item.children[0]?.view) onSelect(item.children[0].view)
+            } else {
+              setOpen(!open)
+            }
           }}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium relative transition-all duration-200 ease-in-out',
-            isParentActive
-              ? 'bg-white/15 text-white shadow-sm'
-              : 'text-blue-100 hover:bg-white/10 hover:text-white',
-            collapsed ? 'lg:justify-center lg:px-0' : 'justify-start'
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
+            isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
+            collapsed && 'justify-center px-0'
           )}
           title={collapsed ? item.label : undefined}
         >
-          {isParentActive && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />
-          )}
+          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
           {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-          <span className={cn('truncate flex-1 text-left', collapsed ? 'lg:hidden' : 'inline')}>
-            {item.label}
-          </span>
-          <ChevronDown
-            className={cn(
-              'w-4 h-4 transition-transform duration-200 opacity-80',
-              open && 'rotate-180',
-              collapsed ? 'lg:hidden' : 'block'
-            )}
-          />
+          {!collapsed && (
+            <>
+              <span className="truncate flex-1 text-left">{item.label}</span>
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-180')} />
+            </>
+          )}
         </button>
       </CollapsibleTrigger>
-      
-      {/* Submenu */}
-      <CollapsibleContent>
-        <div className={cn('space-y-1 mt-1 mb-1.5', collapsed ? 'lg:ml-0' : 'ml-4 pl-3 border-l border-white/15')}>
-          {item.children.map((child) => {
-            const childActive = child.view === activeView
-            return (
-              <button
-                key={child.key}
-                onClick={() => child.view && onSelect(child.view)}
-                className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs sm:text-sm font-normal transition-all duration-150 ease-in-out',
-                  childActive
-                    ? 'bg-white/20 text-white font-medium shadow-sm'
-                    : 'text-blue-100/90 hover:bg-white/10 hover:text-white'
-                )}
-              >
-                <span
+      {!collapsed && (
+        <CollapsibleContent>
+          <div className="ml-4 pl-4 border-l border-white/10 space-y-0.5 mt-0.5 mb-1">
+            {item.children.map((child) => {
+              const ChildIcon = child.icon
+              const childActive = child.view === activeView
+              return (
+                <button
+                  key={child.key}
+                  onClick={() => child.view && onSelect(child.view)}
                   className={cn(
-                    'w-1.5 h-1.5 rounded-full flex-shrink-0 transition-transform duration-200',
-                    childActive ? 'bg-[#22C55E] scale-125' : 'bg-blue-300/40'
+                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out',
+                    childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10'
                   )}
-                />
-                <span className="truncate">{child.label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </CollapsibleContent>
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-[#22C55E] scale-125' : 'bg-blue-300/50')} />
+                  <span className="truncate">{child.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </CollapsibleContent>
+      )}
     </Collapsible>
   )
 }
