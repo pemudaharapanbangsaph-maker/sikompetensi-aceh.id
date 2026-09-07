@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -59,19 +59,19 @@ export function DataTable<T>({
   const end = Math.min(page * pageSize, total)
 
   return (
-    <Card className="border-slate-200 shadow-sm">
-      <CardContent className="p-4 space-y-4">
+    <Card className="border-slate-200 shadow-sm w-full overflow-hidden">
+      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         {/* Toolbar */}
-        <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
-          <div className="flex flex-1 flex-col sm:flex-row gap-2 sm:items-center">
+        <div className="flex flex-col lg:flex-row gap-2.5 sm:gap-3 lg:items-center lg:justify-between">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center flex-1">
             {onSearchChange && (
-              <div className="relative flex-1 max-w-xs">
+              <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
                   value={searchValue || ''}
                   onChange={(e) => onSearchChange(e.target.value)}
                   placeholder={searchPlaceholder}
-                  className="pl-9 h-9"
+                  className="pl-9 h-9 text-xs sm:text-sm bg-white"
                 />
               </div>
             )}
@@ -81,7 +81,7 @@ export function DataTable<T>({
                 value={filterValues[f.key] || 'all'}
                 onValueChange={(v) => onFilterChange?.(f.key, v === 'all' ? '' : v)}
               >
-                <SelectTrigger className={cn('h-9 w-full', f.width || 'sm:w-40')}>
+                <SelectTrigger className={cn('h-9 w-full text-xs sm:text-sm bg-white', f.width || 'sm:w-40')}>
                   <SelectValue placeholder={f.label} />
                 </SelectTrigger>
                 <SelectContent>
@@ -93,35 +93,35 @@ export function DataTable<T>({
               </Select>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-end">
             {toolbar}
             {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading} className="h-9">
-                <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
-                <span className="hidden sm:inline">Refresh</span>
+              <Button variant="outline" size="sm" onClick={onRefresh} disabled={loading} className="h-9 px-3 text-xs sm:text-sm">
+                <RefreshCw className={cn('w-3.5 h-3.5 sm:w-4 sm:h-4', loading && 'animate-spin')} />
+                <span className="hidden sm:inline ml-1.5">Refresh</span>
               </Button>
             )}
             {onAdd && (
-              <Button size="sm" onClick={onAdd} className="h-9 bg-[#0F4C81] hover:bg-[#0a3a63]">
-                <Plus className="w-4 h-4" />
+              <Button size="sm" onClick={onAdd} className="h-9 px-3 bg-[#0F4C81] hover:bg-[#0a3a63] text-xs sm:text-sm">
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                 {addLabel}
               </Button>
             )}
           </div>
         </div>
 
-        {/* Table */}
-        <div className="rounded-lg border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
+        {/* Table Container with Horizontal Touch Scroll */}
+        <div className="rounded-lg border border-slate-200 overflow-hidden bg-white">
+          <div className="overflow-x-auto min-w-full">
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-200 hover:bg-slate-50">
                   {columns.map((c) => (
-                    <TableHead key={c.key} className={cn('text-xs font-semibold text-slate-600 uppercase tracking-wide', c.className)} style={{ width: c.width }}>
+                    <TableHead key={c.key} className={cn('text-[11px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap py-3 px-3', c.className)} style={{ width: c.width }}>
                       {c.header}
                     </TableHead>
                   ))}
-                  {actions && <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide text-right w-[100px]">Aksi</TableHead>}
+                  {actions && <TableHead className="text-[11px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wide text-right whitespace-nowrap py-3 px-3 min-w-[90px]">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,30 +129,30 @@ export function DataTable<T>({
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                       {columns.map((c) => (
-                        <TableCell key={c.key}>
+                        <TableCell key={c.key} className="py-3 px-3">
                           <div className="h-4 bg-slate-100 rounded animate-pulse" />
                         </TableCell>
                       ))}
-                      {actions && <TableCell><div className="h-4 bg-slate-100 rounded animate-pulse ml-auto w-16" /></TableCell>}
+                      {actions && <TableCell className="py-3 px-3"><div className="h-4 bg-slate-100 rounded animate-pulse ml-auto w-12" /></TableCell>}
                     </TableRow>
                   ))
                 ) : data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={columns.length + (actions ? 1 : 0)} className="text-center py-12 text-slate-400">
-                      <Inbox className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                      {emptyMessage}
+                    <TableCell colSpan={columns.length + (actions ? 1 : 0)} className="text-center py-10 text-slate-400">
+                      <Inbox className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 text-slate-300" />
+                      <p className="text-xs sm:text-sm">{emptyMessage}</p>
                     </TableCell>
                   </TableRow>
                 ) : (
                   data.map((row, rowIndex) => (
                     <TableRow key={rowKey(row)} className="border-slate-100 hover:bg-slate-50/50 transition-colors">
                       {columns.map((c) => (
-                        <TableCell key={c.key} className={cn('text-sm text-slate-700', c.className)}>
+                        <TableCell key={c.key} className={cn('text-xs sm:text-sm text-slate-700 py-3 px-3', c.className)}>
                           {c.render ? c.render(row, rowIndex) : (row as Record<string, unknown>)[c.key] as ReactNode}
                         </TableCell>
                       ))}
                       {actions && (
-                        <TableCell className="text-right">
+                        <TableCell className="text-right py-3 px-3 whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1">{actions(row)}</div>
                         </TableCell>
                       )}
@@ -165,12 +165,12 @@ export function DataTable<T>({
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-          <p className="text-slate-500 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs sm:text-sm pt-1">
+          <p className="text-slate-500 text-[11px] sm:text-xs text-center sm:text-left order-2 sm:order-1">
             Menampilkan <span className="font-medium text-slate-700">{start}-{end}</span> dari <span className="font-medium text-slate-700">{total}</span> data
           </p>
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page - 1)} disabled={page <= 1 || loading} className="h-8">
+          <div className="flex items-center gap-1 order-1 sm:order-2">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page - 1)} disabled={page <= 1 || loading} className="h-8 w-8 p-0">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-1">
@@ -188,14 +188,14 @@ export function DataTable<T>({
                     size="sm"
                     onClick={() => onPageChange?.(p)}
                     disabled={loading}
-                    className={cn('h-8 w-8 p-0', p === page && 'bg-[#0F4C81] hover:bg-[#0a3a63]')}
+                    className={cn('h-8 w-8 p-0 text-xs', p === page && 'bg-[#0F4C81] hover:bg-[#0a3a63]')}
                   >
                     {p}
                   </Button>
                 )
               })}
             </div>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages || loading} className="h-8">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages || loading} className="h-8 w-8 p-0">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -212,18 +212,14 @@ function useAnimatedNumber(target: number, duration = 800): number {
   const rafRef = useRef<number>(0)
 
   useEffect(() => {
-    if (typeof target !== 'number' || isNaN(target) || target === 0) {
-      return
-    }
+    if (typeof target !== 'number' || isNaN(target) || target === 0) return
     startTime.current = null
     const animate = (timestamp: number) => {
       if (!startTime.current) startTime.current = timestamp
       const progress = Math.min((timestamp - startTime.current) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
       setCurrent(Math.round(eased * target))
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate)
-      }
+      if (progress < 1) rafRef.current = requestAnimationFrame(animate)
     }
     rafRef.current = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(rafRef.current)
@@ -243,55 +239,33 @@ export function StatCard({
   subtitle?: string
   trend?: { value: string; up: boolean }
 }) {
-  const colors: Record<string, { bg: string; text: string; ring: string; hover: string; shadow: string }> = {
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100', hover: 'hover:shadow-blue-200/40', shadow: 'shadow-blue-100/60' },
-    green: { bg: 'bg-green-50', text: 'text-[#15803D]', ring: 'ring-green-100', hover: 'hover:shadow-[#86EFAC]/40', shadow: 'shadow-[#86EFAC]/60' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100', hover: 'hover:shadow-amber-200/40', shadow: 'shadow-amber-100/60' },
-    purple: { bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-100', hover: 'hover:shadow-purple-200/40', shadow: 'shadow-purple-100/60' },
-    red: { bg: 'bg-red-50', text: 'text-red-600', ring: 'ring-red-100', hover: 'hover:shadow-red-200/40', shadow: 'shadow-red-100/60' },
-    slate: { bg: 'bg-slate-100', text: 'text-slate-600', ring: 'ring-slate-200', hover: 'hover:shadow-slate-300/40', shadow: 'shadow-slate-200/60' },
+  const colors: Record<string, { bg: string; text: string; ring: string }> = {
+    blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100' },
+    green: { bg: 'bg-green-50', text: 'text-[#15803D]', ring: 'ring-green-100' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-600', ring: 'ring-amber-100' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-600', ring: 'ring-purple-100' },
+    red: { bg: 'bg-red-50', text: 'text-red-600', ring: 'ring-red-100' },
+    slate: { bg: 'bg-slate-50', text: 'text-slate-600', ring: 'ring-slate-100' },
   }
-  const c = colors[color]
-  const numericValue = typeof value === 'number' ? value : parseInt(String(value), 10)
-  const isNumeric = typeof value === 'number' || (!isNaN(numericValue) && String(value) === String(numericValue))
-  const animatedValue = useAnimatedNumber(isNumeric ? numericValue : 0, 800)
-  const displayValue = isNumeric ? animatedValue : value
+  const c = colors[color] || colors.blue
+  const numericVal = typeof value === 'number' ? value : parseInt(value.toString().replace(/\D/g, ''), 10)
+  const animatedVal = useAnimatedNumber(isNaN(numericVal) ? 0 : numericVal)
+  const displayVal = typeof value === 'number' ? animatedVal : value
 
   return (
-    <Card className={cn(
-      'border-slate-100 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg',
-      c.hover
-    )}>
-      <CardContent className="p-4 sm:p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{displayValue}</p>
-            {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
-            {trend && (
-              <p className={cn('text-xs font-medium mt-1 flex items-center gap-1', trend.up ? 'text-[#15803D]' : 'text-red-600')}>
-                {trend.up ? '↑' : '↓'} {trend.value}
-              </p>
-            )}
+    <Card className="border-slate-200 shadow-sm hover:shadow transition-all">
+      <CardContent className="p-3.5 sm:p-5">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-slate-500">{title}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">{displayVal}</p>
+            {subtitle && <p className="text-[11px] text-slate-400">{subtitle}</p>}
           </div>
-          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center ring-4 transition-transform duration-200 hover:scale-110', c.bg, c.text, c.ring)}>
-            <Icon className="w-5 h-5" />
+          <div className={cn('p-2.5 sm:p-3 rounded-xl flex-shrink-0', c.bg, c.text)}>
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-// Page header component
-export function PageHeader({ title, description, children }: { title: string; description?: string; children?: ReactNode }) {
-  return (
-    <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900">{title}</h2>
-        {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
-      </div>
-      {children && <div className="flex items-center gap-2">{children}</div>}
-    </div>
   )
 }
