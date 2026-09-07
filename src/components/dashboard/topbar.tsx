@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useUIStore, useAuthStore, useNavStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -61,18 +61,19 @@ export function Topbar() {
   const { user, logout } = useAuthStore()
   const { activeView, setActiveView } = useNavStore()
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
+  const [notifOpen, setNotifOpen] = useState(false)
   const title = viewTitles[activeView] || { title: 'Dashboard', subtitle: '' }
 
   const initials = user?.nama
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || 'U'
 
   return (
-    <header className="h-14 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-3 sm:px-4 gap-2 sm:gap-3 shadow-sm min-w-0">
-      {/* Mobile menu button */}
+    <header className="h-14 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-4 gap-2 sm:gap-3 shadow-sm">
+      {/* Mobile menu */}
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden flex-shrink-0"
+        className="lg:hidden"
         onClick={() => setMobileSidebarOpen(true)}
       >
         <Menu className="w-5 h-5" />
@@ -82,7 +83,7 @@ export function Topbar() {
       <Button
         variant="ghost"
         size="icon"
-        className="hidden lg:flex flex-shrink-0"
+        className="hidden lg:flex"
         onClick={toggleSidebar}
       >
         {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
@@ -90,28 +91,28 @@ export function Topbar() {
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 truncate">{title.title}</h1>
+        <h1 className="text-base lg:text-lg font-bold text-slate-900 truncate">{title.title}</h1>
         <p className="text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
       </div>
 
-      {/* Search (desktop only) */}
+      {/* Search (decorative on desktop) */}
       <div className="hidden md:flex items-center relative">
         <Search className="absolute left-3 w-4 h-4 text-slate-400" />
         <input
           type="text"
           placeholder="Cari cepat..."
-          className="pl-9 pr-4 py-1.5 w-48 lg:w-64 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F4C81]/20 focus:border-[#0F4C81] transition-colors"
+          className="pl-9 pr-4 py-2 w-56 lg:w-64 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F4C81]/20 focus:border-[#0F4C81] transition-colors"
         />
       </div>
 
       {/* Notifications */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative flex-shrink-0">
+          <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-5 h-5 text-slate-600" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72 sm:w-80 max-w-[calc(100vw-2rem)]">
+        <DropdownMenuContent align="end" className="w-80">
           <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <div className="px-3 py-6 text-center">
@@ -124,14 +125,14 @@ export function Topbar() {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 p-1 sm:px-2 sm:py-1.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0">
+          <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
             <Avatar className="w-8 h-8 border border-slate-200">
               <AvatarFallback className="bg-[#0F4C81] text-white text-xs font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold text-slate-900 leading-tight truncate max-w-[120px]">{user?.nama}</p>
+              <p className="text-sm font-semibold text-slate-900 leading-tight truncate max-w-[140px]">{user?.nama}</p>
               <span className={cn('inline-block text-[10px] font-medium px-1.5 py-0.5 rounded border leading-none', roleBadgeClass(user?.role || ''))}>
                 {roleLabel(user?.role || '')}
               </span>
@@ -139,11 +140,11 @@ export function Topbar() {
             <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 max-w-[calc(100vw-2rem)]">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
-            <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-slate-900 truncate">{user?.nama}</span>
-              <span className="text-xs font-normal text-slate-500 truncate">{user?.email}</span>
+            <div className="flex flex-col gap-1">
+              <span>{user?.nama}</span>
+              <span className="text-xs font-normal text-slate-500">{user?.email}</span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
