@@ -2,16 +2,11 @@ import http from 'node:http'
 import next from 'next'
 import { parse } from 'node:url'
 
-const dev = false
+const dev = process.env.NODE_ENV !== 'production'
 const hostname = '0.0.0.0'
 const port = Number(process.env.PORT || 3000)
 
-const app = next({
-  dev,
-  hostname,
-  port,
-})
-
+const app = next({ dev })
 const handle = app.getRequestHandler()
 
 let server
@@ -20,11 +15,10 @@ async function startServer() {
   try {
     await app.prepare()
 
-    server = http.createServer(async (req, res) => {
-      try {
-        const parsedUrl = parse(req.url || '/', true)
-        await handle(req, res, parsedUrl)
-      } catch (error) {
+    server = http.createServer((req, res) => {
+      const parsedUrl = parse(req.url || '/', true)
+
+      handle(req, res, parsedUrl).catch((error) => {
         console.error('Request error:', error)
 
         if (!res.headersSent) {
@@ -33,7 +27,7 @@ async function startServer() {
         } else {
           res.destroy()
         }
-      }
+      })
     })
 
     server.on('error', (error) => {
@@ -57,17 +51,9 @@ async function startServer() {
 function shutdown(signal) {
   console.log(`${signal} diterima, menghentikan server...`)
 
-  if (!server) {
-    process.exit(0)
-  }
+  if (!server) process.exit(0)
 
-  server.close((error) => {
-    if (error) {
-      console.error('Gagal menghentikan server:', error)
-      process.exit(1)
-    }
-
-    console.log('Server berhasil dihentikan')
+  server.close(() => {
     process.exit(0)
   })
 }
