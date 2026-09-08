@@ -4,88 +4,12 @@ import {
   auditLog,
   hasPermission,
 } from "@/lib/auth";
-import { execFileSync } from "child_process";
+import { restoreDatabaseFromBuffer } from "@/lib/db-dump";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_UPLOAD_SIZE = 100 * 1024 * 1024;
-
-function parseDbUrl(): {
-  host: string;
-  port: string;
-  user: string;
-  password: string;
-  database: string;
-} {
-  const rawUrl = String(process.env.DATABASE_URL || "").trim();
-
-  if (!rawUrl) {
-    throw new Error("DATABASE_URL belum dikonfigurasi");
-  }
-
-  let parsed: URL;
-
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new Error("DATABASE_URL tidak valid");
-  }
-
-  if (parsed.protocol !== "mysql:") {
-    throw new Error(
-      "DATABASE_URL harus menggunakan mysql://"
-    );
-  }
-
-  const database = decodeURIComponent(
-    parsed.pathname.replace(/^\/+/, "")
-  );
-
-  if (!parsed.hostname || !database) {
-    throw new Error(
-      "Host atau nama database tidak ditemukan"
-    );
-  }
-
-  return {
-    host: parsed.hostname,
-    port: parsed.port || "3306",
-    user: decodeURIComponent(parsed.username),
-    password: decodeURIComponent(parsed.password),
-    database,
-  };
-}
-
-function restoreDatabase(sqlBuffer: Buffer): void {
-  const dbConfig = parseDbUrl();
-
-  const environment = {
-    ...process.env,
-    MYSQL_PWD: dbConfig.password,
-  };
-
-  execFileSync(
-    "mysql",
-    [
-      "--host",
-      dbConfig.host,
-      "--port",
-      dbConfig.port,
-      "--user",
-      dbConfig.user,
-      "--default-character-set=utf8mb4",
-      "--binary-mode=1",
-      dbConfig.database,
-    ],
-    {
-      input: sqlBuffer,
-      timeout: 120000,
-      stdio: ["pipe", "pipe", "pipe"],
-      env: environment,
-    }
-  );
-}
 
 export async function POST(req: Request) {
   try {
@@ -154,7 +78,7 @@ export async function POST(req: Request) {
       );
     }
 
-    restoreDatabase(sqlBuffer);
+    restoreDatabaseFromBuffer(sqlBuffer);
 
     await auditLog(
       session,
