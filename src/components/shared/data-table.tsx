@@ -234,7 +234,7 @@ function useAnimatedNumber(target: number, duration = 800): number {
 
 // Stat card component
 export function StatCard({
-  title, value, icon: Icon, color = 'blue', subtitle, trend,
+  title, value, icon: Icon, color = 'blue', subtitle, trend, onClick,
 }: {
   title: string
   value: string | number
@@ -242,6 +242,7 @@ export function StatCard({
   color?: 'blue' | 'green' | 'amber' | 'purple' | 'red' | 'slate'
   subtitle?: string
   trend?: { value: string; up: boolean }
+  onClick?: () => void
 }) {
   const colors: Record<string, { bg: string; text: string; ring: string; hover: string; shadow: string }> = {
     blue: { bg: 'bg-blue-50', text: 'text-blue-600', ring: 'ring-blue-100', hover: 'hover:shadow-blue-200/40', shadow: 'shadow-blue-100/60' },
@@ -256,12 +257,30 @@ export function StatCard({
   const isNumeric = typeof value === 'number' || (!isNaN(numericValue) && String(value) === String(numericValue))
   const animatedValue = useAnimatedNumber(isNumeric ? numericValue : 0, 800)
   const displayValue = isNumeric ? animatedValue : value
+  const clickable = typeof onClick === 'function'
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!clickable) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onClick!()
+    }
+  }
 
   return (
-    <Card className={cn(
-      'border-slate-100 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg',
-      c.hover
-    )}>
+    <Card
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      className={cn(
+        'border-slate-100 shadow-sm transition-all duration-200 ease-out',
+        clickable
+          ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81]/40'
+          : 'hover:shadow-lg',
+        c.hover
+      )}
+    >
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -274,7 +293,7 @@ export function StatCard({
               </p>
             )}
           </div>
-          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center ring-4 transition-transform duration-200 hover:scale-110', c.bg, c.text, c.ring)}>
+          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center ring-4 transition-transform duration-200', c.bg, c.text, c.ring, clickable && 'group-hover:scale-110')}>
             <Icon className="w-5 h-5" />
           </div>
         </div>
