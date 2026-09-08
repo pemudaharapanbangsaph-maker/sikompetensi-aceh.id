@@ -23,6 +23,7 @@ const BackupView = lazy(() => import('@/components/views/backup-view').then(m =>
 const SettingsView = lazy(() => import('@/components/views/settings-view').then(m => ({ default: m.SettingsView })))
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
 const ArsipView = lazy(() => import('@/components/views/arsip-view').then(m => ({ default: m.ArsipView })))
+const SertifikatView = lazy(() => import('@/components/views/sertifikat-view').then(m => ({ default: m.SertifikatView })))
 
 function ViewLoader() {
   return (
@@ -68,13 +69,13 @@ function renderView(view: string): React.ReactNode {
     case 'monitoring-rekap':
       return <MonitoringView />
     case 'laporan-pelatihan':
-    case 'laporan-uji':
     case 'laporan-peserta':
       return <LaporanView />
     case 'arsip-pelatihan':
-    case 'arsip-uji':
     case 'arsip-peserta':
       return <ArsipView />
+    case 'sertifikat-pelatihan':
+      return <SertifikatView />
     case 'user-data':
     case 'user-hak-akses':
     case 'user-log':
