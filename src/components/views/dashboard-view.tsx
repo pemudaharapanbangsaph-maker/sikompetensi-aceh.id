@@ -99,83 +99,89 @@ export function DashboardView() {
         <StatCard title="Pendaftaran" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="amber" onClick={() => setActiveView('pendaftaran-list')} />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4">
+      <div className="grid lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="lg:col-span-2 border-slate-200 shadow-sm">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-5">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#0F4C81]" />
                 Pelatihan per Bulan
               </CardTitle>
-              <Badge variant="outline" className="text-[10px]">12 Bulan Terakhir</Badge>
+              <Badge variant="outline" className="text-[9px] sm:text-[10px]">12 Bulan</Badge>
             </div>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={grafikBulan}>
+          <CardContent className="p-3 sm:p-5 pt-0">
+            <div className="h-[180px] sm:h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={grafikBulan} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="bulan" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} cursor={{ fill: '#f8fafc' }} />
-                <Bar dataKey="jumlah" name="Jumlah Angkatan" fill="#0F4C81" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                <XAxis dataKey="bulan" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} interval={0} angle={-30} textAnchor="end" height={50} />
+                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} width={40} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11 }} cursor={{ fill: '#f8fafc' }} />
+                <Bar dataKey="jumlah" name="Angkatan" fill="#0F4C81" radius={[4, 4, 0, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
+          <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-5">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#198754]" />
               Kategori Pelatihan
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+          <CardContent className="p-3 sm:p-5 pt-0">
+            <div className="h-[180px] sm:h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={grafikKategori} dataKey="jumlah" nameKey="kategori" cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3}>
+                <Pie data={grafikKategori} dataKey="jumlah" nameKey="kategori" cx="50%" cy="45%" innerRadius={35} outerRadius={60} paddingAngle={3}>
                   {grafikKategori.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11 }} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
               </PieChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4">
+      <div className="grid lg:grid-cols-3 gap-3 sm:gap-4">
         <Card className="lg:col-span-2 border-slate-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
+          <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-5">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-[#0F4C81]" />
-              Peserta per Angkatan Terbaru
+              Peserta per Angkatan
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={grafikAngkatan}>
+          <CardContent className="p-3 sm:p-5 pt-0">
+            <div className="h-[180px] sm:h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={grafikAngkatan} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="nama" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }} cursor={{ fill: '#f8fafc' }} />
-                <Bar dataKey="peserta" name="Jumlah Peserta" fill="#198754" radius={[4, 4, 0, 0]} maxBarSize={35} />
+                <XAxis dataKey="nama" tick={{ fontSize: 8, fill: '#64748b' }} axisLine={false} tickLine={false} interval={0} angle={-25} textAnchor="end" height={55} />
+                <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} width={40} />
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 11 }} cursor={{ fill: '#f8fafc' }} />
+                <Bar dataKey="peserta" name="Peserta" fill="#198754" radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
         <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
+          <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-5">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <Calendar className="w-4 h-4 text-[#0F4C81]" />
               Jadwal Terdekat
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="space-y-2 max-h-[260px] overflow-y-auto px-4 pb-4">
+            <div className="space-y-1.5 max-h-[200px] sm:max-h-[260px] overflow-y-auto px-3 sm:px-4 pb-3 sm:pb-4">
               {jadwal.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
@@ -188,16 +194,16 @@ export function DashboardView() {
                 const tanggal = j.tanggalMulai || j.tanggalUji
                 const nama = j.pelatihan?.nama || j.namaAngkatan
                 return (
-                  <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100">
-                    <div className="w-10 h-10 rounded-lg bg-[#0F4C81]/10 flex flex-col items-center justify-center flex-shrink-0">
-                      <span className="text-[10px] font-medium text-[#0F4C81] leading-none">{new Date(tanggal).toLocaleDateString('id-ID', { month: 'short' })}</span>
-                      <span className="text-sm font-bold text-[#0F4C81] leading-none mt-0.5">{new Date(tanggal).getDate()}</span>
+                  <div key={i} className="flex items-start gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg hover:bg-slate-50 transition-colors border border-slate-100">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-md sm:rounded-lg bg-[#0F4C81]/10 flex flex-col items-center justify-center flex-shrink-0">
+                      <span className="text-[9px] sm:text-[10px] font-medium text-[#0F4C81] leading-none">{new Date(tanggal).toLocaleDateString('id-ID', { month: 'short' })}</span>
+                      <span className="text-xs sm:text-sm font-bold text-[#0F4C81] leading-none mt-0.5">{new Date(tanggal).getDate()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{nama}</p>
+                      <p className="text-xs sm:text-sm font-medium text-slate-900 truncate">{nama}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <Badge variant="outline" className="text-[9px] py-0 h-4">Pelatihan</Badge>
-                        <span className="text-[11px] text-slate-400">{j.lokasi || ''}</span>
+                        <Badge variant="outline" className="text-[8px] sm:text-[9px] py-0 h-3.5 sm:h-4">Pelatihan</Badge>
+                        <span className="text-[10px] sm:text-[11px] text-slate-400 truncate">{j.lokasi || ''}</span>
                       </div>
                     </div>
                   </div>
@@ -209,13 +215,13 @@ export function DashboardView() {
       </div>
 
       <Card className="border-slate-200 shadow-sm">
-        <CardHeader className="pb-2">
+        <CardHeader className="pb-1 sm:pb-2 p-3 sm:p-5">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#0F4C81]" />
               Aktivitas Terbaru
             </CardTitle>
-            <Button variant="ghost" size="sm" className="text-xs text-[#0F4C81]" onClick={() => setActiveView('user-log')}>Lihat Semua</Button>
+            <Button variant="ghost" size="sm" className="text-xs text-[#0F4C81] h-7" onClick={() => setActiveView('user-log')}>Lihat Semua</Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -229,23 +235,23 @@ export function DashboardView() {
                 <p className="text-xs text-slate-300 mt-1">Aktivitas pengguna akan tampil di sini</p>
               </div>
             ) : aktivitas.map((a: any) => (
-              <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+              <div key={a.id} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 hover:bg-slate-50 transition-colors">
+                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                   a.aksi?.includes('LOGIN') ? 'bg-green-100 text-[#15803D]' :
                   a.aksi?.includes('CREATE') ? 'bg-blue-100 text-blue-600' :
                   a.aksi?.includes('UPDATE') ? 'bg-amber-100 text-amber-600' :
                   a.aksi?.includes('DELETE') ? 'bg-red-100 text-red-600' :
                   'bg-slate-100 text-slate-600'
                 }`}>
-                  <Activity className="w-4 h-4" />
+                  <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-900 truncate">{a.deskripsi || ''}</p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs sm:text-sm text-slate-900 truncate">{a.deskripsi || ''}</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400">
                     <span className="font-medium">{a.username || ''}</span> · {a.modul || ''}
                   </p>
                 </div>
-                <span className="text-xs text-slate-400 whitespace-nowrap">{a.createdAt ? formatDateTime(a.createdAt) : ''}</span>
+                <span className="text-[10px] sm:text-xs text-slate-400 whitespace-nowrap">{a.createdAt ? formatDateTime(a.createdAt) : ''}</span>
               </div>
             ))}
           </div>
