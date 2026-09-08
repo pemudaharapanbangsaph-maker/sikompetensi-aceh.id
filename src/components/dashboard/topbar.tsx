@@ -68,12 +68,12 @@ export function Topbar() {
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || 'U'
 
   return (
-    <header className="h-14 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-4 gap-2 sm:gap-3 shadow-sm">
+    <header className="h-14 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-3 sm:px-4 gap-1.5 sm:gap-2 lg:gap-3 shadow-sm">
       {/* Mobile menu */}
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden"
+        className="lg:hidden flex-shrink-0"
         onClick={() => setMobileSidebarOpen(true)}
       >
         <Menu className="w-5 h-5" />
@@ -83,7 +83,7 @@ export function Topbar() {
       <Button
         variant="ghost"
         size="icon"
-        className="hidden lg:flex"
+        className="hidden lg:flex flex-shrink-0"
         onClick={toggleSidebar}
       >
         {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
@@ -91,12 +91,12 @@ export function Topbar() {
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-base lg:text-lg font-bold text-slate-900 truncate">{title.title}</h1>
-        <p className="text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
+        <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 truncate leading-tight">{title.title}</h1>
+        <p className="text-[11px] sm:text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
       </div>
 
       {/* Search (decorative on desktop) */}
-      <div className="hidden md:flex items-center relative">
+      <div className="hidden md:flex items-center relative flex-shrink-0">
         <Search className="absolute left-3 w-4 h-4 text-slate-400" />
         <input
           type="text"
@@ -108,11 +108,11 @@ export function Topbar() {
       {/* Notifications */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="ghost" size="icon" className="relative flex-shrink-0">
             <Bell className="w-5 h-5 text-slate-600" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuContent align="end" className="w-[calc(100vw-1.5rem)] max-w-80">
           <DropdownMenuLabel>Notifikasi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <div className="px-3 py-6 text-center">
@@ -125,14 +125,14 @@ export function Topbar() {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          <button className="flex items-center gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0">
             <Avatar className="w-8 h-8 border border-slate-200">
               <AvatarFallback className="bg-[#0F4C81] text-white text-xs font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold text-slate-900 leading-tight truncate max-w-[140px]">{user?.nama}</p>
+            <div className="hidden sm:block text-left min-w-0">
+              <p className="text-sm font-semibold text-slate-900 leading-tight truncate max-w-[120px] lg:max-w-[140px]">{user?.nama}</p>
               <span className={cn('inline-block text-[10px] font-medium px-1.5 py-0.5 rounded border leading-none', roleBadgeClass(user?.role || ''))}>
                 {roleLabel(user?.role || '')}
               </span>
@@ -144,7 +144,7 @@ export function Topbar() {
           <DropdownMenuLabel>
             <div className="flex flex-col gap-1">
               <span>{user?.nama}</span>
-              <span className="text-xs font-normal text-slate-500">{user?.email}</span>
+              <span className="text-xs font-normal text-slate-500 break-all">{user?.email}</span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
