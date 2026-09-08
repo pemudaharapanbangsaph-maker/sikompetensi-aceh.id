@@ -113,7 +113,7 @@ const menuItems: MenuItem[] = [
   },
 ]
 
-export function Sidebar({ userRole }: { userRole: string }) {
+export function Sidebar({ userRole, inSheet = false }: { userRole: string; inSheet?: boolean }) {
   const { activeView, setActiveView } = useNavStore()
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
 
@@ -129,8 +129,11 @@ export function Sidebar({ userRole }: { userRole: string }) {
   return (
     <aside
       className={cn(
-        'sidebar-transition bg-[#0F4C81] text-white flex flex-col h-screen sticky top-0',
-        sidebarCollapsed ? 'w-[68px]' : 'w-64'
+        'sidebar-transition bg-[#0F4C81] text-white flex flex-col',
+        inSheet
+          ? 'w-full h-full min-h-screen'
+          : 'h-screen sticky top-0',
+        !inSheet && (sidebarCollapsed ? 'w-[68px]' : 'w-64')
       )}
     >
       {/* Logo */}
@@ -147,7 +150,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 overflow-y-auto sidebar-scroll py-3">
+      <nav className="flex-1 overflow-y-auto sidebar-scroll py-3 overscroll-contain">
         <div className="space-y-0.5 px-2">
           {visibleMenu.map((item) => (
             <SidebarItem
