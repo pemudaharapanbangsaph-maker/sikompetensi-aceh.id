@@ -274,27 +274,27 @@ export function StatCard({
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
       className={cn(
-        'border-slate-100 shadow-sm transition-all duration-200 ease-out',
+        'border-slate-100 shadow-sm transition-all duration-200 ease-out overflow-hidden',
         clickable
-          ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81]/40'
+          ? 'cursor-pointer hover:-translate-y-0.5 sm:hover:-translate-y-1 hover:shadow-md sm:hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F4C81]/40'
           : 'hover:shadow-lg',
         c.hover
       )}
     >
-      <CardContent className="p-4 sm:p-5">
-        <div className="flex items-start justify-between">
+      <CardContent className="p-3 sm:p-4 lg:p-5">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-1 tabular-nums">{displayValue}</p>
-            {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+            <p className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wide leading-tight line-clamp-1">{title}</p>
+            <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-0.5 sm:mt-1 tabular-nums leading-tight">{displayValue}</p>
+            {subtitle && <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 line-clamp-1">{subtitle}</p>}
             {trend && (
-              <p className={cn('text-xs font-medium mt-1 flex items-center gap-1', trend.up ? 'text-[#15803D]' : 'text-red-600')}>
+              <p className={cn('text-[10px] sm:text-xs font-medium mt-0.5 sm:mt-1 flex items-center gap-0.5', trend.up ? 'text-[#15803D]' : 'text-red-600')}>
                 {trend.up ? '↑' : '↓'} {trend.value}
               </p>
             )}
           </div>
-          <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center ring-4 transition-transform duration-200', c.bg, c.text, c.ring, clickable && 'group-hover:scale-110')}>
-            <Icon className="w-5 h-5" />
+          <div className={cn('w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center ring-2 sm:ring-4 transition-transform duration-200 flex-shrink-0', c.bg, c.text, c.ring, clickable && 'group-hover:scale-110')}>
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
       </CardContent>
