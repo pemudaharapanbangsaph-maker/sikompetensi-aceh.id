@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Download, Trash2, Plus, Save, X, FileText, Upload, Award } from 'lucide-react'
+import { Download, Trash2, Plus, Save, X, FileText, Upload, Award, Eye } from 'lucide-react'
 
 // ===========================================================================
 // ROOT
@@ -127,6 +127,10 @@ function SertifikatDataTable({ jenis, title, description }: { jenis: string; tit
     api.sertifikat.downloadFile(item.id)
   }
 
+  const handleView = (item: Sertifikat) => {
+    api.sertifikat.viewFile(item.id)
+  }
+
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleting(true)
@@ -194,6 +198,15 @@ function SertifikatDataTable({ jenis, title, description }: { jenis: string; tit
         emptyMessage="Belum ada data sertifikat"
         actions={(row) => (
           <>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]"
+              onClick={() => handleView(row)}
+              title="Lihat"
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
             <Button
               size="sm"
               variant="ghost"
