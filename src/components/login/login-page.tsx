@@ -177,21 +177,20 @@ export function LoginPage() {
               <div className="scale-75 sm:scale-100">
                 <LogoPancaCita size={100} className="drop-shadow-2xl" />
               </div>
-              <p className="text-white/80 text-xs font-bold uppercase tracking-[0.2em] mt-3">Pemerintah Aceh</p>
-              <div className="mt-4 sm:mt-5">
-                <p className="text-white text-2xl sm:text-3xl font-extrabold tracking-wide">SIKOMPETENSI ACEH</p>
-                <p className="text-xs tracking-[0.35em] text-[#86EFAC]/80 mt-1.5 font-medium">CORPORATE UNIVERSITY</p>
+              <div className="mt-3 sm:mt-4">
+                <p className="font-serif-georgia text-white text-2xl sm:text-3xl font-bold tracking-wide">SIKOMPETENSI ACEH</p>
+                <p className="font-serif-georgia text-xs sm:text-sm tracking-[0.3em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1.5 font-semibold">CORPORATE UNIVERSITY</p>
               </div>
-              <div className="flex items-center justify-center mt-4 sm:mt-5 mb-4 sm:mb-5">
-                <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-amber-400/60" />
-                <div className="h-[2px] w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
-                <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-amber-400/60" />
+              <div className="flex items-center justify-center mt-3 sm:mt-4 mb-3 sm:mb-4">
+                <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-amber-400/60" />
+                <div className="h-[2px] w-16 sm:w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
+                <div className="h-[1px] w-10 bg-gradient-to-l from-transparent to-amber-400/60" />
               </div>
-              <p className="text-amber-300/90 text-[10px] font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
-              <h2 className="text-white text-base sm:text-lg lg:text-xl font-bold mt-3 leading-relaxed max-w-sm mx-auto">
+              <p className="font-serif-georgia text-amber-300/90 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
+              <h2 className="font-serif-georgia text-white text-base sm:text-lg lg:text-xl font-bold mt-2.5 sm:mt-3 leading-snug max-w-sm mx-auto">
                 Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
               </h2>
-              <p className="text-white/50 text-xs mt-3 max-w-xs mx-auto leading-relaxed">
+              <p className="font-serif-georgia text-white/55 text-xs mt-2.5 sm:mt-3 max-w-xs mx-auto leading-relaxed">
                 Satu pintu untuk pengembangan kompetensi, pelatihan, dan sertifikasi ASN Pemerintah Aceh.
               </p>
             </div>
@@ -278,16 +277,13 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
         </svg>
       </div>
       <div className="relative z-10 max-w-xl w-full">
-        <div className="flex items-center gap-2 mb-6 sm:mb-8">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <div className="w-4 h-px bg-[#195737]/40" />
         </div>
-        <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
-          Mewujudkan ASN Aceh{' '}
-          <span className="text-slate-900">yang Kompeten, Profesional &</span>
-          <br />
-          <span className="text-[#195737]">Berintegritas.</span>
+        <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
+          Mewujudkan ASN Aceh yang Kompeten, Profesional & <span className="text-[#195737]">Berintegritas.</span>
         </h1>
-        <p className="text-slate-500 text-sm sm:text-base mt-5 sm:mt-6 leading-relaxed max-w-lg">
+        <p className="text-slate-500 text-sm sm:text-base mt-4 sm:mt-6 leading-relaxed max-w-lg">
           Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
           berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
         </p>
