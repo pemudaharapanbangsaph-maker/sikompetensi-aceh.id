@@ -112,16 +112,16 @@ export function DataTable<T>({
 
         {/* Table */}
         <div className="rounded-lg border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <Table className="min-w-[640px] sm:min-w-0">
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-200 hover:bg-slate-50">
                   {columns.map((c) => (
-                    <TableHead key={c.key} className={cn('text-xs font-semibold text-slate-600 uppercase tracking-wide', c.className)} style={{ width: c.width }}>
+                    <TableHead key={c.key} className={cn('text-xs font-semibold text-slate-600 uppercase tracking-wide whitespace-nowrap', c.className)} style={{ width: c.width }}>
                       {c.header}
                     </TableHead>
                   ))}
-                  {actions && <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide text-right w-[100px]">Aksi</TableHead>}
+                  {actions && <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wide text-right w-[100px] whitespace-nowrap">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,11 +166,11 @@ export function DataTable<T>({
 
         {/* Pagination */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-          <p className="text-slate-500 text-xs">
+          <p className="text-slate-500 text-xs text-center sm:text-left">
             Menampilkan <span className="font-medium text-slate-700">{start}-{end}</span> dari <span className="font-medium text-slate-700">{total}</span> data
           </p>
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page - 1)} disabled={page <= 1 || loading} className="h-8">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page - 1)} disabled={page <= 1 || loading} className="h-8 w-8 p-0">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-1">
@@ -195,7 +195,7 @@ export function DataTable<T>({
                 )
               })}
             </div>
-            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages || loading} className="h-8">
+            <Button variant="outline" size="sm" onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages || loading} className="h-8 w-8 p-0">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
