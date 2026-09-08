@@ -277,9 +277,6 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
         </svg>
       </div>
       <div className="relative z-10 max-w-xl w-full">
-        <div className="flex items-center gap-2 mb-4 sm:mb-6">
-          <div className="w-4 h-px bg-[#195737]/40" />
-        </div>
         <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
           Mewujudkan ASN Aceh yang Kompeten, Profesional & <span className="text-[#195737]">Berintegritas.</span>
         </h1>
