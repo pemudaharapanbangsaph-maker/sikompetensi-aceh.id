@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -52,7 +52,6 @@ const menuItems: MenuItem[] = [
     key: 'arsip', label: 'Arsip', icon: Archive, permission: 'laporan',
     children: [
       { key: 'arsip-pelatihan', label: 'Arsip Pelatihan', view: 'arsip-pelatihan', permission: 'laporan' },
-      { key: 'arsip-uji', label: 'Arsip Uji Kompetensi', view: 'arsip-uji', permission: 'laporan' },
       { key: 'arsip-peserta', label: 'Arsip Peserta', view: 'arsip-peserta', permission: 'peserta' },
     ],
   },
@@ -60,7 +59,7 @@ const menuItems: MenuItem[] = [
     key: 'peserta', label: 'Data Peserta', icon: Users, permission: 'peserta',
     children: [
       { key: 'peserta-data', label: 'Data Peserta', view: 'peserta', permission: 'peserta' },
-      { key: 'peserta-riwayat', label: 'Riwayat Pelatihan & Uji', view: 'peserta-riwayat', permission: 'peserta' },
+      { key: 'peserta-riwayat', label: 'Riwayat Pelatihan', view: 'peserta-riwayat', permission: 'peserta' },
     ],
   },
   {
@@ -79,10 +78,15 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    key: 'sertifikat', label: 'Sertifikat', icon: ScrollText, permission: 'pelatihan',
+    children: [
+      { key: 'sertifikat-pelatihan', label: 'Sertifikat Pelatihan', view: 'sertifikat-pelatihan', permission: 'pelatihan' },
+    ],
+  },
+  {
     key: 'laporan', label: 'Laporan', icon: FileText, permission: 'laporan',
     children: [
       { key: 'laporan-pelatihan', label: 'Laporan Pelatihan', view: 'laporan-pelatihan', permission: 'laporan' },
-      { key: 'laporan-uji', label: 'Laporan Uji Kompetensi', view: 'laporan-uji', permission: 'laporan' },
       { key: 'laporan-peserta', label: 'Laporan Peserta', view: 'laporan-peserta', permission: 'laporan' },
     ],
   },
