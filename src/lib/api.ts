@@ -240,10 +240,12 @@ export const api = {
       ).toString() : ''
       return request<PaginatedResponse<Sertifikat>>(`/sertifikat${qs}`)
     },
+    get: (id: string) => request<Sertifikat>(`/sertifikat/${id}`),
     create: (data: FormData) =>
       request<Sertifikat>('/sertifikat', { method: 'POST', body: data, headers: {} }),
     remove: (id: string) => request<void>(`/sertifikat/${id}`, { method: 'DELETE' }),
     downloadFile: (id: string) => { window.location.href = `${BASE}/sertifikat/${id}/file` },
+    viewFile: (id: string) => { window.open(`${BASE}/sertifikat/${id}/file`, '_blank', 'noopener,noreferrer') },
   },
 
   // ===== Notifikasi Email =====
