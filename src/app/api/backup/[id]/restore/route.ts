@@ -6,10 +6,10 @@ import {
   hasPermission,
 } from "@/lib/auth";
 import { getWriteRoot } from "@/lib/storage";
+import { restoreDatabase } from "@/lib/db-dump";
 import * as fs from "fs";
 import * as fsp from "fs/promises";
 import * as path from "path";
-import { execFileSync } from "child_process";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -72,86 +72,6 @@ function getFilesBackupPath(fileName: string): string {
   }
 
   return filesPath;
-}
-
-function parseDbUrl(): {
-  host: string;
-  port: string;
-  user: string;
-  password: string;
-  database: string;
-} {
-  const rawUrl = String(
-    process.env.DATABASE_URL || ""
-  ).trim();
-
-  if (!rawUrl) {
-    throw new Error(
-      "DATABASE_URL belum dikonfigurasi"
-    );
-  }
-
-  const parsed = new URL(rawUrl);
-
-  if (parsed.protocol !== "mysql:") {
-    throw new Error(
-      "DATABASE_URL harus menggunakan mysql://"
-    );
-  }
-
-  const database = decodeURIComponent(
-    parsed.pathname.replace(/^\/+/, "")
-  );
-
-  if (!parsed.hostname || !database) {
-    throw new Error(
-      "Host atau nama database tidak ditemukan"
-    );
-  }
-
-  return {
-    host: parsed.hostname,
-    port: parsed.port || "3306",
-    user: decodeURIComponent(parsed.username),
-    password: decodeURIComponent(parsed.password),
-    database,
-  };
-}
-
-function restoreDatabase(
-  backupPath: string
-): void {
-  const config = parseDbUrl();
-  const sqlContent = fs.readFileSync(
-    backupPath,
-    "utf8"
-  );
-
-  const environment = {
-    ...process.env,
-    MYSQL_PWD: config.password,
-  };
-
-  execFileSync(
-    "mysql",
-    [
-      "--host",
-      config.host,
-      "--port",
-      config.port,
-      "--user",
-      config.user,
-      "--default-character-set=utf8mb4",
-      "--binary-mode=1",
-      config.database,
-    ],
-    {
-      input: sqlContent,
-      timeout: 120000,
-      stdio: ["pipe", "pipe", "pipe"],
-      env: environment,
-    }
-  );
 }
 
 function isInside(
@@ -397,15 +317,19 @@ export async function POST(
       );
     }
 
-    restoreDatabase(backupPath);
-
     const fileBackupPath =
       getFilesBackupPath(item.namaFile);
 
+    // Restore file upload (sertifikat, dokumen pendaftaran) DULU,
+    // baru database. Urutan ini aman untuk MySQL (mysql CLI tidak
+    // mengganggu koneksi aktif) dan membuat restore file tetap
+    // terlindungi pada SQLite bila proses perlu restart.
     const filesResult =
       await restoreUploadedFiles(
         fileBackupPath
       );
+
+    restoreDatabase(backupPath);
 
     if (!filesResult.restored) {
       await auditLog(
