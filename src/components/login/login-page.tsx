@@ -173,20 +173,22 @@ export function LoginPage() {
           {/* ===== LEFT PANEL (Green Branding) ===== */}
           <div className="login-bg relative z-10 overflow-hidden lg:w-[45%] flex flex-col">
             <div className="login-bg-pattern absolute inset-0 z-0" />
-            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8 py-10 text-center">
-              <LogoPancaCita size={100} className="drop-shadow-2xl" />
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-8 sm:px-8 sm:py-10 text-center">
+              <div className="scale-75 sm:scale-100">
+                <LogoPancaCita size={100} className="drop-shadow-2xl" />
+              </div>
               <p className="text-white/80 text-xs font-bold uppercase tracking-[0.2em] mt-3">Pemerintah Aceh</p>
-              <div className="mt-5">
+              <div className="mt-4 sm:mt-5">
                 <p className="text-white text-2xl sm:text-3xl font-extrabold tracking-wide">SIKOMPETENSI ACEH</p>
                 <p className="text-xs tracking-[0.35em] text-[#86EFAC]/80 mt-1.5 font-medium">CORPORATE UNIVERSITY</p>
               </div>
-              <div className="flex items-center justify-center mt-5 mb-5">
+              <div className="flex items-center justify-center mt-4 sm:mt-5 mb-4 sm:mb-5">
                 <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-amber-400/60" />
                 <div className="h-[2px] w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
                 <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-amber-400/60" />
               </div>
               <p className="text-amber-300/90 text-[10px] font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
-              <h2 className="text-white text-lg sm:text-xl font-bold mt-3 leading-relaxed max-w-sm mx-auto">
+              <h2 className="text-white text-base sm:text-lg lg:text-xl font-bold mt-3 leading-relaxed max-w-sm mx-auto">
                 Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
               </h2>
               <p className="text-white/50 text-xs mt-3 max-w-xs mx-auto leading-relaxed">
@@ -260,7 +262,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 lg:flex-1 relative flex items-center px-6 sm:px-12 lg:px-16 py-12 bg-[#FFFEF9] overflow-hidden"
+      className="flex-1 lg:flex-1 relative flex items-center px-5 sm:px-12 lg:px-16 py-8 sm:py-12 bg-[#FFFEF9] overflow-hidden"
     >
       <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2/3 h-2/3 opacity-[0.04] pointer-events-none hidden lg:block">
         <svg viewBox="0 0 400 500" fill="none" className="w-full h-full text-amber-800">
@@ -276,57 +278,85 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
         </svg>
       </div>
       <div className="relative z-10 max-w-xl w-full">
-        <div className="flex items-center gap-2 mb-8">
+        <div className="flex items-center gap-2 mb-6 sm:mb-8">
           <div className="w-4 h-px bg-[#195737]/40" />
         </div>
-        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
+        <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-[1.15]">
           Mewujudkan ASN Aceh{' '}
           <span className="text-slate-900">yang Kompeten, Profesional &</span>
           <br />
           <span className="text-[#195737]">Berintegritas.</span>
         </h1>
-        <p className="text-slate-500 text-sm sm:text-base mt-6 leading-relaxed max-w-lg">
+        <p className="text-slate-500 text-sm sm:text-base mt-5 sm:mt-6 leading-relaxed max-w-lg">
           Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
           berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
         </p>
-        <div className="flex flex-wrap gap-3 mt-10">
-          <button
-            onClick={onEnter}
-            className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
-          >
-            <LogIn className="w-5 h-5" />
-            Masuk Portal
-          </button>
-          <button
-            onClick={onPrograms}
-            className="flex items-center gap-2.5 px-8 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
-          >
-            <Search className="w-5 h-5" />
-            Jelajahi Program
-          </button>
-          <button
-            onClick={onPendaftaran}
-            className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <ClipboardList className="w-6 h-6" />
-            Pendaftaran Pelatihan
-          </button>
-          <button
-            onClick={onCekStatus}
-            className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <FileCheck2 className="w-6 h-6" />
-            Cek Status Pendaftaran
-          </button>
-        </div>
-        <div className="lg:hidden mt-6">
-          <button
-            onClick={onEnter}
-            className="w-full flex items-center justify-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
-          >
-            <LogIn className="w-5 h-5" />
-            Masuk Portal
-          </button>
+        <div className="mt-8 sm:mt-10">
+          {/* Desktop: semua tombol dalam satu baris */}
+          <div className="hidden lg:flex flex-wrap gap-3">
+            <button
+              onClick={onEnter}
+              className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
+            >
+              <LogIn className="w-5 h-5" />
+              Masuk Portal
+            </button>
+            <button
+              onClick={onPrograms}
+              className="flex items-center gap-2.5 px-8 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+            >
+              <Search className="w-5 h-5" />
+              Jelajahi Program
+            </button>
+            <button
+              onClick={onPendaftaran}
+              className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <ClipboardList className="w-6 h-6" />
+              Pendaftaran Pelatihan
+            </button>
+            <button
+              onClick={onCekStatus}
+              className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <FileCheck2 className="w-6 h-6" />
+              Cek Status Pendaftaran
+            </button>
+          </div>
+
+          {/* Mobile: primary CTA full-width + grid 2 kolom untuk aksi sekunder */}
+          <div className="lg:hidden space-y-3">
+            <button
+              onClick={onEnter}
+              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200 shadow-sm"
+            >
+              <LogIn className="w-5 h-5" />
+              Masuk Portal
+            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={onPendaftaran}
+                className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-semibold text-xs sm:text-sm rounded-xl transition-all duration-200"
+              >
+                <ClipboardList className="w-5 h-5" />
+                Pendaftaran
+              </button>
+              <button
+                onClick={onCekStatus}
+                className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-semibold text-xs sm:text-sm rounded-xl transition-all duration-200"
+              >
+                <FileCheck2 className="w-5 h-5" />
+                Cek Status
+              </button>
+            </div>
+            <button
+              onClick={onPrograms}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+            >
+              <Search className="w-5 h-5" />
+              Jelajahi Program
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -375,7 +405,7 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
         </button>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Program Diklat</h2>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Program Diklat</h2>
             <p className="text-sm text-slate-500 mt-1">
               Katalog program diklat BPSDM Aceh berdasarkan analisis kebutuhan —{' '}
               <span className="font-semibold text-[#195737]">{total} program</span> tersedia.
@@ -383,7 +413,7 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
           </div>
           <button
             onClick={onLogin}
-            className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white text-sm font-semibold rounded-xl transition-colors duration-200"
+            className="flex items-center justify-center gap-2.5 px-6 py-3 bg-[#195737] hover:bg-[#0F4227] text-white text-sm font-semibold rounded-xl transition-colors duration-200 w-full sm:w-auto"
           >
             <LogIn className="w-5 h-5" />
             Masuk Portal
@@ -856,12 +886,12 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   return (
     <motion.div key="pendaftaran-right" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.4 }} className="min-h-screen flex flex-col bg-[#FFFEF9]">
       {/* Header */}
-      <div className="px-6 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
+      <div className="px-5 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
         <button type="button" onClick={onBack} disabled={loading} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4"><ArrowLeft className="w-4 h-4" /> Kembali</button>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#195737]/10 flex items-center justify-center"><ClipboardList className="w-5 h-5 text-[#195737]" /></div>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Form Pendaftaran Pelatihan</h2>
+          <div className="w-10 h-10 rounded-xl bg-[#195737]/10 flex items-center justify-center flex-shrink-0"><ClipboardList className="w-5 h-5 text-[#195737]" /></div>
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">Form Pendaftaran Pelatihan</h2>
             <p className="text-sm text-slate-500 mt-0.5">Lengkapi semua data dan upload dokumen wajib untuk mendaftar</p>
           </div>
         </div>
@@ -892,7 +922,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto p-6 sm:p-10">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-10">
           <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6" noValidate>
 
             {/* === ERROR SUMMARY === */}
@@ -1088,18 +1118,18 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* === TOMBOL DAFTAR === */}
-            <div className="pt-4 pb-6">
-              <button type="submit" disabled={loading} className={`w-full flex items-center justify-center gap-3 py-6 text-xl font-bold rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl hover:scale-[1.02] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}>
+            <div className="pt-2 pb-6">
+              <button type="submit" disabled={loading} className={`w-full flex items-center justify-center gap-3 py-5 sm:py-6 text-lg sm:text-xl font-bold rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl hover:scale-[1.01] sm:hover:scale-[1.02] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}>
                 {loading ? (
-                  <><Loader2 className="w-7 h-7 animate-spin" /> {uploadProgress || 'Memproses...'}</>
+                  <><Loader2 className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" /> {uploadProgress || 'Memproses...'}</>
                 ) : attempted && !formComplete ? (
-                  <><AlertCircle className="w-7 h-7" /> Lengkapi {errorCount} Data yang Belum Diisi</>
+                  <><AlertCircle className="w-6 h-6 sm:w-7 sm:h-7" /> Lengkapi {errorCount} Data yang Belum Diisi</>
                 ) : attempted && !docsComplete ? (
-                  <><AlertCircle className="w-7 h-7" /> Upload {docsMissing} Dokumen yang Belum Dipilih</>
+                  <><AlertCircle className="w-6 h-6 sm:w-7 sm:h-7" /> Upload {docsMissing} Dokumen yang Belum Dipilih</>
                 ) : attempted ? (
-                  <><ArrowRight className="w-7 h-7" /> DAFTAR SEKARANG</>
+                  <><ArrowRight className="w-6 h-6 sm:w-7 sm:h-7" /> DAFTAR SEKARANG</>
                 ) : (
-                  <><ArrowRight className="w-7 h-7" /> DAFTAR SEKARANG</>
+                  <><ArrowRight className="w-6 h-6 sm:w-7 sm:h-7" /> DAFTAR SEKARANG</>
                 )}
               </button>
               {!canSubmit && !attempted && (
@@ -1208,22 +1238,22 @@ function CekStatusRight({ onBack, onDaftar }: { onBack: () => void; onDaftar: ()
       className="min-h-screen flex flex-col bg-[#FFFEF9]"
     >
       {/* Header */}
-      <div className="px-6 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
+      <div className="px-5 sm:px-10 pt-6 pb-4 border-b border-slate-200/60">
         <button type="button" onClick={onBack} disabled={loading} className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors font-medium mb-4">
           <ArrowLeft className="w-4 h-4" /> Kembali
         </button>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0F4C81]/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[#0F4C81]/10 flex items-center justify-center flex-shrink-0">
             <FileCheck2 className="w-5 h-5 text-[#0F4C81]" />
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Cek Status Pendaftaran</h2>
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">Cek Status Pendaftaran</h2>
             <p className="text-sm text-slate-500 mt-0.5">Masukkan NIP untuk melihat status pendaftaran pelatihan Anda</p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 sm:p-10">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-10">
         <div className="max-w-2xl mx-auto space-y-6">
 
           {/* Form Cari */}
