@@ -143,6 +143,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'laporan:view', 'laporan:export',
     'backup:view', 'backup:create', 'backup:restore',
     'settings:view', 'settings:update',
+    'sertifikat:view', 'sertifikat:create', 'sertifikat:update', 'sertifikat:delete',
   ],
   OPERATOR: [
     'dashboard:view',
@@ -153,6 +154,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     'pendaftaran:view', 'pendaftaran:update',
     'monitoring:view', 'monitoring:create',
     'laporan:view',
+    'sertifikat:view', 'sertifikat:create', 'sertifikat:update',
   ],
 }
 
