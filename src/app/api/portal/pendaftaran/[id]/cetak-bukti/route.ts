@@ -127,17 +127,9 @@ export async function GET(
     y += 8
 
     // ========== INFORMASI PELATIHAN ==========
-    doc.setFillColor(248, 250, 252)
-    doc.roundedRect(ml, y, cw, 38, 2, 2, 'F')
-
-    doc.setTextColor(15, 76, 129)
+    // Nama Pelatihan di layout full-width dengan word-wrap agar tidak menimpah kolom kanan
     doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.text('INFORMASI PELATIHAN', ml + 4, y + 6)
 
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(30, 41, 59)
-    doc.setFontSize(9)
     const pelatihanNama = p.analisisDiklatItem?.namaPelatihan || '-'
     const pelatihanKategori = KATEGORI_LABEL[p.analisisDiklatItem?.kategori || ''] || '-'
     const pelatihanMetode = METODE_LABEL[p.analisisDiklatItem?.metodePembelajaran || ''] || '-'
@@ -147,43 +139,60 @@ export async function GET(
     const tanggalPelaksanaan = p.analisisDiklatItem?.tanggalPelaksanaan
       ? new Date(p.analisisDiklatItem.tanggalPelaksanaan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
       : '-'
+    const rcol = pw / 2 + 5
 
-    // Left column
+    // Hitung tinggi yang dibutuhkan untuk word-wrap nama pelatihan
+    const pelatihanNamaWrapped = doc.splitTextToSize(pelatihanNama, cw - 50) // 50mm = ruang label "Nama Pelatihan : "
+    const extraLines = Math.max(0, pelatihanNamaWrapped.length - 1)
+    const infoBoxH = 38 + extraLines * 5 // tinggi box adaptif
+
+    doc.setFillColor(248, 250, 252)
+    doc.roundedRect(ml, y, cw, infoBoxH, 2, 2, 'F')
+
+    doc.setTextColor(15, 76, 129)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INFORMASI PELATIHAN', ml + 4, y + 6)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(30, 41, 59)
+    doc.setFontSize(9)
+
+    // --- Baris "Nama Pelatihan" (full width, word-wrap) ---
     let ly = y + 13
     doc.setFont('helvetica', 'bold')
     doc.text('Nama Pelatihan', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanNama}`, ml + 38, ly)
-    ly += 6
+    doc.text(':', ml + 38, ly)
+    doc.text(pelatihanNamaWrapped, ml + 41, ly)
+    ly += 5 * pelatihanNamaWrapped.length + 2
+
+    // --- Baris 2-kolom untuk field lain ---
     doc.setFont('helvetica', 'bold')
     doc.text('Kategori', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
     doc.text(`: ${pelatihanKategori}`, ml + 38, ly)
+    doc.setFont('helvetica', 'bold')
+    doc.text('JP / Hari', rcol, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 30, ly)
     ly += 6
     doc.setFont('helvetica', 'bold')
     doc.text('Metode', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
     doc.text(`: ${pelatihanMetode}`, ml + 38, ly)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tgl Pelaksanaan', rcol, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${tanggalPelaksanaan}`, rcol + 30, ly)
+    ly += 6
+    // Baris ketiga (hanya kolom kanan)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tahun', rcol, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${pelatihanTahun}`, rcol + 30, ly)
 
-    // Right column
-    let ry = y + 13
-    const rcol = pw / 2 + 5
-    doc.setFont('helvetica', 'bold')
-    doc.text('JP / Hari', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 30, ry)
-    ry += 6
-    doc.setFont('helvetica', 'bold')
-    doc.text('Tgl Pelaksanaan', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${tanggalPelaksanaan}`, rcol + 30, ry)
-    ry += 6
-    doc.setFont('helvetica', 'bold')
-    doc.text('Tahun', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanTahun}`, rcol + 30, ry)
-
-    y += 44
+    y += infoBoxH + 6
 
     // ========== DATA PESERTA ==========
     doc.setTextColor(15, 76, 129)
@@ -216,8 +225,11 @@ export async function GET(
     doc.setFont('helvetica', 'normal')
     doc.text(label, ml + 4, y)
     doc.setTextColor(30, 41, 59)
-    doc.text(`: ${value}`, ml + 42, y)
-    y += 6.5
+    // Word-wrap nilai panjang (Instansi, Unit Kerja, Alamat, dll)
+    const valStr = `: ${value}`
+    const valWrapped = doc.splitTextToSize(valStr, cw - 42)
+    doc.text(valWrapped, ml + 42, y)
+    y += 6.5 * Math.max(1, valWrapped.length)
     }
 
     y += 3
