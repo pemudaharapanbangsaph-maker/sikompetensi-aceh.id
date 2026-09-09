@@ -87,16 +87,13 @@ export function DashboardView() {
         </Card>
       ) : (
         <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
         <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={stats.trendPelatihan ?? undefined} onClick={() => setActiveView('pelatihan')} />
-        <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.totalAngkatan} angkatan`} icon={Users} color="green" onClick={() => setActiveView('peserta')} />
-        <StatCard title="Analisis" value={stats.totalAnalisis} subtitle={`${stats.totalAsesor} asesor`} icon={ClipboardList} color="purple" onClick={() => setActiveView('analisis')} />
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-4">
-        <StatCard title="Pelatihan Berjalan" value={stats.pelatihanBerjalan} icon={Activity} color="blue" onClick={() => setActiveView('angkatan')} />
-        <StatCard title="Angkatan Selesai" value={stats.angkatanSelesai} icon={CheckCircle2} color="green" onClick={() => setActiveView('pelatihan-arsip')} />
-        <StatCard title="Pendaftaran" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="amber" onClick={() => setActiveView('pendaftaran-list')} />
+        <StatCard title="Peserta" value={stats.totalPeserta} icon={Users} color="green" onClick={() => setActiveView('peserta')} />
+        <StatCard title="Analisis" value={stats.totalAnalisis} icon={ClipboardList} color="purple" onClick={() => setActiveView('analisis')} />
+        <StatCard title="Berjalan" value={stats.pelatihanBerjalan} icon={Activity} color="amber" onClick={() => setActiveView('angkatan')} />
+        <StatCard title="Selesai" value={stats.angkatanSelesai} icon={CheckCircle2} color="green" onClick={() => setActiveView('pelatihan-arsip')} />
+        <StatCard title="Daftar" value={stats.pendaftaranPortal} subtitle={`${stats.pendaftaranMenunggu} menunggu`} icon={ArrowDownToLine} color="blue" onClick={() => setActiveView('pendaftaran-list')} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-3 sm:gap-4">
