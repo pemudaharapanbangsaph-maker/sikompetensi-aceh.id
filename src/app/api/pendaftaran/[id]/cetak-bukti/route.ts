@@ -59,14 +59,14 @@ export async function GET(
       REK_BANK: 'Rekening Bank',
     }
 
-    // PDF generation
+    // PDF generation — F4 Portrait (210 × 330 mm) agar lebih lega & rapi
     const { jsPDF } = await import('jspdf')
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [210, 330] })
     const pw = 210
-    const ph = 297
-    const ml = 20 // margin left
-    const mr = 20
-    const cw = pw - ml - mr // content width
+    const ph = 330
+    const ml = 18 // margin left
+    const mr = 18
+    const cw = pw - ml - mr // content width = 174mm
     let y = 15
 
     // ========== KOP SURAT ==========
@@ -134,14 +134,6 @@ export async function GET(
     y += 8
 
     // ========== INFORMASI PELATIHAN ==========
-    doc.setFillColor(248, 250, 252)
-    doc.roundedRect(ml, y, cw, 38, 2, 2, 'F')
-
-    doc.setTextColor(15, 76, 129)
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'bold')
-    doc.text('INFORMASI PELATIHAN', ml + 4, y + 6)
-
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(30, 41, 59)
     doc.setFontSize(9)
@@ -155,42 +147,63 @@ export async function GET(
       ? new Date(p.analisisDiklatItem.tanggalPelaksanaan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
       : '-'
 
-    // Left column
+    // Layout FULL-WIDTH per baris — tidak ada 2-kolom, jadi tidak mungkin overlap
+    // Nama Pelatihan di word-wrap, tinggi box adaptif
+    const namaWrapped = doc.splitTextToSize(pelatihanNama, cw - 44) // 44mm = ruang label + separator
+    const infoRows = 6 // Nama + Kategori + Metode + JP/Hari + Tgl Pelaksanaan + Tahun
+    const rowH = 6
+    const infoBoxH = 14 + namaWrapped.length * rowH + (infoRows - 1) * rowH
+    doc.setFillColor(248, 250, 252)
+    doc.roundedRect(ml, y, cw, infoBoxH, 2, 2, 'F')
+
+    doc.setTextColor(15, 76, 129)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INFORMASI PELATIHAN', ml + 4, y + 6)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(30, 41, 59)
+    doc.setFontSize(9)
+
     let ly = y + 13
+    // Baris 1: Nama Pelatihan (full width, word-wrap)
     doc.setFont('helvetica', 'bold')
     doc.text('Nama Pelatihan', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanNama}`, ml + 38, ly)
-    ly += 6
+    doc.text(':', ml + 36, ly)
+    doc.text(namaWrapped, ml + 39, ly)
+    ly += rowH * namaWrapped.length
+    // Baris 2: Kategori
     doc.setFont('helvetica', 'bold')
     doc.text('Kategori', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanKategori}`, ml + 38, ly)
-    ly += 6
+    doc.text(`: ${pelatihanKategori}`, ml + 36, ly)
+    ly += rowH
+    // Baris 3: Metode
     doc.setFont('helvetica', 'bold')
     doc.text('Metode', ml + 4, ly)
     doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanMetode}`, ml + 38, ly)
+    doc.text(`: ${pelatihanMetode}`, ml + 36, ly)
+    ly += rowH
+    // Baris 4: JP / Hari
+    doc.setFont('helvetica', 'bold')
+    doc.text('JP / Hari', ml + 4, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, ml + 36, ly)
+    ly += rowH
+    // Baris 5: Tgl Pelaksanaan
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tgl Pelaksanaan', ml + 4, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${tanggalPelaksanaan}`, ml + 36, ly)
+    ly += rowH
+    // Baris 6: Tahun
+    doc.setFont('helvetica', 'bold')
+    doc.text('Tahun', ml + 4, ly)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`: ${pelatihanTahun}`, ml + 36, ly)
 
-    // Right column
-    let ry = y + 13
-    const rcol = pw / 2 + 5
-    doc.setFont('helvetica', 'bold')
-    doc.text('JP / Hari', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanJP} JP / ${pelatihanHari} Hari`, rcol + 30, ry)
-    ry += 6
-    doc.setFont('helvetica', 'bold')
-    doc.text('Tgl Pelaksanaan', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${tanggalPelaksanaan}`, rcol + 30, ry)
-    ry += 6
-    doc.setFont('helvetica', 'bold')
-    doc.text('Tahun', rcol, ry)
-    doc.setFont('helvetica', 'normal')
-    doc.text(`: ${pelatihanTahun}`, rcol + 30, ry)
-
-    y += 44
+    y += infoBoxH + 6
 
     // ========== DATA PESERTA ==========
     doc.setTextColor(15, 76, 129)
@@ -223,8 +236,11 @@ export async function GET(
     doc.setFont('helvetica', 'normal')
     doc.text(label, ml + 4, y)
     doc.setTextColor(30, 41, 59)
-    doc.text(`: ${value}`, ml + 42, y)
-    y += 6.5
+    // Word-wrap nilai panjang (Instansi, Unit Kerja, Email, Alamat, dll)
+    const valStr = `: ${value}`
+    const valWrapped = doc.splitTextToSize(valStr, cw - 40)
+    doc.text(valWrapped, ml + 40, y)
+    y += 6.5 * Math.max(1, valWrapped.length)
     }
 
     y += 3
