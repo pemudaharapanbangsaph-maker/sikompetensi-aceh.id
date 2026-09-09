@@ -65,7 +65,7 @@ export async function GET(
     const pw = 210
     const ph = 330
     const ml = 18 // margin left
-    const mr = 16
+    const mr = 18
     const cw = pw - ml - mr // content width = 174mm
     let y = 15
 
