@@ -75,6 +75,15 @@ export const api = {
     remove: (id: string) => request<void>(`/peserta/${id}`, { method: 'DELETE' }),
     riwayat: (id: string) => request<{ angkatan: (Angkatan & { pelatihan?: Pelatihan | null; ujiKompetensi?: UjiKompetensi[] })[]; nilai: (Nilai & { ujiKompetensi?: UjiKompetensi | null })[] }>(`/peserta/${id}/riwayat`),
     kegiatanMap: () => request<Record<string, string>>('/peserta/kegiatan-map'),
+    importExcel: (file: File) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      return request<{ success: boolean; created: number; skipped: number; total: number; errors?: string[]; message: string }>(
+        '/peserta/import',
+        { method: 'POST', body: fd, headers: {} }
+      )
+    },
+    downloadTemplate: () => { window.location.href = `${BASE}/peserta/import/template` },
   },
 
   pelatihan: {
