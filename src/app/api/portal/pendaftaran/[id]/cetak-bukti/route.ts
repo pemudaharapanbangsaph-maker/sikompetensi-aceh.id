@@ -317,7 +317,7 @@ export async function GET(
     y += 15
     doc.setDrawColor(30, 41, 59)
     doc.setLineWidth(0.5)
-    doc.line(pw - mr - 35, y, pw - mr + 5, y)
+    doc.line(pw - mr - 50, y, pw - mr + 5, y)
     y += 5
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
