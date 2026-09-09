@@ -281,20 +281,20 @@ export function StatCard({
         c.hover
       )}
     >
-      <CardContent className="p-3 sm:p-4 lg:p-5">
-        <div className="flex items-start justify-between gap-2">
+      <CardContent className="p-2 sm:p-4 lg:p-5">
+        <div className="flex items-center justify-between gap-1">
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] sm:text-xs font-medium text-slate-500 uppercase tracking-wide leading-tight line-clamp-1">{title}</p>
-            <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-0.5 sm:mt-1 tabular-nums leading-tight">{displayValue}</p>
-            {subtitle && <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5 line-clamp-1">{subtitle}</p>}
+            <p className="text-[8px] sm:text-xs font-medium text-slate-500 uppercase tracking-wide leading-tight line-clamp-1">{title}</p>
+            <p className="text-sm sm:text-2xl lg:text-3xl font-bold text-slate-900 mt-0.5 sm:mt-1 tabular-nums leading-tight">{displayValue}</p>
+            {subtitle && <p className="text-[8px] sm:text-xs text-slate-400 mt-0.5 line-clamp-1">{subtitle}</p>}
             {trend && (
-              <p className={cn('text-[10px] sm:text-xs font-medium mt-0.5 sm:mt-1 flex items-center gap-0.5', trend.up ? 'text-[#15803D]' : 'text-red-600')}>
+              <p className={cn('text-[8px] sm:text-xs font-medium mt-0.5 sm:mt-1 flex items-center gap-0.5', trend.up ? 'text-[#15803D]' : 'text-red-600')}>
                 {trend.up ? '↑' : '↓'} {trend.value}
               </p>
             )}
           </div>
-          <div className={cn('w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center ring-2 sm:ring-4 transition-transform duration-200 flex-shrink-0', c.bg, c.text, c.ring, clickable && 'group-hover:scale-110')}>
-            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+          <div className={cn('w-6 h-6 sm:w-11 sm:h-11 rounded-md sm:rounded-xl flex items-center justify-center ring-1 sm:ring-4 transition-transform duration-200 flex-shrink-0', c.bg, c.text, c.ring, clickable && 'group-hover:scale-110')}>
+            <Icon className="w-3 h-3 sm:w-5 sm:h-5" />
           </div>
         </div>
       </CardContent>
@@ -305,10 +305,10 @@ export function StatCard({
 // Page header component
 export function PageHeader({ title, description, children }: { title: string; description?: string; children?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="mb-3 sm:mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900">{title}</h2>
-        {description && <p className="text-sm text-slate-500 mt-0.5">{description}</p>}
+        <h2 className="text-sm sm:text-xl font-bold text-slate-900">{title}</h2>
+        {description && <p className="text-[11px] sm:text-sm text-slate-500 mt-0.5 line-clamp-2 sm:line-clamp-none">{description}</p>}
       </div>
       {children && <div className="flex items-center gap-2">{children}</div>}
     </div>
