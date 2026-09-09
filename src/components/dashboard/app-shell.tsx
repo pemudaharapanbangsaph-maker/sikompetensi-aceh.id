@@ -13,8 +13,6 @@ const AnalisisView = lazy(() => import('@/components/views/analisis-view').then(
 const AnalisisDiklatInputView = lazy(() => import('@/components/views/analisis-diklat-input-view').then(m => ({ default: m.AnalisisDiklatInputView })))
 const PelatihanView = lazy(() => import('@/components/views/pelatihan-view').then(m => ({ default: m.PelatihanView })))
 const AngkatanView = lazy(() => import('@/components/views/angkatan-view').then(m => ({ default: m.AngkatanView })))
-const UjiKompetensiView = lazy(() => import('@/components/views/uji-kompetensi-view').then(m => ({ default: m.UjiKompetensiView })))
-const AsesorView = lazy(() => import('@/components/views/asesor-view').then(m => ({ default: m.AsesorView })))
 const PesertaView = lazy(() => import('@/components/views/peserta-view').then(m => ({ default: m.PesertaView })))
 const MonitoringView = lazy(() => import('@/components/views/monitoring-view').then(m => ({ default: m.MonitoringView })))
 const LaporanView = lazy(() => import('@/components/views/laporan-view').then(m => ({ default: m.LaporanView })))
@@ -50,14 +48,6 @@ function renderView(view: string): React.ReactNode {
     case 'kehadiran':
     case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
-    case 'uji-biodata':
-    case 'uji-jadwal':
-    case 'uji-penilaian':
-    case 'uji-hasil':
-    case 'uji-rekap':
-      return <UjiKompetensiView />
-    case 'uji-asesor':
-      return <AsesorView />
     case 'peserta':
     case 'peserta-riwayat':
       return <PesertaView />
