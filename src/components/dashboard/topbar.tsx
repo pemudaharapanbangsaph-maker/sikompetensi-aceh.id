@@ -63,15 +63,15 @@ export function Topbar() {
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || 'U'
 
   return (
-    <header className="h-14 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-3 sm:px-4 gap-1.5 sm:gap-2 lg:gap-3 shadow-sm">
+    <header className="h-12 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-2.5 sm:px-4 gap-1.5 sm:gap-2 lg:gap-3 shadow-sm">
       {/* Mobile menu */}
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden flex-shrink-0"
+        className="lg:hidden flex-shrink-0 h-9 w-9"
         onClick={() => setMobileSidebarOpen(true)}
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-4 h-4 lg:w-5 lg:h-5" />
       </Button>
 
       {/* Desktop collapse toggle */}
@@ -86,8 +86,8 @@ export function Topbar() {
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 truncate leading-tight">{title.title}</h1>
-        <p className="text-[11px] sm:text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
+        <h1 className="text-[13px] sm:text-base lg:text-lg font-bold text-slate-900 truncate leading-tight">{title.title}</h1>
+        <p className="text-[10px] sm:text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
       </div>
 
       {/* Search (decorative on desktop) */}
