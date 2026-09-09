@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -37,17 +37,6 @@ const menuItems: MenuItem[] = [
   },
   { key: 'kehadiran', label: 'Kehadiran Peserta', icon: ClipboardCheck, view: 'kehadiran', permission: 'pelatihan' },
   { key: 'angkatan', label: 'Data Angkatan', icon: UsersRound, view: 'angkatan', permission: 'pelatihan' },
-  {
-    key: 'uji', label: 'Uji Kompetensi', icon: Award, permission: 'uji_kompetensi',
-    children: [
-      { key: 'uji-jadwal', label: 'Jadwal Uji Kompetensi', view: 'uji-jadwal', permission: 'uji_kompetensi' },
-      { key: 'uji-biodata', label: 'Biodata Peserta', view: 'uji-biodata', permission: 'uji_kompetensi' },
-      { key: 'uji-asesor', label: 'Data Asesor', view: 'uji-asesor', permission: 'uji_kompetensi' },
-      { key: 'uji-penilaian', label: 'Penilaian', view: 'uji-penilaian', permission: 'uji_kompetensi' },
-      { key: 'uji-hasil', label: 'Hasil Uji', view: 'uji-hasil', permission: 'uji_kompetensi' },
-      { key: 'uji-rekap', label: 'Rekap Nilai', view: 'uji-rekap', permission: 'uji_kompetensi' },
-    ],
-  },
   {
     key: 'arsip', label: 'Arsip', icon: Archive, permission: 'laporan',
     children: [
