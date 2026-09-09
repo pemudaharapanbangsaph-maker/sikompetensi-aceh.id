@@ -841,7 +841,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
   }
 
   const inputCls = (fieldName: string) =>
-    `w-full h-11 bg-white rounded-lg text-sm transition-colors ${
+    `w-full h-9 sm:h-11 bg-white rounded-lg text-xs sm:text-sm transition-colors ${
       showErr(fieldName) && fieldErrors[fieldName]
         ? 'border-2 border-red-400 focus:border-red-500 focus:ring-red-500/20'
         : 'border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20'
@@ -855,7 +855,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
     const err = showErr(k) && fieldErrors[k]
     return (
       <div className={`space-y-1.5 ${opts?.colSpan ? 'sm:col-span-2' : ''}`}>
-        <Label className={`text-xs font-semibold transition-colors ${err ? 'text-red-600' : 'text-slate-600'}`}>
+        <Label className={`text-[11px] sm:text-xs font-semibold transition-colors ${err ? 'text-red-600' : 'text-slate-600'}`}>
           {label}{req}
         </Label>
         <Input
@@ -957,12 +957,12 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             )}
 
             {/* === SECTION 1: Data Pribadi === */}
-            <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && (fieldErrors.nama || fieldErrors.nip || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
+            <div className={`bg-white rounded-xl border-2 p-3 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 transition-colors ${attempted && (fieldErrors.nama || fieldErrors.nip || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><User className="w-4 h-4 text-[#195737]" /> Data Pribadi <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2"><User className="w-4 h-4 text-[#195737]" /> Data Pribadi <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
                 {attempted && !(fieldErrors.nama || fieldErrors.nip || fieldErrors.jenisKelamin || fieldErrors.pangkatGolongan || fieldErrors.tempatLahir || fieldErrors.tanggalLahir || fieldErrors.jabatan) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderField('nama', 'Nama Lengkap', { placeholder: 'Masukkan nama lengkap beserta gelar' })}
                 {renderField('nip', 'NIP', { placeholder: '18 digit NIP', maxLength: 18, extraCls: 'font-mono' })}
                 <div className="space-y-1.5">
@@ -973,7 +973,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                     value={form.jenisKelamin}
                     onChange={handleChange('jenisKelamin')}
                     onBlur={handleBlur('jenisKelamin')}
-                    className={`w-full h-11 bg-white rounded-lg text-sm px-3 transition-colors ${
+                    className={`w-full h-9 sm:h-11 bg-white rounded-lg text-xs sm:text-sm px-3 transition-colors ${
                       showErr('jenisKelamin') && fieldErrors.jenisKelamin
                         ? 'border-2 border-red-400 focus:border-red-500 focus:ring-red-500/20'
                         : 'border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20'
@@ -997,12 +997,12 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* === SECTION 2: Instansi & Kontak === */}
-            <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && (fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.email || fieldErrors.nomorRekening || fieldErrors.npwp) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
+            <div className={`bg-white rounded-xl border-2 p-3 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 transition-colors ${attempted && (fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.email || fieldErrors.nomorRekening || fieldErrors.npwp) ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Building2 className="w-4 h-4 text-[#195737]" /> Instansi & Kontak <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2"><Building2 className="w-4 h-4 text-[#195737]" /> Instansi & Kontak <span className="text-xs font-normal text-slate-400">(wajib diisi semua)</span></h3>
                 {attempted && !(fieldErrors.unitKerja || fieldErrors.instansi || fieldErrors.nomorHP || fieldErrors.email || fieldErrors.nomorRekening || fieldErrors.npwp) && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                 {renderField('unitKerja', 'Unit Kerja', { placeholder: 'Nama unit kerja/OPD' })}
                 {renderField('instansi', 'Instansi', { placeholder: 'Nama instansi/pemerintah', colSpan: true })}
                 {renderField('nomorHP', 'No. HP', { placeholder: '08xxxxxxxxxx' })}
@@ -1013,9 +1013,9 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* === SECTION 3: Pilih Pelatihan === */}
-            <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && fieldErrors.pelatihanId ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
+            <div className={`bg-white rounded-xl border-2 p-3 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 transition-colors ${attempted && fieldErrors.pelatihanId ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><GraduationCap className="w-4 h-4 text-[#195737]" /> Pilih Pelatihan</h3>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2"><GraduationCap className="w-4 h-4 text-[#195737]" /> Pilih Pelatihan</h3>
                 {attempted && !fieldErrors.pelatihanId && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
               <div className="space-y-1.5">
@@ -1029,7 +1029,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                     value={form.pelatihanId}
                     onChange={handleChange('pelatihanId')}
                     onBlur={handleBlur('pelatihanId')}
-                    className={`w-full h-11 bg-white rounded-lg text-sm px-3 transition-colors ${
+                    className={`w-full h-9 sm:h-11 bg-white rounded-lg text-xs sm:text-sm px-3 transition-colors ${
                       showErr('pelatihanId') && fieldErrors.pelatihanId
                         ? 'border-2 border-red-400 focus:border-red-500 focus:ring-red-500/20'
                         : 'border-slate-300 focus:border-[#195737] focus:ring-[#195737]/20'
@@ -1050,16 +1050,16 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
             </div>
 
             {/* === SECTION 4: Upload Dokumen === */}
-            <div className={`bg-white rounded-xl border-2 p-5 sm:p-6 space-y-4 transition-colors ${attempted && docsMissing > 0 ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
+            <div className={`bg-white rounded-xl border-2 p-3 sm:p-5 lg:p-6 space-y-3 sm:space-y-4 transition-colors ${attempted && docsMissing > 0 ? 'border-red-200 bg-red-50/30' : 'border-slate-200/80'}`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen <span className="text-xs font-normal text-slate-400">({DOKUMEN_WAJIB.length} wajib + {DOKUMEN_OPSIONAL.length} opsional)</span></h3>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-2"><UploadIcon className="w-4 h-4 text-[#195737]" /> Upload Dokumen <span className="text-xs font-normal text-slate-400">({DOKUMEN_WAJIB.length} wajib + {DOKUMEN_OPSIONAL.length} opsional)</span></h3>
                 {attempted && docsMissing === 0 && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
                 <strong>Petunjuk:</strong> Upload dokumen dalam format <strong>PDF</strong> (maks. 5MB per file). Dokumen bertanda <span className="text-red-500 font-bold">*</span> wajib diupload.
               </div>
               {/* Dokumen Wajib */}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {DOKUMEN_WAJIB.map((d) => {
                   const hasFile = !!files[d.tipe]
                   const isMissing = attempted && !hasFile
@@ -1085,7 +1085,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
               {/* Dokumen Opsional */}
               <div className="pt-2">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Dokumen Opsional</p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {DOKUMEN_OPSIONAL.map((d) => {
                     const hasFile = !!files[d.tipe]
                     return (
@@ -1325,7 +1325,7 @@ function CekStatusRight({ onBack, onDaftar }: { onBack: () => void; onDaftar: ()
               </div>
 
               {/* Data Peserta */}
-              <div className="bg-white rounded-xl border-2 border-slate-200/80 p-5 sm:p-6 space-y-4">
+              <div className="bg-white rounded-xl border-2 border-slate-200/80 p-3 sm:p-5 lg:p-6 space-y-3 sm:space-y-4">
                 <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <User className="w-4 h-4 text-[#0F4C81]" /> Data Pendaftar
                 </h4>
@@ -1355,7 +1355,7 @@ function CekStatusRight({ onBack, onDaftar }: { onBack: () => void; onDaftar: ()
 
               {/* Dokumen */}
               {result.dokumen && result.dokumen.length > 0 && (
-                <div className="bg-white rounded-xl border-2 border-slate-200/80 p-5 sm:p-6 space-y-4">
+                <div className="bg-white rounded-xl border-2 border-slate-200/80 p-3 sm:p-5 lg:p-6 space-y-3 sm:space-y-4">
                   <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-[#0F4C81]" /> Dokumen yang Diunggah
                   </h4>
