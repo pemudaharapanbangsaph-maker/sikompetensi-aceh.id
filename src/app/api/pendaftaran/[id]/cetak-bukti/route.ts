@@ -315,13 +315,13 @@ export async function GET(
     y += 5
     doc.text('Verifikasi kelengkapan data dan dokumen dilakukan oleh admin.', ml, y)
 
-    y += 10
+    y += 15
     doc.text(`Banda Aceh, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, pw - mr - 30, y)
     y += 3
     doc.setFont('helvetica', 'bold')
     doc.text('Admin Pendaftaran', pw - mr - 30, y)
 
-    y += 10
+    y += 15
     doc.setDrawColor(30, 41, 59)
     doc.setLineWidth(0.5)
     doc.line(pw - mr - 35, y, pw - mr + 5, y)
