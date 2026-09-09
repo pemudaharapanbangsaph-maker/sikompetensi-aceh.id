@@ -173,24 +173,24 @@ export function LoginPage() {
           {/* ===== LEFT PANEL (Green Branding) ===== */}
           <div className="login-bg relative z-10 overflow-hidden lg:w-[45%] flex flex-col">
             <div className="login-bg-pattern absolute inset-0 z-0" />
-            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-8 sm:px-8 sm:py-10 text-center">
-              <div className="scale-75 sm:scale-100">
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-6 sm:px-8 sm:py-10 text-center">
+              <div className="scale-[0.6] sm:scale-100">
                 <LogoPancaCita size={100} className="drop-shadow-2xl" />
               </div>
-              <div className="mt-3 sm:mt-4">
-                <p className="font-serif-georgia text-white text-2xl sm:text-3xl font-bold tracking-wide">SIKOMPETENSI ACEH</p>
-                <p className="font-serif-georgia text-xs sm:text-sm tracking-[0.3em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1.5 font-semibold">CORPORATE UNIVERSITY</p>
+              <div className="mt-2 sm:mt-4">
+                <p className="font-serif-georgia text-white text-xl sm:text-3xl font-bold tracking-wide">SIKOMPETENSI ACEH</p>
+                <p className="font-serif-georgia text-[10px] sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1 sm:mt-1.5 font-semibold">CORPORATE UNIVERSITY</p>
               </div>
-              <div className="flex items-center justify-center mt-3 sm:mt-4 mb-3 sm:mb-4">
-                <div className="h-[1px] w-10 bg-gradient-to-r from-transparent to-amber-400/60" />
-                <div className="h-[2px] w-16 sm:w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
-                <div className="h-[1px] w-10 bg-gradient-to-l from-transparent to-amber-400/60" />
+              <div className="flex items-center justify-center mt-2 sm:mt-4 mb-2 sm:mb-4">
+                <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-amber-400/60" />
+                <div className="h-[2px] w-12 sm:w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
+                <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-amber-400/60" />
               </div>
-              <p className="font-serif-georgia text-amber-300/90 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
-              <h2 className="font-serif-georgia text-white text-base sm:text-lg lg:text-xl font-bold mt-2.5 sm:mt-3 leading-snug max-w-sm mx-auto">
+              <p className="font-serif-georgia text-amber-300/90 text-[9px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
+              <h2 className="font-serif-georgia text-white text-sm sm:text-lg lg:text-xl font-bold mt-2 sm:mt-3 leading-snug max-w-xs sm:max-w-sm mx-auto">
                 Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
               </h2>
-              <p className="font-serif-georgia text-white/55 text-xs mt-2.5 sm:mt-3 max-w-xs mx-auto leading-relaxed">
+              <p className="font-serif-georgia text-white/55 text-[11px] sm:text-xs mt-2 sm:mt-3 max-w-[16rem] sm:max-w-xs mx-auto leading-relaxed">
                 Satu pintu untuk pengembangan kompetensi, pelatihan, dan sertifikasi ASN Pemerintah Aceh.
               </p>
             </div>
@@ -277,14 +277,14 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
         </svg>
       </div>
       <div className="relative z-10 max-w-xl w-full">
-        <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
+        <h1 className="font-serif-georgia text-lg sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
           Mewujudkan ASN Aceh yang Kompeten, Profesional & <span className="text-[#195737]">Berintegritas.</span>
         </h1>
-        <p className="text-slate-500 text-sm sm:text-base mt-4 sm:mt-6 leading-relaxed max-w-lg">
+        <p className="text-slate-500 text-xs sm:text-base mt-3 sm:mt-6 leading-relaxed max-w-lg">
           Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
           berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
         </p>
-        <div className="mt-8 sm:mt-10">
+        <div className="mt-5 sm:mt-10">
           {/* Desktop: semua tombol dalam satu baris */}
           <div className="hidden lg:flex flex-wrap gap-3">
             <button
@@ -318,35 +318,35 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
           </div>
 
           {/* Mobile: primary CTA full-width + grid 2 kolom untuk aksi sekunder */}
-          <div className="lg:hidden space-y-3">
+          <div className="lg:hidden space-y-2.5">
             <button
               onClick={onEnter}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-xs rounded-lg transition-colors duration-200 shadow-sm"
             >
-              <LogIn className="w-5 h-5" />
+              <LogIn className="w-4 h-4" />
               Masuk Portal
             </button>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={onPendaftaran}
-                className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-semibold text-xs sm:text-sm rounded-xl transition-all duration-200"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-semibold text-[11px] sm:text-sm rounded-lg transition-all duration-200"
               >
-                <ClipboardList className="w-5 h-5" />
+                <ClipboardList className="w-4 h-4" />
                 Pendaftaran
               </button>
               <button
                 onClick={onCekStatus}
-                className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-semibold text-xs sm:text-sm rounded-xl transition-all duration-200"
+                className="flex items-center justify-center gap-1.5 px-2 py-2 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-semibold text-[11px] sm:text-sm rounded-lg transition-all duration-200"
               >
-                <FileCheck2 className="w-5 h-5" />
+                <FileCheck2 className="w-4 h-4" />
                 Cek Status
               </button>
             </div>
             <button
               onClick={onPrograms}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+              className="w-full flex items-center justify-center gap-1.5 px-4 py-2 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-xs rounded-lg transition-colors duration-200"
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-4 h-4" />
               Jelajahi Program
             </button>
           </div>
@@ -610,7 +610,7 @@ function LoginRight({
           </p>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -653,7 +653,7 @@ function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, on
               <Smartphone className="w-6 h-6 text-amber-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Verifikasi 2FA</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Verifikasi 2FA</h2>
               <p className="text-sm text-slate-500">Langkah keamanan tambahan</p>
             </div>
           </div>
@@ -894,7 +894,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="max-w-md text-center space-y-5">
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', bounce: 0.5 }} className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto"><CheckCircle2 className="w-10 h-10 text-green-600" /></motion.div>
-            <h3 className="text-2xl font-bold text-slate-900">Pendaftaran Berhasil! 🎉</h3>
+            <h3 className="text-lg sm:text-2xl font-bold text-slate-900">Pendaftaran Berhasil! 🎉</h3>
             <p className="text-sm text-slate-600">Terima kasih <strong>{success.nama}</strong>, data dan dokumen Anda telah tersimpan. Admin akan memverifikasi pendaftaran Anda.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               {success.id && (
@@ -1112,17 +1112,17 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
 
             {/* === TOMBOL DAFTAR === */}
             <div className="pt-2 pb-6">
-              <button type="submit" disabled={loading} className={`w-full flex items-center justify-center gap-3 py-5 sm:py-6 text-lg sm:text-xl font-bold rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl hover:scale-[1.01] sm:hover:scale-[1.02] text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}>
+              <button type="submit" disabled={loading} className={`w-full flex items-center justify-center gap-2 sm:gap-3 py-3.5 sm:py-6 text-sm sm:text-xl font-bold rounded-xl sm:rounded-2xl transition-all shadow-lg ${canSubmit && !loading ? 'bg-[#195737] hover:bg-[#0F4227] hover:shadow-xl text-white cursor-pointer' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}>
                 {loading ? (
-                  <><Loader2 className="w-6 h-6 sm:w-7 sm:h-7 animate-spin" /> {uploadProgress || 'Memproses...'}</>
+                  <><Loader2 className="w-4 h-4 sm:w-7 sm:h-7 animate-spin" /> {uploadProgress || 'Memproses...'}</>
                 ) : attempted && !formComplete ? (
-                  <><AlertCircle className="w-6 h-6 sm:w-7 sm:h-7" /> Lengkapi {errorCount} Data yang Belum Diisi</>
+                  <><AlertCircle className="w-4 h-4 sm:w-7 sm:h-7" /> Lengkapi {errorCount} Data yang Belum Diisi</>
                 ) : attempted && !docsComplete ? (
-                  <><AlertCircle className="w-6 h-6 sm:w-7 sm:h-7" /> Upload {docsMissing} Dokumen yang Belum Dipilih</>
+                  <><AlertCircle className="w-4 h-4 sm:w-7 sm:h-7" /> Upload {docsMissing} Dokumen yang Belum Dipilih</>
                 ) : attempted ? (
-                  <><ArrowRight className="w-6 h-6 sm:w-7 sm:h-7" /> DAFTAR SEKARANG</>
+                  <><ArrowRight className="w-4 h-4 sm:w-7 sm:h-7" /> DAFTAR SEKARANG</>
                 ) : (
-                  <><ArrowRight className="w-6 h-6 sm:w-7 sm:h-7" /> DAFTAR SEKARANG</>
+                  <><ArrowRight className="w-4 h-4 sm:w-7 sm:h-7" /> DAFTAR SEKARANG</>
                 )}
               </button>
               {!canSubmit && !attempted && (
