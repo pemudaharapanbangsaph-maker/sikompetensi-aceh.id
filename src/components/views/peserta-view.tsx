@@ -18,7 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, ArrowRight, Search, FileText, Download, ClipboardList, History } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, ArrowRight, Search, FileText, Download, ClipboardList, History, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -96,6 +96,42 @@ function PesertaDataTable() {
   // delete state
   const [deleteTarget, setDeleteTarget] = useState<Peserta | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // import state
+  const [importOpen, setImportOpen] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ created: number; skipped: number; total: number; errors: string[] } | null>(null)
+
+  const handleDownloadTemplate = () => {
+    toast({ title: 'Mengunduh Template', description: 'File template-import-peserta.xlsx sedang diunduh...' })
+    api.peserta.downloadTemplate()
+  }
+
+  const handleImport = async () => {
+    if (!importFile) {
+      toast({ title: 'Validasi', description: 'Pilih file Excel (.xlsx) terlebih dahulu', variant: 'destructive' })
+      return
+    }
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const res = await api.peserta.importExcel(importFile)
+      setImportResult({ created: res.created, skipped: res.skipped, total: res.total, errors: res.errors || [] })
+      toast({ title: 'Import Berhasil', description: res.message })
+      fetchData()
+    } catch (e) {
+      toast({ title: 'Gagal Import', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const closeImport = () => {
+    setImportOpen(false)
+    setImportFile(null)
+    setImportResult(null)
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -255,8 +291,14 @@ function PesertaDataTable() {
   return (
     <div className="space-y-4">
       <PageHeader title="Data Peserta" description="Kelola data peserta pelatihan dan uji kompetensi">
+        <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="h-9">
+          <FileSpreadsheet className="w-4 h-4" /> <span className="hidden sm:inline">Unduh</span> Template
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => { setImportResult(null); setImportFile(null); setImportOpen(true) }} className="h-9">
+          <Upload className="w-4 h-4" /> Import Excel
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setActiveView('peserta-riwayat')} className="h-9">
-          <History className="w-4 h-4" /> Riwayat Peserta
+          <History className="w-4 h-4" /> Riwayat
         </Button>
       </PageHeader>
 
@@ -399,6 +441,78 @@ function PesertaDataTable() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Excel Dialog */}
+      <Dialog open={importOpen} onOpenChange={(o) => !o && closeImport()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="w-5 h-5 text-[#0F4C81]" />
+              Import Data Peserta (Excel)
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-semibold mb-1">Petunjuk:</p>
+                <p>1. Unduh template Excel, isi data peserta, lalu upload kembali.<br />2. Kolom <strong>NIP</strong> & <strong>Nama</strong> wajib diisi.<br />3. Peserta dengan NIP yang sudah ada akan dilewati (tidak duplikat).</p>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>File Excel (.xlsx)</Label>
+              <Input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                className="file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-[#0F4C81]/10 file:text-[#0F4C81] hover:file:bg-[#0F4C81]/20"
+              />
+              {importFile && <p className="text-xs text-slate-500">File: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)</p>}
+            </div>
+
+            {importResult && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-md bg-green-50 p-2">
+                    <p className="text-lg font-bold text-green-700">{importResult.created}</p>
+                    <p className="text-[10px] text-green-600 uppercase">Dibuat</p>
+                  </div>
+                  <div className="rounded-md bg-amber-50 p-2">
+                    <p className="text-lg font-bold text-amber-700">{importResult.skipped}</p>
+                    <p className="text-[10px] text-amber-600 uppercase">Dilewati</p>
+                  </div>
+                  <div className="rounded-md bg-slate-100 p-2">
+                    <p className="text-lg font-bold text-slate-700">{importResult.total}</p>
+                    <p className="text-[10px] text-slate-500 uppercase">Total Baris</p>
+                  </div>
+                </div>
+                {importResult.errors.length > 0 && (
+                  <div className="max-h-32 overflow-y-auto rounded-md bg-white border border-slate-200 p-2 space-y-0.5">
+                    {importResult.errors.slice(0, 20).map((err, i) => (
+                      <p key={i} className="text-[11px] text-slate-500 flex items-start gap-1">
+                        <span className="text-amber-500 mt-0.5">•</span> {err}
+                      </p>
+                    ))}
+                    {importResult.errors.length > 20 && (
+                      <p className="text-[11px] text-slate-400 italic">...dan {importResult.errors.length - 20} lainnya</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={importing}><X className="w-4 h-4" /> Tutup</Button>
+            </DialogClose>
+            {!importResult && (
+              <Button onClick={handleImport} disabled={importing || !importFile} className="bg-[#0F4C81] hover:bg-[#0a3a63]">
+                {importing ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Mengimpor...</> : <><Upload className="w-4 h-4" /> Import Sekarang</>}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
