@@ -610,7 +610,7 @@ function LoginRight({
           </p>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
