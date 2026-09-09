@@ -85,7 +85,7 @@ export async function GET(
     y += 7
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
-    doc.text('SIKOMPETENSI ACEH - BPSDM Provinsi Aceh', pageWidth / 2, y, { align: 'center' })
+    doc.text('SIKOMPETENSI ACEH - BPSDM Aceh', pageWidth / 2, y, { align: 'center' })
 
     y += 6
     doc.setDrawColor(15, 76, 129) // #0F4C81
@@ -178,7 +178,7 @@ export async function GET(
         fillColor: [248, 250, 252],
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 7 },   // No
+        0: { halign: 'center', cellWidth: 9 },   // No
         1: { cellWidth: 28 },                      // NIP
         2: { cellWidth: 40 },                      // Nama
         3: { halign: 'center', cellWidth: 9 },    // L/P
