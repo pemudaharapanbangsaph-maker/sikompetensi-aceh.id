@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText, Mail } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -37,6 +37,17 @@ const menuItems: MenuItem[] = [
   },
   { key: 'kehadiran', label: 'Kehadiran Peserta', icon: ClipboardCheck, view: 'kehadiran', permission: 'pelatihan' },
   { key: 'angkatan', label: 'Data Angkatan', icon: UsersRound, view: 'angkatan', permission: 'pelatihan' },
+  {
+    key: 'uji', label: 'Uji Kompetensi', icon: Award, permission: 'uji_kompetensi',
+    children: [
+      { key: 'uji-jadwal', label: 'Jadwal Uji Kompetensi', view: 'uji-jadwal', permission: 'uji_kompetensi' },
+      { key: 'uji-biodata', label: 'Biodata Peserta', view: 'uji-biodata', permission: 'uji_kompetensi' },
+      { key: 'uji-asesor', label: 'Data Asesor', view: 'uji-asesor', permission: 'uji_kompetensi' },
+      { key: 'uji-penilaian', label: 'Penilaian', view: 'uji-penilaian', permission: 'uji_kompetensi' },
+      { key: 'uji-hasil', label: 'Hasil Uji', view: 'uji-hasil', permission: 'uji_kompetensi' },
+      { key: 'uji-rekap', label: 'Rekap Nilai', view: 'uji-rekap', permission: 'uji_kompetensi' },
+    ],
+  },
   {
     key: 'arsip', label: 'Arsip', icon: Archive, permission: 'laporan',
     children: [
@@ -101,9 +112,11 @@ const menuItems: MenuItem[] = [
       { key: 'settings-profil', label: 'Profil Instansi', view: 'settings-profil', permission: 'settings' },
       { key: 'settings-logo', label: 'Logo', view: 'settings-logo', permission: 'settings' },
       { key: 'settings-login', label: 'Pengaturan Login', view: 'settings-login', permission: 'settings' },
+      { key: 'settings-smtp', label: 'Pengaturan Email', view: 'settings-smtp', permission: 'settings' },
       { key: 'settings-audit', label: 'Audit Log', view: 'settings-audit', permission: 'settings' },
     ],
   },
+  { key: 'notifikasi', label: 'Notifikasi Email', icon: Mail, view: 'notifikasi', permission: 'settings' },
 ]
 
 export function Sidebar({ userRole, inSheet = false }: { userRole: string; inSheet?: boolean }) {
@@ -130,21 +143,21 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
       )}
     >
       {/* Logo */}
-      <div className="h-12 lg:h-16 flex items-center gap-2 px-3 lg:px-4 border-b border-white/10 flex-shrink-0">
+      <div className="h-14 lg:h-16 flex items-center gap-2.5 px-4 border-b border-white/10 flex-shrink-0">
         <div className="flex-shrink-0">
-          <LogoPancaCita size={28} />
+          <LogoPancaCita size={32} />
         </div>
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
-            <p className="text-[13px] font-bold leading-tight truncate">SIKOMPETENSI</p>
-            <p className="text-[9px] text-[#86EFAC] leading-tight truncate">BPSDM Aceh</p>
+            <p className="text-sm font-bold leading-tight truncate">SIKOMPETENSI</p>
+            <p className="text-[10px] text-[#86EFAC] leading-tight truncate">BPSDM Aceh</p>
           </div>
         )}
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 overflow-y-auto sidebar-scroll py-2 lg:py-3 overscroll-contain">
-        <div className="space-y-0.5 px-1.5 lg:px-2">
+      <nav className="flex-1 overflow-y-auto sidebar-scroll py-3 overscroll-contain">
+        <div className="space-y-0.5 px-2">
           {visibleMenu.map((item) => (
             <SidebarItem
               key={item.key}
@@ -190,14 +203,14 @@ function SidebarItem({
       <button
         onClick={() => item.view && onSelect(item.view)}
         className={cn(
-          'w-full flex items-center gap-2 lg:gap-3 px-2.5 lg:px-3 py-2 lg:py-2.5 rounded-lg text-[13px] lg:text-sm relative transition-all duration-200 ease-out',
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
           isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
           collapsed && 'justify-center px-0'
         )}
         title={collapsed ? item.label : undefined}
       >
-        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 lg:h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
-        {Icon && <Icon className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />}
+        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
+        {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
         {!collapsed && <span className="truncate">{item.label}</span>}
       </button>
     )
@@ -215,25 +228,25 @@ function SidebarItem({
             }
           }}
           className={cn(
-            'w-full flex items-center gap-2 lg:gap-3 px-2.5 lg:px-3 py-2 lg:py-2.5 rounded-lg text-[13px] lg:text-sm relative transition-all duration-200 ease-out',
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
             isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
             collapsed && 'justify-center px-0'
           )}
           title={collapsed ? item.label : undefined}
         >
-          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-6 lg:h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
-          {Icon && <Icon className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />}
+          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
+          {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
           {!collapsed && (
             <>
               <span className="truncate flex-1 text-left">{item.label}</span>
-              <ChevronDown className={cn('w-3.5 h-3.5 lg:w-4 lg:h-4 transition-transform duration-200', open && 'rotate-180')} />
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-180')} />
             </>
           )}
         </button>
       </CollapsibleTrigger>
       {!collapsed && (
         <CollapsibleContent>
-          <div className="ml-3 lg:ml-4 pl-3 lg:pl-4 border-l border-white/10 space-y-0.5 mt-0.5 mb-1">
+          <div className="ml-4 pl-4 border-l border-white/10 space-y-0.5 mt-0.5 mb-1">
             {item.children.map((child) => {
               const ChildIcon = child.icon
               const childActive = child.view === activeView
@@ -242,7 +255,7 @@ function SidebarItem({
                   key={child.key}
                   onClick={() => child.view && onSelect(child.view)}
                   className={cn(
-                    'w-full flex items-center gap-2 px-2.5 lg:px-3 py-1.5 lg:py-2 rounded-md text-[12px] lg:text-sm transition-all duration-200 ease-out',
+                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out',
                     childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10'
                   )}
                 >
