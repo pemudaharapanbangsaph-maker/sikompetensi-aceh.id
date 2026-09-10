@@ -13,6 +13,8 @@ const AnalisisView = lazy(() => import('@/components/views/analisis-view').then(
 const AnalisisDiklatInputView = lazy(() => import('@/components/views/analisis-diklat-input-view').then(m => ({ default: m.AnalisisDiklatInputView })))
 const PelatihanView = lazy(() => import('@/components/views/pelatihan-view').then(m => ({ default: m.PelatihanView })))
 const AngkatanView = lazy(() => import('@/components/views/angkatan-view').then(m => ({ default: m.AngkatanView })))
+const UjiKompetensiView = lazy(() => import('@/components/views/uji-kompetensi-view').then(m => ({ default: m.UjiKompetensiView })))
+const AsesorView = lazy(() => import('@/components/views/asesor-view').then(m => ({ default: m.AsesorView })))
 const PesertaView = lazy(() => import('@/components/views/peserta-view').then(m => ({ default: m.PesertaView })))
 const MonitoringView = lazy(() => import('@/components/views/monitoring-view').then(m => ({ default: m.MonitoringView })))
 const LaporanView = lazy(() => import('@/components/views/laporan-view').then(m => ({ default: m.LaporanView })))
@@ -22,6 +24,7 @@ const SettingsView = lazy(() => import('@/components/views/settings-view').then(
 const PendaftaranView = lazy(() => import('@/components/views/pendaftaran-view').then(m => ({ default: m.PendaftaranView })))
 const ArsipView = lazy(() => import('@/components/views/arsip-view').then(m => ({ default: m.ArsipView })))
 const SertifikatView = lazy(() => import('@/components/views/sertifikat-view').then(m => ({ default: m.SertifikatView })))
+const NotifikasiView = lazy(() => import('@/components/views/notifikasi-view').then(m => ({ default: m.NotifikasiView })))
 
 function ViewLoader() {
   return (
@@ -48,6 +51,14 @@ function renderView(view: string): React.ReactNode {
     case 'kehadiran':
     case 'pelatihan-peserta-kegiatan':
       return <AngkatanView />
+    case 'uji-biodata':
+    case 'uji-jadwal':
+    case 'uji-penilaian':
+    case 'uji-hasil':
+    case 'uji-rekap':
+      return <UjiKompetensiView />
+    case 'uji-asesor':
+      return <AsesorView />
     case 'peserta':
     case 'peserta-riwayat':
       return <PesertaView />
@@ -77,8 +88,11 @@ function renderView(view: string): React.ReactNode {
     case 'settings-profil':
     case 'settings-logo':
     case 'settings-login':
+    case 'settings-smtp':
     case 'settings-audit':
       return <SettingsView />
+    case 'notifikasi':
+      return <NotifikasiView />
     default: return <DashboardView />
   }
 }
@@ -108,14 +122,14 @@ export function AppShell() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         <Topbar />
-        <main className="flex-1 p-2 sm:p-4 lg:p-6 overflow-x-hidden">
-          <div key={activeView} className="animate-fade-in-up space-y-3">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-hidden">
+          <div key={activeView} className="animate-fade-in-up">
             <Suspense fallback={<ViewLoader />}>
               {renderView(activeView)}
             </Suspense>
           </div>
         </main>
-        <footer className="mt-auto bg-[#0F4C81] text-white py-2.5 px-3 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] sm:text-xs">
+        <footer className="mt-auto bg-[#0F4C81] text-white py-4 px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 text-center sm:text-left">
             <span className="font-semibold">Sistem Informasi Kompetensi Teknis</span>
             <span className="text-blue-200 hidden sm:inline">— BPSDM Aceh</span>
