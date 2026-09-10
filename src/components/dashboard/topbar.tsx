@@ -27,6 +27,11 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'kehadiran': { title: 'Kehadiran Peserta', subtitle: 'Rekap kehadiran peserta pelatihan' },
   'pelatihan-peserta-kegiatan': { title: 'Peserta Per Kegiatan', subtitle: 'Data peserta per kegiatan pelatihan' },
   'pelatihan-arsip': { title: 'Arsip Pelatihan', subtitle: 'Arsip pelatihan yang telah selesai' },
+  'uji-jadwal': { title: 'Jadwal Uji Kompetensi', subtitle: 'Jadwal uji kompetensi terjadwal' },
+  'uji-asesor': { title: 'Data Asesor', subtitle: 'Kelola data asesor kompetensi' },
+  'uji-penilaian': { title: 'Penilaian', subtitle: 'Input penilaian uji kompetensi' },
+  'uji-hasil': { title: 'Hasil Uji', subtitle: 'Hasil uji kompetensi peserta' },
+  'uji-rekap': { title: 'Rekap Nilai', subtitle: 'Rekapitulasi nilai uji kompetensi' },
   'peserta': { title: 'Data Peserta', subtitle: 'Kelola data peserta diklat' },
   'peserta-riwayat': { title: 'Riwayat Pelatihan', subtitle: 'Riwayat pelatihan per peserta' },
   'pendaftaran-list': { title: 'Data Pendaftar', subtitle: 'Pendaftaran peserta dari portal publik' },
@@ -46,7 +51,9 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'settings-profil': { title: 'Profil Instansi', subtitle: 'Pengaturan profil instansi' },
   'settings-logo': { title: 'Logo', subtitle: 'Pengaturan logo instansi' },
   'settings-login': { title: 'Pengaturan Login', subtitle: 'Konfigurasi keamanan login' },
+  'settings-smtp': { title: 'Pengaturan Email', subtitle: 'Konfigurasi SMTP untuk notifikasi email' },
   'settings-audit': { title: 'Audit Log', subtitle: 'Log audit sistem' },
+  'notifikasi': { title: 'Notifikasi Email', subtitle: 'Kirim dan kelola notifikasi email' },
   'account-profil': { title: 'Profil Saya', subtitle: 'Informasi akun dan profil' },
   'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
 }
@@ -63,15 +70,15 @@ export function Topbar() {
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || 'U'
 
   return (
-    <header className="h-12 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-2.5 sm:px-4 gap-1.5 sm:gap-2 lg:gap-3 shadow-sm">
+    <header className="h-14 lg:h-16 bg-white border-b border-slate-200 sticky top-0 z-30 flex items-center px-3 sm:px-4 gap-1.5 sm:gap-2 lg:gap-3 shadow-sm">
       {/* Mobile menu */}
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden flex-shrink-0 h-9 w-9"
+        className="lg:hidden flex-shrink-0"
         onClick={() => setMobileSidebarOpen(true)}
       >
-        <Menu className="w-4 h-4 lg:w-5 lg:h-5" />
+        <Menu className="w-5 h-5" />
       </Button>
 
       {/* Desktop collapse toggle */}
@@ -86,8 +93,8 @@ export function Topbar() {
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-[13px] sm:text-base lg:text-lg font-bold text-slate-900 truncate leading-tight">{title.title}</h1>
-        <p className="text-[10px] sm:text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
+        <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 truncate leading-tight">{title.title}</h1>
+        <p className="text-[11px] sm:text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
       </div>
 
       {/* Search (decorative on desktop) */}
