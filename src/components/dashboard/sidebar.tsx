@@ -123,11 +123,26 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
   const { activeView, setActiveView } = useNavStore()
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
 
-  const filterMenu = (items: MenuItem[]): MenuItem[] => {
-    return items
-      .filter((item) => !item.permission || hasPermission(userRole, item.permission))
-      .map((item) => (item.children ? { ...item, children: filterMenu(item.children) } : item))
-  }
+  const isSuperAdmin =
+  userRole === 'SUPER_ADMIN' ||
+  userRole === 'SUPER_ADMINISTRATOR'
+
+const filterMenu = (items: MenuItem[]): MenuItem[] => {
+  return items
+    .filter((item) => {
+      // Sembunyikan Uji Kompetensi khusus dari Super Administrator
+      if (isSuperAdmin && item.key === 'uji') {
+        return false
+      }
+
+      return !item.permission || hasPermission(userRole, item.permission)
+    })
+    .map((item) => (
+      item.children
+        ? { ...item, children: filterMenu(item.children) }
+        : item
+    ))
+}
 
   const visibleMenu = filterMenu(menuItems)
   const activeTopKey = activeView.split('-')[0]
