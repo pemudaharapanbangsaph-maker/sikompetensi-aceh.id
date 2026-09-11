@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
+import { KeamananSection } from './account-view'
 import { useAuthStore, useNavStore } from '@/store/auth-store'
 import { PageHeader } from '@/components/shared/data-table'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
