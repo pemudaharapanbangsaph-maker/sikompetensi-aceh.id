@@ -43,7 +43,7 @@ function AccountProfilView() {
     let cancelled = false
     async function load() {
       try {
-        const res = await api.getProfile()
+        const res = await api.me()
         if (!cancelled) {
           const u = res.user
           setForm({
