@@ -191,7 +191,7 @@ function ProfilSection() {
 type SetupStep = 'idle' | 'qr' | 'verify' | 'done'
 type DisableStep = 'idle' | 'confirm'
 
-function KeamananSection() {
+export function KeamananSection() {
   const { user } = useAuthStore()
   const [enabled, setEnabled] = useState(false)
   const [loading, setLoading] = useState(true)
