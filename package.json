@@ -2,6 +2,10 @@
   "name": "nextjs_tailwind_shadcn_ts",
   "version": "0.2.1",
   "private": true,
+  "overrides": {
+    "js-yaml": "4.3.2",
+    "prismjs": "1.30.0"
+  },
   "scripts": {
     "build": "prisma generate && next build --webpack",
     "start": "NODE_ENV=production node server.mjs",
