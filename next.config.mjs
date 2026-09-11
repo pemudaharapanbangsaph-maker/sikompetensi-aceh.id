@@ -4,6 +4,21 @@ import { dirname, resolve } from 'node:path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+const securityHeaders = [
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=86400',
+  },
+  {
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+]
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
@@ -12,6 +27,15 @@ const nextConfig = {
   // setelah semua error TypeScript diperbaiki.
   typescript: {
     ignoreBuildErrors: true,
+  },
+
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: securityHeaders,
+      },
+    ]
   },
 
   webpack: (config) => {
