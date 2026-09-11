@@ -200,7 +200,7 @@ function renderView(view: string): React.ReactNode {
     // Perbaikan menu Profil dan Keamanan
     case 'account-profil':
     case 'account-keamanan':
-      return <UserAccountView activeView={view} />
+      return <UserAccountView />
 
     default:
       return <DashboardView />
