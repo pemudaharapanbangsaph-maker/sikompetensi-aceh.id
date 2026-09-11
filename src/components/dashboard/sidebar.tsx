@@ -123,15 +123,10 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
   const { activeView, setActiveView } = useNavStore()
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
 
-  const isSuperAdmin =
-  userRole === 'SUPER_ADMIN' ||
-  userRole === 'SUPER_ADMINISTRATOR'
-
-const filterMenu = (items: MenuItem[]): MenuItem[] => {
+  cconst filterMenu = (items: MenuItem[]): MenuItem[] => {
   return items
     .filter((item) => {
-      // Sembunyikan Uji Kompetensi khusus dari Super Administrator
-      if (isSuperAdmin && item.key === 'uji') {
+      if (userRole === 'SUPER_ADMIN' && item.key === 'uji') {
         return false
       }
 
