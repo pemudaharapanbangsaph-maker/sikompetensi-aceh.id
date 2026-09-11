@@ -75,7 +75,7 @@ function AccountProfilView() {
     }
     setSaving(true)
     try {
-      const res = await api.updateProfile(form)
+      const res = await api.users.update(user.id, form)
       // Update auth store
       if (user) {
         setUser({ ...user, nama: res.user.nama, email: res.user.email, noTelp: res.user.noTelp, tempatLahir: res.user.tempatLahir, tanggalLahir: res.user.tanggalLahir })
