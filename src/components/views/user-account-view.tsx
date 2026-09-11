@@ -18,7 +18,7 @@ import { formatDateTime } from '@/components/shared/ui-helpers'
 
 export function UserAccountView() {
   const { activeView } = useNavStore()
-  if (activeView === 'account-keamanan') return <AccountKeamananView />
+  if (activeView === 'account-keamanan') return <KeamananSection />
   return <AccountProfilView />
 }
 
