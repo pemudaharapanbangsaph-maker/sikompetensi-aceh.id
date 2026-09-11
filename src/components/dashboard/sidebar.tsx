@@ -123,7 +123,7 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
   const { activeView, setActiveView } = useNavStore()
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
 
-  cconst filterMenu = (items: MenuItem[]): MenuItem[] => {
+  const filterMenu = (items: MenuItem[]): MenuItem[] => {
   return items
     .filter((item) => {
       if (userRole === 'SUPER_ADMIN' && item.key === 'uji') {
