@@ -19,6 +19,7 @@ export async function GET(req: Request) {
       if (v !== undefined && v !== '') filters[k] = v as string
     }
     const where = buildWhere(search as string, ['judul', 'unitKerja'], filters)
+    where.deleted = false
     if (tahun !== undefined && tahun !== '') {
       (where as Record<string, unknown>).tahun = Number(tahun)
     }
