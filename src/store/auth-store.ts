@@ -91,7 +91,7 @@ export type ViewKey =
   | 'dashboard'
   | 'analisis' | 'analisis-input' | 'analisis-prioritas' | 'analisis-rekap'
   | 'pelatihan' | 'pelatihan-jadwal' | 'pelatihan-peserta-kegiatan' | 'pelatihan-arsip' | 'kehadiran' | 'angkatan'
-  | 'arsip-pelatihan' | 'arsip-peserta'
+  | 'arsip-pelatihan' | 'arsip-peserta' | 'arsip-sertifikat' | 'arsip-pendaftar' | 'arsip-analisis' | 'arsip-dokumentasi'
   | 'peserta' | 'peserta-riwayat'
   | 'pendaftaran-list' | 'pendaftaran-dokumen'
   | 'monitoring-pretest' | 'monitoring-posttest' | 'monitoring-rekap'
