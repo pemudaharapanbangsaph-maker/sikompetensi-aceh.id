@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     const status = searchParams.get('status') || ''
     const analisisDiklatItemId = searchParams.get('analisisDiklatItemId') || ''
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { deleted: false }
     if (analisisDiklatItemId) where.analisisDiklatItemId = analisisDiklatItemId
     if (search) {
       where.OR = [
