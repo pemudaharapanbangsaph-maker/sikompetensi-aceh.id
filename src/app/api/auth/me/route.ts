@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
 import { db } from '@/lib/db'
+import { getSession } from '@/lib/auth'
+
+const USER_SELECT = {
+  id: true,
+  username: true,
+  nama: true,
+  email: true,
+  role: true,
+  status: true,
+  noTelp: true,
+  tempatLahir: true,
+  tanggalLahir: true,
+  lastLogin: true,
+  createdAt: true,
+}
 
 export async function GET() {
   try {
@@ -17,17 +31,7 @@ export async function GET() {
       where: {
         id: session.user.id,
       },
-      select: {
-        id: true,
-        username: true,
-        nama: true,
-        email: true,
-        role: true,
-        status: true,
-        noTelp: true,
-        tempatLahir: true,
-        tanggalLahir: true,
-      },
+      select: USER_SELECT,
     })
 
     if (!user) {
@@ -38,7 +42,9 @@ export async function GET() {
     }
 
     return NextResponse.json({ user })
-  } catch {
+  } catch (e) {
+    console.error('auth me error:', e)
+
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
