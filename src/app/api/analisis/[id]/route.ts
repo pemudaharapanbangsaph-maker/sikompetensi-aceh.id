@@ -55,7 +55,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
     const { id } = await params
-    const item = await db.analisisKebutuhan.delete({ where: { id } })
+    const item = await db.analisisKebutuhan.findUnique({ where: { id } })
+    if (!item) return NextResponse.json({ error: "Tidak ditemukan" }, { status: 404 })
+    await db.analisisKebutuhan.update({ where: { id }, data: { deleted: true, deletedAt: new Date() } })
     await auditLog(session, 'DELETE', 'ANALISIS', `Hapus analisis kebutuhan: ${item.judul}`, req)
     return NextResponse.json({ success: true })
   } catch (e) {
