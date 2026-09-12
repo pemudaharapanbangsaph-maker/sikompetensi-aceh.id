@@ -116,8 +116,6 @@ export async function GET(req: Request) {
     );
 
     const where = buildWhere(
-      String(search || "")
-    const where = buildWhere(
   String(search || ""),
   ["namaPeserta", "nomorSertifikat", "namaKegiatan"],
   filters
