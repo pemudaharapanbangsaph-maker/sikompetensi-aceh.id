@@ -23,6 +23,10 @@ import {
 export function ArsipView() {
   const { activeView } = useNavStore()
   if (activeView === 'arsip-peserta') return <ArsipPesertaView />
+  if (activeView === 'arsip-sertifikat') return <ArsipSertifikatView />
+  if (activeView === 'arsip-pendaftar') return <ArsipPendaftarView />
+  if (activeView === 'arsip-analisis') return <ArsipAnalisisView />
+  if (activeView === 'arsip-dokumentasi') return <ArsipDokumentasiView />
   return <ArsipPelatihanView />
 }
 
@@ -358,5 +362,299 @@ function DetailDialogPeserta({ target, onClose }: { target: (Peserta & { _count?
         <DialogFooter><DialogClose asChild><Button variant="outline"><X className="w-4 h-4" /> Tutup</Button></DialogClose></DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ===========================================================================
+// ARSIP SERTIFIKAT
+// ===========================================================================
+
+function ArsipSertifikatView() {
+  const { toast } = useToast()
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/arsip/sertifikat?search=${encodeURIComponent(search)}`, { credentials: 'same-origin' })
+      const d = await res.json()
+      setData(Array.isArray(d) ? d : [])
+    } catch { setData([]) } finally { setLoading(false) }
+  }, [search])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleRestore = async () => {
+    if (!restoreTarget) return
+    setRestoring(true)
+    try {
+      const res = await fetch(`/api/arsip/sertifikat/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal memulihkan') }
+      toast({ title: 'Berhasil', description: 'Sertifikat dipulihkan dari arsip' })
+      setRestoreTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setRestoring(false) }
+  }
+
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/sertifikat/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal menghapus permanen') }
+      toast({ title: 'Dihapus Permanen', description: 'Sertifikat telah dihapus permanen' })
+      setDeleteTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
+  }
+
+  const columns: Column<any>[] = [
+    { key: 'namaPeserta', header: 'Nama Peserta', render: (r) => <span className="font-medium text-slate-900">{r.namaPeserta || '-'}</span> },
+    { key: 'namaKegiatan', header: 'Nama Kegiatan', render: (r) => <span className="text-slate-600 text-xs line-clamp-1">{r.namaKegiatan || '-'}</span> },
+    { key: 'nomorSertifikat', header: 'No. Sertifikat', render: (r) => <span className="font-mono text-xs text-slate-600">{r.nomorSertifikat || '-'}</span> },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Arsip Sertifikat" description="Sertifikat yang telah dihapus (soft delete)" />
+      <DataTable data={data} total={data.length} page={1} pageSize={100} loading={loading} columns={columns}
+        searchPlaceholder="Cari nama / no sertifikat..." searchValue={search} onSearchChange={(v) => { setSearch(v) }}
+        onRefresh={fetchData} rowKey={(r) => r.id} emptyMessage="Belum ada data arsip sertifikat"
+        actions={(row) => (
+          <>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
+          </>
+        )}
+      />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Sertifikat?" description={<>Yakin ingin memulihkan sertifikat <span className="font-semibold">{restoreTarget?.namaPeserta}</span>?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Sertifikat?" description={<>Sertifikat <span className="font-semibold">{deleteTarget?.namaPeserta}</span> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  )
+}
+
+// ===========================================================================
+// ARSIP PENDAFTAR
+// ===========================================================================
+
+function ArsipPendaftarView() {
+  const { toast } = useToast()
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/arsip/pendaftar?search=${encodeURIComponent(search)}`, { credentials: 'same-origin' })
+      const d = await res.json()
+      setData(Array.isArray(d) ? d : [])
+    } catch { setData([]) } finally { setLoading(false) }
+  }, [search])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleRestore = async () => {
+    if (!restoreTarget) return
+    setRestoring(true)
+    try {
+      const res = await fetch(`/api/arsip/pendaftar/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal memulihkan')
+      toast({ title: 'Berhasil', description: 'Pendaftar dipulihkan dari arsip' })
+      setRestoreTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setRestoring(false) }
+  }
+
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/pendaftar/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal menghapus permanen')
+      toast({ title: 'Dihapus Permanen', description: 'Pendaftar telah dihapus permanen' })
+      setDeleteTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
+  }
+
+  const columns: Column<any>[] = [
+    { key: 'nip', header: 'NIP', render: (r) => <span className="font-mono text-xs text-slate-700">{r.nip}</span> },
+    { key: 'nama', header: 'Nama', render: (r) => <span className="font-medium text-slate-900">{r.nama}</span> },
+    { key: 'instansi', header: 'Instansi', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[150px] inline-block">{r.instansi || '-'}</span> },
+    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Arsip Pendaftar" description="Data pendaftar portal yang telah dihapus" />
+      <DataTable data={data} total={data.length} page={1} pageSize={100} loading={loading} columns={columns}
+        searchPlaceholder="Cari NIP / nama / instansi..." searchValue={search} onSearchChange={(v) => { setSearch(v) }}
+        onRefresh={fetchData} rowKey={(r) => r.id} emptyMessage="Belum ada data arsip pendaftar"
+        actions={(row) => (
+          <>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
+          </>
+        )}
+      />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Pendaftar?" description={<>Yakin ingin memulihkan pendaftar <span className="font-semibold">{restoreTarget?.nama}</span> ({restoreTarget?.nip})?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Pendaftar?" description={<>Data <span className="font-semibold">{deleteTarget?.nama}</span> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  )
+}
+
+// ===========================================================================
+// ARSIP ANALISIS
+// ===========================================================================
+
+function ArsipAnalisisView() {
+  const { toast } = useToast()
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/arsip/analisis?search=${encodeURIComponent(search)}`, { credentials: 'same-origin' })
+      const d = await res.json()
+      setData(Array.isArray(d) ? d : [])
+    } catch { setData([]) } finally { setLoading(false) }
+  }, [search])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleRestore = async () => {
+    if (!restoreTarget) return
+    setRestoring(true)
+    try {
+      const res = await fetch(`/api/arsip/analisis/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal memulihkan')
+      toast({ title: 'Berhasil', description: 'Analisis dipulihkan dari arsip' })
+      setRestoreTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setRestoring(false) }
+  }
+
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/analisis/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal menghapus permanen')
+      toast({ title: 'Dihapus Permanen', description: 'Analisis telah dihapus permanen' })
+      setDeleteTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
+  }
+
+  const columns: Column<any>[] = [
+    { key: 'judul', header: 'Judul', render: (r) => <span className="font-medium text-slate-900 line-clamp-1">{r.judul}</span> },
+    { key: 'tahun', header: 'Tahun', render: (r) => <span className="text-slate-600 text-xs">{r.tahun}</span> },
+    { key: 'unitKerja', header: 'Unit Kerja', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[150px] inline-block">{r.unitKerja}</span> },
+    { key: 'status', header: 'Status', render: (r) => <StatusBadge status={r.status} /> },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Arsip Analisis" description="Analisis kebutuhan yang telah dihapus" />
+      <DataTable data={data} total={data.length} page={1} pageSize={100} loading={loading} columns={columns}
+        searchPlaceholder="Cari judul / unit kerja..." searchValue={search} onSearchChange={(v) => { setSearch(v) }}
+        onRefresh={fetchData} rowKey={(r) => r.id} emptyMessage="Belum ada data arsip analisis"
+        actions={(row) => (
+          <>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
+          </>
+        )}
+      />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Analisis?" description={<>Yakin ingin memulihkan analisis <span className="font-semibold">{restoreTarget?.judul}</span>?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Analisis?" description={<>Analisis <span className="font-semibold">{deleteTarget?.judul}</span> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  )
+}
+
+// ===========================================================================
+// ARSIP DOKUMENTASI
+// ===========================================================================
+
+function ArsipDokumentasiView() {
+  const { toast } = useToast()
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/arsip/dokumentasi?search=${encodeURIComponent(search)}`, { credentials: 'same-origin' })
+      const d = await res.json()
+      setData(Array.isArray(d) ? d : [])
+    } catch { setData([]) } finally { setLoading(false) }
+  }, [search])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const handleRestore = async () => {
+    if (!restoreTarget) return
+    setRestoring(true)
+    try {
+      const res = await fetch(`/api/arsip/dokumentasi/${restoreTarget.id}/restore`, { method: 'POST', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal memulihkan')
+      toast({ title: 'Berhasil', description: 'Dokumentasi dipulihkan dari arsip' })
+      setRestoreTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setRestoring(false) }
+  }
+
+  const handleDeletePermanent = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/arsip/dokumentasi/${deleteTarget.id}/delete-permanent`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal menghapus permanen')
+      toast({ title: 'Dihapus Permanen', description: 'Dokumentasi telah dihapus permanen' })
+      setDeleteTarget(null); fetchData()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
+  }
+
+  const columns: Column<any>[] = [
+    { key: 'judul', header: 'Judul', render: (r) => <span className="font-medium text-slate-900 line-clamp-1">{r.judul}</span> },
+    { key: 'angkatan', header: 'Angkatan', render: (r) => <span className="text-slate-600 text-xs line-clamp-1 max-w-[200px] inline-block">{r.angkatan?.namaAngkatan || '-'}</span> },
+    { key: 'tipeFile', header: 'Tipe', render: (r) => <span className="text-slate-600 text-xs">{r.tipeFile || '-'}</span> },
+    { key: 'deletedAt', header: 'Diarsipkan', render: (r) => <span className="text-xs text-slate-500">{r.deletedAt ? formatTanggal(r.deletedAt) : '-'}</span> },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <PageHeader title="Arsip Dokumentasi" description="Dokumentasi yang telah dihapus" />
+      <DataTable data={data} total={data.length} page={1} pageSize={100} loading={loading} columns={columns}
+        searchPlaceholder="Cari judul dokumentasi..." searchValue={search} onSearchChange={(v) => { setSearch(v) }}
+        onRefresh={fetchData} rowKey={(r) => r.id} emptyMessage="Belum ada data arsip dokumentasi"
+        actions={(row) => (
+          <>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-600" onClick={() => setRestoreTarget(row)} title="Pulihkan"><RotateCcw className="w-4 h-4" /> Pulihkan</Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2 text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus Permanen"><Trash2 className="w-4 h-4" /> Hapus</Button>
+          </>
+        )}
+      />
+      <RestoreDialog open={!!restoreTarget} title="Pulihkan Dokumentasi?" description={<>Yakin ingin memulihkan dokumentasi <span className="font-semibold">{restoreTarget?.judul}</span>?</>} loading={restoring} onConfirm={handleRestore} onCancel={() => setRestoreTarget(null)} />
+      <DeletePermanentDialog open={!!deleteTarget} title="Hapus Permanen Dokumentasi?" description={<>Dokumentasi <span className="font-semibold">{deleteTarget?.judul}</span> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan!</>} loading={deleting} onConfirm={handleDeletePermanent} onCancel={() => setDeleteTarget(null)} />
+    </div>
   )
 }
