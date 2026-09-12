@@ -66,28 +66,58 @@ function AccountProfilView() {
   }, [toast])
 
   const handleSave = async () => {
-    if (!form.nama || form.nama.trim().length < 2) {
-      toast({ title: 'Validasi', description: 'Nama minimal 2 karakter', variant: 'destructive' })
-      return
-    }
-    if (!form.email || !form.email.includes('@')) {
-      toast({ title: 'Validasi', description: 'Email tidak valid', variant: 'destructive' })
-      return
-    }
-    setSaving(true)
-    try {
-      const res = await api.users.update(user.id, form)
-      // Update auth store
-      if (user) {
-        setUser({ ...user, nama: res.user.nama, email: res.user.email, noTelp: res.user.noTelp, tempatLahir: res.user.tempatLahir, tanggalLahir: res.user.tanggalLahir })
-      }
-      toast({ title: 'Berhasil', description: 'Profil berhasil diperbarui' })
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setSaving(false)
-    }
+  if (!user) {
+    toast({
+      title: 'Gagal',
+      description: 'Data pengguna belum tersedia',
+      variant: 'destructive',
+    })
+    return
   }
+
+  if (!form.nama || form.nama.trim().length < 2) {
+    toast({
+      title: 'Validasi',
+      description: 'Nama minimal 2 karakter',
+      variant: 'destructive',
+    })
+    return
+  }
+
+  if (!form.email || !form.email.includes('@')) {
+    toast({
+      title: 'Validasi',
+      description: 'Email tidak valid',
+      variant: 'destructive',
+    })
+    return
+  }
+
+  setSaving(true)
+
+  try {
+    const res = await api.users.update(user.id, form)
+
+    // Response API berupa data user langsung, bukan { user: ... }
+    setUser({
+      ...user,
+      ...res,
+    })
+
+    toast({
+      title: 'Berhasil',
+      description: 'Profil berhasil diperbarui',
+    })
+  } catch (e) {
+    toast({
+      title: 'Gagal',
+      description: e instanceof Error ? e.message : 'Profil gagal diperbarui',
+      variant: 'destructive',
+    })
+  } finally {
+    setSaving(false)
+  }
+}
 
   const initials = user?.nama?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || 'U'
 
