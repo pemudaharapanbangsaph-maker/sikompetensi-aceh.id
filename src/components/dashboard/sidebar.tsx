@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText, Mail, ArrowLeft } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText, Mail } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -128,30 +128,22 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
 
   const filterMenu = (items: MenuItem[]): MenuItem[] => {
-  return items
-    .filter((item) => {
-      if (userRole === 'SUPER_ADMIN' && item.key === 'uji') {
-        return false
-      }
-
-      return !item.permission || hasPermission(userRole, item.permission)
-    })
-    .map((item) => (
-      item.children
-        ? { ...item, children: filterMenu(item.children) }
-        : item
-    ))
-}
+    return items
+      .filter((item) => {
+        if (userRole === 'SUPER_ADMIN' && item.key === 'uji') {
+          return false
+        }
+        return !item.permission || hasPermission(userRole, item.permission)
+      })
+      .map((item) => (
+        item.children
+          ? { ...item, children: filterMenu(item.children) }
+          : item
+      ))
+  }
 
   const visibleMenu = filterMenu(menuItems)
   const activeTopKey = activeView.split('-')[0]
-
-  // Helper: kembali ke dashboard
-  const goToDashboard = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setActiveView('dashboard')
-    setMobileSidebarOpen(false)
-  }
 
   return (
     <aside
@@ -190,7 +182,6 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
                 setActiveView(v)
                 setMobileSidebarOpen(false)
               }}
-              goToDashboard={goToDashboard}
             />
           ))}
         </div>
@@ -207,14 +198,13 @@ export function Sidebar({ userRole, inSheet = false }: { userRole: string; inShe
 }
 
 function SidebarItem({
-  item, activeView, activeTopKey, collapsed, onSelect, goToDashboard,
+  item, activeView, activeTopKey, collapsed, onSelect,
 }: {
   item: MenuItem
   activeView: ViewKey
   activeTopKey: string
   collapsed: boolean
   onSelect: (v: ViewKey) => void
-  goToDashboard: (e: React.MouseEvent) => void
 }) {
   const [open, setOpen] = useState(item.key === activeTopKey)
   const Icon = item.icon
@@ -223,73 +213,49 @@ function SidebarItem({
 
   if (!item.children || item.children.length === 0) {
     return (
-      <div className="flex items-center group">
-        <button
-          onClick={() => item.view && onSelect(item.view)}
-          className={cn(
-            'flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
-            isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
-            collapsed && 'justify-center px-0'
-          )}
-          title={collapsed ? item.label : undefined}
-        >
-          {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
-          {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-          {!collapsed && <span className="truncate">{item.label}</span>}
-        </button>
-        {/* Tombol panah kecil — klik = kembali ke Dashboard */}
-        {!collapsed && (
-          <button
-            onClick={goToDashboard}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded text-blue-300 hover:text-white hover:bg-white/10 flex-shrink-0"
-            title="Kembali ke Dashboard"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-          </button>
+      <button
+        onClick={() => item.view && onSelect(item.view)}
+        className={cn(
+          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
+          isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5',
+          collapsed && 'justify-center px-0'
         )}
-      </div>
+        title={collapsed ? item.label : undefined}
+      >
+        {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50 animate-[pulse_2s_ease-in-out_infinite]" />}
+        {Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />}
+        {!collapsed && <span className="truncate">{item.label}</span>}
+      </button>
     )
   }
 
   return (
     <Collapsible open={open && !collapsed} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
-        <div className="flex items-center group">
-          <button
-            onClick={() => {
-              if (collapsed) {
-                if (item.children && item.children[0]?.view) onSelect(item.children[0].view)
-              } else {
-                setOpen(!open)
-              }
-            }}
-            className={cn(
-              'flex-1 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out',
-              isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10',
-              collapsed && 'justify-center px-0'
-            )}
-            title={collapsed ? item.label : undefined}
-          >
-            {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50" />}
-            {Icon && <Icon className="w-5 h-5 flex-shrink-0" />}
-            {!collapsed && (
-              <>
-                <span className="truncate flex-1 text-left">{item.label}</span>
-                <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-180')} />
-              </>
-            )}
-          </button>
-          {/* Tombol panah kecil — klik = kembali ke Dashboard */}
-          {!collapsed && (
-            <button
-              onClick={goToDashboard}
-              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded text-blue-300 hover:text-white hover:bg-white/10 flex-shrink-0"
-              title="Kembali ke Dashboard"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </button>
+        <button
+          onClick={() => {
+            if (collapsed) {
+              if (item.children && item.children[0]?.view) onSelect(item.children[0].view)
+            } else {
+              setOpen(!open)
+            }
+          }}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
+            isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5',
+            collapsed && 'justify-center px-0'
           )}
-        </div>
+          title={collapsed ? item.label : undefined}
+        >
+          {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50 animate-[pulse_2s_ease-in-out_infinite]" />}
+          {Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />}
+          {!collapsed && (
+            <>
+              <span className="truncate flex-1 text-left">{item.label}</span>
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-180')} />
+            </>
+          )}
+        </button>
       </CollapsibleTrigger>
       {!collapsed && (
         <CollapsibleContent>
@@ -298,26 +264,17 @@ function SidebarItem({
               const ChildIcon = child.icon
               const childActive = child.view === activeView
               return (
-                <div key={child.key} className="flex items-center group">
-                  <button
-                    onClick={() => child.view && onSelect(child.view)}
-                    className={cn(
-                      'flex-1 flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out',
-                      childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10'
-                    )}
-                  >
-                    <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-[#22C55E] scale-125' : 'bg-blue-300/50')} />
-                    <span className="truncate">{child.label}</span>
-                  </button>
-                  {/* Tombol panah kecil di submenu — klik = kembali ke Dashboard */}
-                  <button
-                    onClick={goToDashboard}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded text-blue-300 hover:text-white hover:bg-white/10 flex-shrink-0"
-                    title="Kembali ke Dashboard"
-                  >
-                    <ArrowLeft className="w-3 h-3" />
-                  </button>
-                </div>
+                <button
+                  key={child.key}
+                  onClick={() => child.view && onSelect(child.view)}
+                  className={cn(
+                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
+                    childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5'
+                  )}
+                >
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-[#22C55E] scale-125 animate-[pulse_2s_ease-in-out_infinite]' : 'bg-blue-300/50 active:scale-150')} />
+                  <span className="truncate">{child.label}</span>
+                </button>
               )
             })}
           </div>
