@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Menu, PanelLeftClose, PanelLeft, Bell, Search, LogOut, User as UserIcon,
-  ChevronDown, Settings, ShieldCheck, ArrowLeft,
+  ChevronDown, Settings, ShieldCheck, ArrowLeft, Loader2,
 } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { roleLabel, roleBadgeClass } from '@/components/shared/ui-helpers'
 import { cn } from '@/lib/utils'
+import type { ViewKey } from '@/store/auth-store'
 
 const viewTitles: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'Ringkasan sistem dan statistik' },
@@ -62,6 +63,14 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
 }
 
+interface SearchResult {
+  type: string
+  label: string
+  sub: string
+  view: ViewKey
+  id: string
+}
+
 export function Topbar() {
   const { toggleSidebar, sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
   const { user, logout } = useAuthStore()
@@ -69,6 +78,60 @@ export function Topbar() {
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   const [notifOpen, setNotifOpen] = useState(false)
   const title = viewTitles[activeView] || { title: 'Dashboard', subtitle: '' }
+
+  // === Search State ===
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // === Search Function ===
+  const handleSearch = (value: string) => {
+    setSearchQuery(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (value.trim().length < 2) {
+      setSearchResults([])
+      setSearchOpen(false)
+      return
+    }
+    setSearchLoading(true)
+    setSearchOpen(true)
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(value.trim())}`, { credentials: 'same-origin' })
+        if (res.ok) {
+          const data = await res.json()
+          setSearchResults(data.results || [])
+        } else {
+          setSearchResults([])
+        }
+      } catch {
+        setSearchResults([])
+      } finally {
+        setSearchLoading(false)
+      }
+    }, 300)
+  }
+
+  const handleSelectResult = (result: SearchResult) => {
+    setActiveView(result.view)
+    setSearchQuery('')
+    setSearchResults([])
+    setSearchOpen(false)
+  }
+
+  // Close dropdown when click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Tombol Kembali hanya muncul jika BUKAN di Dashboard
   const showBackButton = activeView !== 'dashboard'
@@ -102,7 +165,7 @@ export function Topbar() {
         {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
       </Button>
 
-      {/* Tombol Kembali ke Dashboard — muncul di setiap halaman kecuali Dashboard */}
+      {/* Tombol Kembali ke Dashboard */}
       {showBackButton && (
         <Button
           variant="outline"
@@ -122,14 +185,50 @@ export function Topbar() {
         <p className="text-[11px] sm:text-xs text-slate-500 truncate hidden sm:block">{title.subtitle}</p>
       </div>
 
-      {/* Search (decorative on desktop) */}
-      <div className="hidden md:flex items-center relative flex-shrink-0">
-        <Search className="absolute left-3 w-4 h-4 text-slate-400" />
+      {/* Search — berfungsi penuh */}
+      <div ref={searchRef} className="hidden md:block relative flex-shrink-0">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
         <input
           type="text"
-          placeholder="Cari cepat..."
-          className="pl-9 pr-4 py-2 w-56 lg:w-64 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F4C81]/20 focus:border-[#0F4C81] transition-colors"
+          value={searchQuery}
+          onChange={(e) => handleSearch(e.target.value)}
+          onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+          placeholder="Cari pelatihan, peserta, angkatan..."
+          className="pl-9 pr-4 py-2 w-72 lg:w-96 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0F4C81]/20 focus:border-[#0F4C81] transition-colors"
         />
+        {/* Search Results Dropdown */}
+        {searchOpen && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 max-h-96 overflow-y-auto z-50">
+            {searchLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-[#0F4C81]" />
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <Search className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-400">Tidak ditemukan</p>
+              </div>
+            ) : (
+              <div className="py-1">
+                {searchResults.map((result, i) => (
+                  <button
+                    key={`${result.id}-${i}`}
+                    onClick={() => handleSelectResult(result)}
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#0F4C81]/10 flex items-center justify-center">
+                      <Search className="w-3.5 h-3.5 text-[#0F4C81]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{result.label}</p>
+                      <p className="text-xs text-slate-400 truncate">{result.sub} • {result.type}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Notifications */}
