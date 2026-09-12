@@ -184,11 +184,11 @@ export async function DELETE(
     const existing = await db.pendaftaranPortal.findUnique({ where: { id } })
     if (!existing) return NextResponse.json({ error: 'Tidak ditemukan' }, { status: 404 })
 
-    await db.pendaftaranPortal.delete({ where: { id } })
+    await db.pendaftaranPortal.update({ where: { id }, data: { deleted: true, deletedAt: new Date() } })
 
-    await auditLog(session, 'DELETE', 'PENDAFTARAN_PORTAL', `Hapus pendaftaran "${existing.nama}" (${existing.nip})`, req)
+    await auditLog(session, 'DELETE', 'PENDAFTARAN_PORTAL', `Arsip pendaftaran "${existing.nama}" (${existing.nip})`, req)
 
-    return NextResponse.json({ message: 'Berhasil dihapus' })
+    return NextResponse.json({ message: 'Berhasil diarsipkan' })
   } catch (e) {
     console.error('pendaftaran delete error:', e)
     return NextResponse.json({ error: 'Gagal menghapus' }, { status: 500 })
