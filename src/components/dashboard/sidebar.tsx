@@ -53,6 +53,10 @@ const menuItems: MenuItem[] = [
     children: [
       { key: 'arsip-pelatihan', label: 'Arsip Pelatihan', view: 'arsip-pelatihan', permission: 'laporan' },
       { key: 'arsip-peserta', label: 'Arsip Peserta', view: 'arsip-peserta', permission: 'peserta' },
+      { key: 'arsip-sertifikat', label: 'Arsip Sertifikat', view: 'arsip-sertifikat', permission: 'laporan' },
+      { key: 'arsip-pendaftar', label: 'Arsip Pendaftar', view: 'arsip-pendaftar', permission: 'pendaftaran' },
+      { key: 'arsip-analisis', label: 'Arsip Analisis', view: 'arsip-analisis', permission: 'analisis' },
+      { key: 'arsip-dokumentasi', label: 'Arsip Dokumentasi', view: 'arsip-dokumentasi', permission: 'pelatihan' },
     ],
   },
   {
