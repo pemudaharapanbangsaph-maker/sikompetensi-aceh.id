@@ -156,9 +156,14 @@ export async function DELETE(
       );
     }
 
-    await db.sertifikat.delete({
+    // Soft delete: tandai deleted=true alih-alih hapus fisik
+    await db.sertifikat.update({
       where: {
         id,
+      },
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
       },
     });
 
@@ -166,14 +171,18 @@ export async function DELETE(
       session,
       "DELETE",
       "SERTIFIKAT",
-      `Menghapus sertifikat: ${id}`,
+      `Mengarsipkan sertifikat: ${
+        existing.nomorSertifikat ||
+        existing.namaPeserta ||
+        existing.id
+      }`,
       req
     );
 
     return NextResponse.json({
       success: true,
       message:
-        "Sertifikat berhasil dihapus",
+        "Sertifikat berhasil diarsipkan",
     });
   } catch (error) {
     console.error(
