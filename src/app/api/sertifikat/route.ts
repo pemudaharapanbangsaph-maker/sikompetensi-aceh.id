@@ -117,14 +117,14 @@ export async function GET(req: Request) {
 
     const where = buildWhere(
       String(search || "")
-    (where as Record<string, unknown>).deleted = false;,
-      [
-        "namaPeserta",
-        "nomorSertifikat",
-        "namaKegiatan",
-      ],
-      filters
-    );
+    const where = buildWhere(
+  String(search || ""),
+  ["namaPeserta", "nomorSertifikat", "namaKegiatan"],
+  filters
+);
+
+    const whereRecord = where as Record<string, unknown>;
+    whereRecord.deleted = false;
 
     const safeSortBy = isAllowedSort(sortBy)
       ? sortBy
