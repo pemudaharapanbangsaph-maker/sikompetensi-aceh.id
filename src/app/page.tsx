@@ -13,6 +13,25 @@ export default function Home() {
     initialize()
   }, [initialize])
 
+  // Cegah tombol back browser keluar dari situs saat di halaman depan
+  useEffect(() => {
+    if (!initialized || user) return
+
+    // Push dummy state ke history
+    window.history.pushState({ page: 'landing' }, '', window.location.href)
+
+    const handlePopState = () => {
+      // Kalau user klik back, tetap di halaman ini
+      window.history.pushState({ page: 'landing' }, '', window.location.href)
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [initialized, user])
+
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100">
