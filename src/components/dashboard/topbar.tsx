@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Menu, PanelLeftClose, PanelLeft, Bell, Search, LogOut, User as UserIcon,
-  ChevronDown, Settings, ShieldCheck,
+  ChevronDown, Settings, ShieldCheck, ArrowLeft,
 } from 'lucide-react'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -54,12 +54,12 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'settings-smtp': { title: 'Pengaturan Email', subtitle: 'Konfigurasi SMTP untuk notifikasi email' },
   'settings-audit': { title: 'Audit Log', subtitle: 'Log audit sistem' },
   'notifikasi': { title: 'Notifikasi Email', subtitle: 'Kirim dan kelola notifikasi email' },
-  'account-profil': { title: 'Profil Saya', subtitle: 'Informasi akun dan profil' },
-  'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
   'arsip-sertifikat': { title: 'Arsip Sertifikat', subtitle: 'Sertifikat yang telah dihapus' },
   'arsip-pendaftar': { title: 'Arsip Pendaftar', subtitle: 'Data pendaftar portal yang telah dihapus' },
   'arsip-analisis': { title: 'Arsip Analisis', subtitle: 'Analisis kebutuhan yang telah dihapus' },
   'arsip-dokumentasi': { title: 'Arsip Dokumentasi', subtitle: 'Dokumentasi yang telah dihapus' },
+  'account-profil': { title: 'Profil Saya', subtitle: 'Informasi akun dan profil' },
+  'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
 }
 
 export function Topbar() {
@@ -69,6 +69,13 @@ export function Topbar() {
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   const [notifOpen, setNotifOpen] = useState(false)
   const title = viewTitles[activeView] || { title: 'Dashboard', subtitle: '' }
+
+  // Tombol Kembali hanya muncul jika BUKAN di Dashboard
+  const showBackButton = activeView !== 'dashboard'
+
+  const handleGoBack = () => {
+    setActiveView('dashboard')
+  }
 
   const initials = user?.nama
     ?.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || 'U'
@@ -94,6 +101,20 @@ export function Topbar() {
       >
         {sidebarCollapsed ? <PanelLeft className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
       </Button>
+
+      {/* Tombol Kembali ke Dashboard — muncul di setiap halaman kecuali Dashboard */}
+      {showBackButton && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleGoBack}
+          className="flex items-center gap-1.5 h-8 sm:h-9 px-2.5 sm:px-3 text-xs sm:text-sm border-slate-200 hover:border-[#0F4C81]/40 hover:text-[#0F4C81] hover:bg-[#0F4C81]/5 transition-all duration-200 active:scale-95 flex-shrink-0"
+          title="Kembali ke Dashboard"
+        >
+          <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+          <span className="hidden sm:inline">Kembali</span>
+        </Button>
+      )}
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
@@ -131,7 +152,7 @@ export function Topbar() {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0">
+          <button className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors flex-shrink-0">
             <Avatar className="w-8 h-8 border border-slate-200">
               <AvatarFallback className="bg-[#0F4C81] text-white text-xs font-semibold">
                 {initials}
