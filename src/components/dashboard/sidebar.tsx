@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useNavStore, useUIStore, hasPermission, type ViewKey } from '@/store/auth-store'
 import { cn } from '@/lib/utils'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText, Mail, Loader2 } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ClipboardList, BookOpen, Award, Users, BarChart3, FileText, UserCog, DatabaseBackup, Settings, FileUser, ClipboardCheck, UsersRound, Archive, ScrollText, Mail } from 'lucide-react'
 import { LogoPancaCita } from "@/components/shared/logo-pancacita"
 
 interface MenuItem {
@@ -123,6 +123,16 @@ const menuItems: MenuItem[] = [
   { key: 'notifikasi', label: 'Notifikasi Email', icon: Mail, view: 'notifikasi', permission: 'settings' },
 ]
 
+// Komponen garis loading bawah teks menu
+function LoadingUnderline({ loading }: { loading: boolean }) {
+  if (!loading) return null
+  return (
+    <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#86EFAC]/30 rounded-full overflow-hidden">
+      <span className="block h-full bg-[#22C55E] rounded-full animate-[loading_1.2s_ease-in-out]" style={{ width: '100%' }} />
+    </span>
+  )
+}
+
 export function Sidebar({ userRole, inSheet = false }: { userRole: string; inSheet?: boolean }) {
   const { activeView, setActiveView } = useNavStore()
   const { sidebarCollapsed, setMobileSidebarOpen } = useUIStore()
@@ -207,12 +217,10 @@ function SidebarItem({
   onSelect: (v: ViewKey) => void
 }) {
   const [open, setOpen] = useState(item.key === activeTopKey)
+  const [loading, setLoading] = useState(false)
   const Icon = item.icon
   const isActive = item.view === activeView
   const isParentActive = item.key === activeTopKey
-
-  // === Loading state per-item ===
-  const [loading, setLoading] = useState(false)
 
   const handleClick = (view: ViewKey | undefined) => {
     if (!view) return
@@ -223,22 +231,12 @@ function SidebarItem({
     }, 1200)
   }
 
-  const handleParentClick = () => {
-    if (collapsed) {
-      if (item.children && item.children[0]?.view) {
-        handleClick(item.children[0].view)
-      }
-    } else {
-      setOpen(!open)
-    }
-  }
-
   if (!item.children || item.children.length === 0) {
     return (
       <button
         onClick={() => handleClick(item.view)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
+          'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
           isActive ? 'bg-white/20 text-white font-semibold shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5',
           collapsed && 'justify-center px-0'
         )}
@@ -246,12 +244,9 @@ function SidebarItem({
         disabled={loading}
       >
         {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50 animate-[pulse_2s_ease-in-out_infinite]" />}
-        {loading ? (
-          <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin text-[#86EFAC]" />
-        ) : (
-          Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />
-        )}
+        {Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />}
         {!collapsed && <span className="truncate">{item.label}</span>}
+        <LoadingUnderline loading={loading} />
       </button>
     )
   }
@@ -260,9 +255,15 @@ function SidebarItem({
     <Collapsible open={open && !collapsed} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
         <button
-          onClick={handleParentClick}
+          onClick={() => {
+            if (collapsed) {
+              if (item.children && item.children[0]?.view) handleClick(item.children[0].view)
+            } else {
+              setOpen(!open)
+            }
+          }}
           className={cn(
-            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm relative transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
+            'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
             isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5',
             collapsed && 'justify-center px-0'
           )}
@@ -270,24 +271,20 @@ function SidebarItem({
           disabled={loading}
         >
           {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50 animate-[pulse_2s_ease-in-out_infinite]" />}
-          {loading ? (
-            <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin text-[#86EFAC]" />
-          ) : (
-            Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />
-          )}
+          {Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />}
           {!collapsed && (
             <>
               <span className="truncate flex-1 text-left">{item.label}</span>
               <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-180')} />
             </>
           )}
+          <LoadingUnderline loading={loading} />
         </button>
       </CollapsibleTrigger>
       {!collapsed && (
         <CollapsibleContent>
           <div className="ml-4 pl-4 border-l border-white/10 space-y-0.5 mt-0.5 mb-1">
             {item.children.map((child) => {
-              const ChildIcon = child.icon
               const childActive = child.view === activeView
               const childLoading = loading && item.children?.[0]?.view === child.view
               return (
@@ -295,17 +292,23 @@ function SidebarItem({
                   key={child.key}
                   onClick={() => {
                     if (child.view) {
-                      onSelect(child.view)
-                      setOpen(false)
+                      setLoading(true)
+                      setTimeout(() => {
+                        onSelect(child.view!)
+                        setOpen(false)
+                        setLoading(false)
+                      }, 1200)
                     }
                   }}
                   className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
+                    'relative w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
                     childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5'
                   )}
+                  disabled={childLoading}
                 >
                   <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200', childActive ? 'bg-[#22C55E] scale-125 animate-[pulse_2s_ease-in-out_infinite]' : 'bg-blue-300/50 active:scale-150')} />
                   <span className="truncate">{child.label}</span>
+                  <LoadingUnderline loading={childLoading} />
                 </button>
               )
             })}
