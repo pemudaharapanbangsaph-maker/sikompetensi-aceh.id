@@ -128,7 +128,7 @@ function LoadingUnderline({ loading }: { loading: boolean }) {
   if (!loading) return null
   return (
     <span className="absolute bottom-1 left-3 right-3 h-[2px] bg-[#86EFAC]/30 rounded-full overflow-hidden">
-      <span className="block h-full bg-[#22C55E] rounded-full animate-[loading_1.2s_ease-in-out]" style={{ width: '100%' }} />
+      <span className="block h-full bg-[#22C55E] rounded-full animate-[loading_0.8s_ease-in-out]" style={{ width: '100%' }} />
     </span>
   )
 }
@@ -217,18 +217,18 @@ function SidebarItem({
   onSelect: (v: ViewKey) => void
 }) {
   const [open, setOpen] = useState(item.key === activeTopKey)
-  const [loading, setLoading] = useState(false)
+  const [loadingView, setLoadingView] = useState<ViewKey | null>(null)
   const Icon = item.icon
   const isActive = item.view === activeView
   const isParentActive = item.key === activeTopKey
 
   const handleClick = (view: ViewKey | undefined) => {
     if (!view) return
-    setLoading(true)
+    setLoadingView(view)
     setTimeout(() => {
       onSelect(view)
-      setLoading(false)
-    }, 1200)
+      setLoadingView(null)
+    }, 800)
   }
 
   if (!item.children || item.children.length === 0) {
@@ -241,12 +241,12 @@ function SidebarItem({
           collapsed && 'justify-center px-0'
         )}
         title={collapsed ? item.label : undefined}
-        disabled={loading}
+        disabled={loadingView === item.view}
       >
         {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50 animate-[pulse_2s_ease-in-out_infinite]" />}
         {Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />}
         {!collapsed && <span className="truncate">{item.label}</span>}
-        <LoadingUnderline loading={loading} />
+        <LoadingUnderline loading={loadingView === item.view} />
       </button>
     )
   }
@@ -268,7 +268,7 @@ function SidebarItem({
             collapsed && 'justify-center px-0'
           )}
           title={collapsed ? item.label : undefined}
-          disabled={loading}
+          disabled={loadingView !== null}
         >
           {isParentActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-[#22C55E] shadow-sm shadow-[#22C55E]/50 animate-[pulse_2s_ease-in-out_infinite]" />}
           {Icon && <Icon className="w-5 h-5 flex-shrink-0 transition-transform duration-200 active:scale-110 active:rotate-3" />}
@@ -278,7 +278,7 @@ function SidebarItem({
               <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', open && 'rotate-180')} />
             </>
           )}
-          <LoadingUnderline loading={loading} />
+          <LoadingUnderline loading={loadingView !== null && item.children?.some(c => c.view === loadingView)} />
         </button>
       </CollapsibleTrigger>
       {!collapsed && (
@@ -286,18 +286,18 @@ function SidebarItem({
           <div className="ml-4 pl-4 border-l border-white/10 space-y-0.5 mt-0.5 mb-1">
             {item.children.map((child) => {
               const childActive = child.view === activeView
-              const childLoading = loading && item.children?.[0]?.view === child.view
+              const childLoading = loadingView === child.view
               return (
                 <button
                   key={child.key}
                   onClick={() => {
                     if (child.view) {
-                      setLoading(true)
+                      setLoadingView(child.view)
                       setTimeout(() => {
                         onSelect(child.view!)
                         setOpen(false)
-                        setLoading(false)
-                      }, 1200)
+                        setLoadingView(null)
+                      }, 800)
                     }
                   }}
                   className={cn(
