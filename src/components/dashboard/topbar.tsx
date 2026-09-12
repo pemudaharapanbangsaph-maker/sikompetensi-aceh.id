@@ -56,6 +56,10 @@ const viewTitles: Record<string, { title: string; subtitle: string }> = {
   'notifikasi': { title: 'Notifikasi Email', subtitle: 'Kirim dan kelola notifikasi email' },
   'account-profil': { title: 'Profil Saya', subtitle: 'Informasi akun dan profil' },
   'account-keamanan': { title: 'Keamanan Akun', subtitle: 'Pengaturan keamanan dan autentikasi dua faktor' },
+  'arsip-sertifikat': { title: 'Arsip Sertifikat', subtitle: 'Sertifikat yang telah dihapus' },
+  'arsip-pendaftar': { title: 'Arsip Pendaftar', subtitle: 'Data pendaftar portal yang telah dihapus' },
+  'arsip-analisis': { title: 'Arsip Analisis', subtitle: 'Analisis kebutuhan yang telah dihapus' },
+  'arsip-dokumentasi': { title: 'Arsip Dokumentasi', subtitle: 'Dokumentasi yang telah dihapus' },
 }
 
 export function Topbar() {
