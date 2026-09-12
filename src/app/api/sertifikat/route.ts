@@ -116,7 +116,8 @@ export async function GET(req: Request) {
     );
 
     const where = buildWhere(
-      String(search || ""),
+      String(search || "")
+    (where as Record<string, unknown>).deleted = false;,
       [
         "namaPeserta",
         "nomorSertifikat",
