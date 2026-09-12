@@ -152,6 +152,8 @@ model Dokumentasi {
   deskripsi  String?  @db.Text
   fileUrl    String   @db.VarChar(500)
   tipeFile   String   @db.VarChar(20) // IMAGE | VIDEO | DOKUMEN
+  deleted    Boolean  @default(false)
+  deletedAt  DateTime?
   uploadedAt DateTime @default(now())
 }
 
@@ -178,6 +180,8 @@ model PendaftaranPortal {
   analisisDiklatItem   AnalisisDiklatItem? @relation(fields: [analisisDiklatItemId], references: [id], onDelete: SetNull)
   status              String   @default("MENUNGGU") @db.VarChar(20) // MENUNGGU | DITERIMA | DITOLAK
   catatanAdmin        String?  @db.Text
+  deleted             Boolean  @default(false)
+  deletedAt           DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -214,6 +218,8 @@ model AnalisisKebutuhan {
   status          String   @default("DRAFT") @db.VarChar(20) // DRAFT | DISETUJUI | DITOLAK | SELESAI
   dibuatOleh      String?
   user            User?    @relation(fields: [dibuatOleh], references: [id], onDelete: SetNull)
+  deleted         Boolean  @default(false)
+  deletedAt       DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -360,6 +366,8 @@ model Sertifikat {
   ukuranFile       String?        @db.VarChar(50)
   tanggalTerbit    DateTime?
   catatan          String?        @db.Text
+  deleted          Boolean        @default(false)
+  deletedAt        DateTime?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 }
