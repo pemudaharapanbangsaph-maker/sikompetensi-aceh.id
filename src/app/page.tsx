@@ -13,16 +13,20 @@ export default function Home() {
     initialize()
   }, [initialize])
 
-  // Cegah tombol back browser keluar dari situs saat di halaman depan
+   // Cegah tombol back browser keluar dari situs saat di halaman depan
   useEffect(() => {
     if (!initialized || user) return
 
-    // Push dummy state ke history
-    window.history.pushState({ page: 'landing' }, '', window.location.href)
+    // Isi history dengan dummy state berkali-kali supaya back button "terjebak"
+    for (let i = 0; i < 3; i++) {
+      window.history.pushState({ page: 'landing' }, '', window.location.href)
+    }
 
     const handlePopState = () => {
-      // Kalau user klik back, tetap di halaman ini
+      // Kalau user klik back, tetap di halaman ini + push ulang
       window.history.pushState({ page: 'landing' }, '', window.location.href)
+      // Optional: reload halaman untuk pastikan state bersih
+      window.location.reload()
     }
 
     window.addEventListener('popstate', handlePopState)
