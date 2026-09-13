@@ -781,6 +781,9 @@ function PesertaRiwayatView() {
             </CardContent>
           </Card>
 
+          {/* Dokumen Peserta — Upload Dokumen untuk Peserta Lampau/Manual */}
+          <PesertaDokumenSection pesertaId={selectedId} pesertaNama={selectedPeserta?.nama || ''} pesertaNip={selectedPeserta?.nip || ''} />
+
           <div className="grid lg:grid-cols-2 gap-4">
             {/* Riwayat Pelatihan (hanya angkatan biasa, tanpa uji kompetensi) */}
             <Card className="border-slate-200 shadow-sm">
@@ -846,5 +849,250 @@ function PesertaRiwayatView() {
         </div>
       )}
     </div>
+  )
+}
+
+// ===========================================================================
+// DOKUMEN PESERTA — Upload KTP/NPWP/Rekening untuk peserta (termasuk lampau)
+// ===========================================================================
+
+interface DokumenPesertaItem {
+  id: string
+  tipe: string
+  namaFile: string
+  ukuranFile: string
+  filePath: string
+  createdAt: string
+}
+
+const DOKUMEN_PESERTA_TYPES = [
+  { value: 'KTP', label: 'KTP', desc: 'Kartu Tanda Penduduk' },
+  { value: 'NPWP', label: 'NPWP', desc: 'Nomor Pokok Wajib Pajak' },
+  { value: 'REK_BANK', label: 'Rekening Bank', desc: 'Bukti Rekening Bank Aceh' },
+  { value: 'SURAT_TUGAS', label: 'Surat Tugas', desc: 'Surat tugas dari instansi' },
+  { value: 'LAINNYA', label: 'Dokumen Lainnya', desc: 'Dokumen pendukung lainnya' },
+]
+
+function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { pesertaId: string; pesertaNama: string; pesertaNip: string }) {
+  const { toast } = useToast()
+  const [dokumen, setDokumen] = useState<DokumenPesertaItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadTipe, setUploadTipe] = useState('')
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DokumenPesertaItem | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const fetchDokumen = useCallback(async () => {
+    if (!pesertaId) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/peserta/${pesertaId}/dokumen`, { credentials: 'same-origin' })
+      if (res.ok) {
+        const data = await res.json()
+        setDokumen(Array.isArray(data) ? data : [])
+      } else {
+        setDokumen([])
+      }
+    } catch {
+      setDokumen([])
+    } finally {
+      setLoading(false)
+    }
+  }, [pesertaId])
+
+  useEffect(() => {
+    fetchDokumen()
+  }, [fetchDokumen])
+
+  const handleUpload = async () => {
+    if (!uploadFile || !uploadTipe) {
+      toast({ title: 'Validasi', description: 'Pilih tipe dokumen dan file', variant: 'destructive' })
+      return
+    }
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', uploadFile)
+      fd.append('tipe', uploadTipe)
+      const res = await fetch(`/api/peserta/${pesertaId}/dokumen`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Gagal upload')
+      }
+      toast({ title: 'Berhasil', description: 'Dokumen berhasil diupload' })
+      setUploadFile(null)
+      setUploadTipe('')
+      fetchDokumen()
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDownload = async (doc: DokumenPesertaItem) => {
+    try {
+      const res = await fetch(`/api/peserta/${pesertaId}/dokumen/${doc.tipe}`, { credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal download')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = doc.namaFile
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/peserta/${pesertaId}/dokumen/${deleteTarget.tipe}`, { method: 'DELETE', credentials: 'same-origin' })
+      if (!res.ok) throw new Error('Gagal hapus')
+      toast({ title: 'Berhasil', description: 'Dokumen dihapus' })
+      setDeleteTarget(null)
+      fetchDokumen()
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader className="pb-2 border-b border-slate-100">
+        <CardTitle className="text-base flex items-center gap-2">
+          <FileText className="w-4 h-4 text-[#0F4C81]" /> Dokumen Peserta
+          <span className="text-xs font-normal text-slate-400 ml-2">
+            — Upload dokumen (KTP, NPWP, Rekening, dll) untuk peserta
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 space-y-4">
+        {/* Upload Form */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+          <div className="space-y-1.5 flex-1">
+            <Label className="text-xs font-semibold text-slate-600">Tipe Dokumen</Label>
+            <Select value={uploadTipe} onValueChange={setUploadTipe}>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Pilih tipe dokumen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {DOKUMEN_PESERTA_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label} — {t.desc}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 flex-1">
+            <Label className="text-xs font-semibold text-slate-600">File (PDF/JPG/PNG, max 10MB)</Label>
+            <Input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+              className="h-9 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-[#0F4C81]/10 file:text-[#0F4C81] hover:file:bg-[#0F4C81]/20"
+            />
+          </div>
+          <Button
+            onClick={handleUpload}
+            disabled={uploading || !uploadFile || !uploadTipe}
+            className="h-9 bg-[#0F4C81] hover:bg-[#0a3a63] text-sm flex-shrink-0"
+          >
+            {uploading ? (
+              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Uploading...</>
+            ) : (
+              <><Upload className="w-4 h-4 mr-1" /> Upload</>
+            )}
+          </Button>
+        </div>
+
+        {/* List Dokumen */}
+        {loading ? (
+          <div className="flex items-center justify-center py-6 text-sm text-slate-400">
+            <div className="w-4 h-4 border-2 border-slate-300 border-t-[#0F4C81] rounded-full animate-spin mr-2" /> Memuat dokumen...
+          </div>
+        ) : dokumen.length === 0 ? (
+          <div className="py-6 text-center text-sm text-slate-400">
+            <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+            <p>Belum ada dokumen yang diupload untuk peserta ini</p>
+            <p className="text-xs text-slate-300 mt-1">Upload KTP, NPWP, atau dokumen lainnya di atas</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {dokumen.map((doc) => {
+              const tipeInfo = DOKUMEN_PESERTA_TYPES.find((t) => t.value === doc.tipe)
+              return (
+                <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-[#0F4C81]/10 flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-[#0F4C81]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-800 truncate">
+                        {tipeInfo?.label || doc.tipe}
+                      </p>
+                      <p className="text-xs text-slate-400 truncate">{doc.namaFile} · {doc.ukuranFile}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(doc)}
+                      className="h-8 w-8 p-0 text-[#0F4C81] border-[#0F4C81]/20 hover:bg-[#0F4C81]/5"
+                      title="Download"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteTarget(doc)}
+                      className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
+                      title="Hapus"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Hapus Dokumen?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Yakin ingin menghapus dokumen <span className="font-semibold">{DOKUMEN_PESERTA_TYPES.find((t) => t.value === deleteTarget?.tipe)?.label || deleteTarget?.tipe}</span> ({deleteTarget?.namaFile})? Tindakan ini tidak dapat dibatalkan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                disabled={deleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {deleting ? 'Menghapus...' : 'Hapus'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
   )
 }
