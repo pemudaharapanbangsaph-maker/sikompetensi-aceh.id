@@ -264,7 +264,7 @@ function SidebarItem({
           }}
           className={cn(
             'relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
-            isParentActive ? 'bg-white/20 text-white font-medium shadow-sm shadow-black/10' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5',
+            isActive ? 'bg-white/20 text-white font-bold shadow-sm shadow-black/10' : 'text-blue-100 font-semibold hover:bg-white/10 hover:translate-x-0.5',
             collapsed && 'justify-center px-0'
           )}
           title={collapsed ? item.label : undefined}
@@ -302,7 +302,7 @@ function SidebarItem({
                   }}
                   className={cn(
                     'relative w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200 ease-out active:scale-[0.97] active:bg-white/25',
-                    childActive ? 'bg-white/20 text-white font-medium' : 'text-blue-100 hover:bg-white/10 hover:translate-x-0.5'
+                    childActive ? 'bg-white/20 text-white font-semibold' : 'text-blue-100 font-medium hover:bg-white/10 hover:translate-x-0.5'
                   )}
                   disabled={childLoading}
                 >
