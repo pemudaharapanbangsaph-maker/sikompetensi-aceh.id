@@ -88,9 +88,9 @@ export function DashboardView() {
       ) : (
         <>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-4">
-        <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} angkatan`} icon={BookOpen} color="blue" trend={stats.trendPelatihan ?? undefined} onClick={() => setActiveView('pelatihan')} />
+        <StatCard title="Total Pelatihan" value={stats.totalPelatihan} subtitle={`${stats.totalAngkatan} total angkatan`} icon={BookOpen} color="blue" trend={stats.trendPelatihan ?? undefined} onClick={() => setActiveView('pelatihan')} />
         <StatCard title="Total Peserta" value={stats.totalPeserta} subtitle={`${stats.totalAngkatan} angkatan`} icon={Users} color="green" onClick={() => setActiveView('peserta')} />
-        <StatCard title="Analisis" value={stats.totalAnalisis} subtitle={`${stats.totalAsesor} asesor`} icon={ClipboardList} color="purple" onClick={() => setActiveView('analisis')} />
+        <StatCard title="Analisis" value={stats.totalAnalisis} subtitle="Kebutuhan Diklat" icon={ClipboardList} color="purple" onClick={() => setActiveView('analisis')} />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-4">
