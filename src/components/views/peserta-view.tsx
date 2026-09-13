@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { api } from '@/lib/api'
+import { api, type PesertaAngkatanView } from '@/lib/api'
 import type { Peserta, Angkatan, Nilai, Pelatihan } from '@/lib/types'
 import { useNavStore } from '@/store/auth-store'
 import { DataTable, StatCard, PageHeader, type Column, type FilterOption } from '@/components/shared/data-table'
@@ -18,7 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, ArrowRight, Search, FileText, Download, ClipboardList, History, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react'
+import { Pencil, Trash2, Plus, Save, X, Users, User, UserCircle, UserCheck, GraduationCap, ArrowRight, Search, FileText, Download, ClipboardList, History, Upload, FileSpreadsheet, AlertCircle, BookOpen } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 // ===========================================================================
@@ -542,24 +542,47 @@ type PendaftaranByNip = {
 function PesertaRiwayatView() {
   const { setActiveView } = useNavStore()
   const { toast } = useToast()
-  const [pesertaList, setPesertaList] = useState<Peserta[]>([])
+
+  // Angkatan list
+  const [angkatanList, setAngkatanList] = useState<Angkatan[]>([])
+  const [selectedAngkatanId, setSelectedAngkatanId] = useState<string>('')
+  const [angkatanLoading, setAngkatanLoading] = useState(true)
+
+  // Peserta in selected angkatan
+  const [pesertaInAngkatan, setPesertaInAngkatan] = useState<PesertaAngkatanView[]>([])
+  const [pesertaLoading, setPesertaLoading] = useState(false)
+
+  // Selected peserta (for riwayat detail)
   const [selectedId, setSelectedId] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
   const [riwayat, setRiwayat] = useState<RiwayatData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [listLoading, setListLoading] = useState(true)
 
   // Dokumen pendaftaran
   const [pendaftaranData, setPendaftaranData] = useState<PendaftaranByNip | null>(null)
   const [dokumenLoading, setDokumenLoading] = useState(false)
 
+  // Load all angkatan on mount
   useEffect(() => {
-    api.peserta.listAll()
-      .then((r) => setPesertaList(r))
-      .catch((e) => toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }))
-      .finally(() => setListLoading(false))
+    api.angkatan.listAll()
+      .then(setAngkatanList)
+      .catch(() => toast({ title: 'Gagal', description: 'Gagal memuat daftar angkatan', variant: 'destructive' }))
+      .finally(() => setAngkatanLoading(false))
   }, [toast])
 
+  // When angkatan selected, load peserta list for that angkatan
+  useEffect(() => {
+    if (!selectedAngkatanId) return
+    setPesertaLoading(true)
+    setSelectedId('')
+    setRiwayat(null)
+    setPendaftaranData(null)
+    api.angkatan.get(selectedAngkatanId)
+      .then((data) => setPesertaInAngkatan(data.peserta || []))
+      .catch(() => toast({ title: 'Gagal', description: 'Gagal memuat peserta', variant: 'destructive' }))
+      .finally(() => setPesertaLoading(false))
+  }, [selectedAngkatanId, toast])
+
+  // When peserta selected, load riwayat
   useEffect(() => {
     if (!selectedId) return
     let cancelled = false
@@ -581,7 +604,8 @@ function PesertaRiwayatView() {
   // Fetch dokumen pendaftaran berdasarkan NIP
   useEffect(() => {
     if (!selectedId) { setPendaftaranData(null); return }
-    const peserta = pesertaList.find((p) => p.id === selectedId)
+    const pa = pesertaInAngkatan.find((p) => p.pesertaId === selectedId)
+    const peserta = pa?.peserta
     if (!peserta?.nip) { setPendaftaranData(null); return }
     let cancelled = false
     const loadDokumen = async () => {
@@ -598,7 +622,7 @@ function PesertaRiwayatView() {
     }
     loadDokumen()
     return () => { cancelled = true }
-  }, [selectedId, pesertaList])
+  }, [selectedId, pesertaInAngkatan])
 
   const handleDownloadDokumen = async (pendaftaranId: string, tipe: string, label: string) => {
     try {
@@ -622,75 +646,140 @@ function PesertaRiwayatView() {
     KTP: 'KTP', SURAT_TUGAS: 'Surat Tugas', NPWP: 'NPWP', REK_BANK: 'REK Bank Aceh',
   }
 
-  const selectedPeserta = pesertaList.find((p) => p.id === selectedId) || null
-
-  const filteredPeserta = useMemo(() => {
-    if (!searchTerm.trim()) return pesertaList
-    const q = searchTerm.toLowerCase()
-    return pesertaList.filter((p) =>
-      p.nama.toLowerCase().includes(q) ||
-      p.nip.toLowerCase().includes(q) ||
-      (p.unitKerja || '').toLowerCase().includes(q) ||
-      (p.instansi || '').toLowerCase().includes(q)
-    )
-  }, [pesertaList, searchTerm])
-
-  // Stats — riwayat pelatihan
+  const selectedPeserta = pesertaInAngkatan.find((p) => p.pesertaId === selectedId)?.peserta || null
   const pelatihanBiasa = riwayat?.angkatan || []
   const totalPelatihan = pelatihanBiasa.length
+  const selectedAngkatan = angkatanList.find((a) => a.id === selectedAngkatanId) || null
 
   return (
     <div className="space-y-4">
-      <PageHeader title="Riwayat Peserta" description="Lihat riwayat pelatihan per peserta">
+      <PageHeader title="Riwayat Pelatihan" description="Pilih pelatihan/angkatan untuk melihat peserta dan riwayatnya">
         <Button variant="outline" size="sm" onClick={() => setActiveView('peserta')} className="h-9">
           <ArrowRight className="w-4 h-4" /> Kembali ke Data Peserta
         </Button>
       </PageHeader>
 
-      {/* Peserta selector */}
+      {/* Angkatan/Pelatihan selector */}
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="p-4">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
-            <div className="space-y-1.5">
-              <Label>Cari Peserta</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <Input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Ketik nama / NIP / unit kerja..."
-                  className="pl-9 h-9"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label>Pilih Peserta</Label>
-              <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger><SelectValue placeholder={listLoading ? 'Memuat daftar peserta...' : 'Pilih peserta dari daftar'} /></SelectTrigger>
-                <SelectContent>
-                  {filteredPeserta.length === 0 ? (
-                    <SelectItem value="__none" disabled>Tidak ada peserta cocok</SelectItem>
-                  ) : (
-                    filteredPeserta.slice(0, 100).map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.nama} — {p.nip} {p.instansi ? `(${p.instansi})` : ''}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-1.5">
+            <Label>Pilih Pelatihan / Angkatan</Label>
+            <Select value={selectedAngkatanId} onValueChange={setSelectedAngkatanId}>
+              <SelectTrigger><SelectValue placeholder={angkatanLoading ? 'Memuat daftar pelatihan...' : 'Pilih pelatihan/angkatan...'} /></SelectTrigger>
+              <SelectContent>
+                {angkatanList.length === 0 ? (
+                  <SelectItem value="__none" disabled>Belum ada angkatan</SelectItem>
+                ) : (
+                  angkatanList.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.pelatihan?.nama || 'Tanpa Pelatihan'} — {a.namaAngkatan}
+                      {a.status === 'SELESAI' ? ' (Selesai)' : a.status === 'BERJALAN' ? ' (Berjalan)' : ''}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
-      {!selectedId ? (
+      {!selectedAngkatanId ? (
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="py-12 text-center text-slate-400">
+            <BookOpen className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+            Silakan pilih pelatihan/angkatan untuk melihat peserta dan riwayatnya
+          </CardContent>
+        </Card>
+      ) : pesertaLoading ? (
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="py-8 text-center">
+            <div className="w-6 h-6 border-2 border-slate-300 border-t-[#0F4C81] rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-slate-400 mt-2">Memuat peserta...</p>
+          </CardContent>
+        </Card>
+      ) : pesertaInAngkatan.length === 0 ? (
         <Card className="border-slate-200 shadow-sm">
           <CardContent className="py-12 text-center text-slate-400">
             <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            Silakan pilih peserta untuk melihat riwayat pelatihan
+            Belum ada peserta terdaftar di angkatan ini
           </CardContent>
         </Card>
+      ) : !selectedId ? (
+        <div className="space-y-4">
+          {selectedAngkatan && (
+            <Card className="border-slate-200 shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm text-slate-500">Pelatihan Terpilih</p>
+                    <p className="text-lg font-semibold text-slate-900">{selectedAngkatan.pelatihan?.nama || '-'}</p>
+                    <p className="text-xs text-slate-400 font-mono">{selectedAngkatan.namaAngkatan} · {selectedAngkatan.pelatihan?.kode || '-'} · {formatTanggalSingkat(selectedAngkatan.tanggalMulai)} s/d {formatTanggalSingkat(selectedAngkatan.tanggalSelesai)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={selectedAngkatan.status} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 lg:gap-4 max-w-xs">
+            <StatCard title="Total Peserta" value={pesertaInAngkatan.length} icon={Users} color="blue" />
+          </div>
+
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-2 border-b border-slate-100">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#0F4C81]" /> Daftar Peserta
+                <span className="text-xs font-normal text-slate-400 ml-2">
+                  — Klik peserta untuk melihat riwayat pelatihan
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[400px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+                    <tr>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Nama Peserta</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5 hidden sm:table-cell">NIP</th>
+                      <th className="text-left text-xs font-semibold text-slate-600 uppercase px-4 py-2.5 hidden lg:table-cell">Unit Kerja</th>
+                      <th className="text-center text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Status</th>
+                      <th className="text-right text-xs font-semibold text-slate-600 uppercase px-4 py-2.5">Nilai</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pesertaInAngkatan.map((pa, i) => (
+                      <motion.tr
+                        key={pa.id}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.2, delay: i * 0.03 }}
+                        className="hover:bg-slate-50/50 cursor-pointer"
+                        onClick={() => setSelectedId(pa.pesertaId)}
+                      >
+                        <td className="px-4 py-2.5">
+                          <p className="font-medium text-slate-900 line-clamp-1 text-sm">{pa.peserta?.nama || '-'}</p>
+                          <p className="text-xs text-slate-400 sm:hidden font-mono">{pa.peserta?.nip || '-'}</p>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-slate-600 font-mono hidden sm:table-cell">{pa.peserta?.nip || '-'}</td>
+                        <td className="px-4 py-2.5 text-xs text-slate-600 hidden lg:table-cell">{pa.peserta?.unitKerja || '-'}</td>
+                        <td className="px-4 py-2.5 text-center"><StatusBadge status={pa.status} /></td>
+                        <td className="px-4 py-2.5 text-right">
+                          {pa.nilaiAkhir != null ? (
+                            <span className="font-semibold text-[#0F4C81]">{pa.nilaiAkhir}</span>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       ) : loading ? (
         <div className="grid lg:grid-cols-2 gap-4">
           <Card className="border-slate-200 shadow-sm animate-pulse"><CardContent className="p-5 h-64 bg-slate-100 rounded-xl" /></Card>
@@ -702,7 +791,10 @@ function PesertaRiwayatView() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {/* Peserta info */}
+          <Button variant="outline" size="sm" onClick={() => setSelectedId('')} className="h-9">
+            <ArrowRight className="w-4 h-4 rotate-180" /> Kembali ke Daftar Peserta
+          </Button>
+
           <Card className="border-slate-200 shadow-sm">
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -718,7 +810,6 @@ function PesertaRiwayatView() {
             </CardContent>
           </Card>
 
-          {/* Statcards */}
           <div className="grid grid-cols-1 gap-3 lg:gap-4 max-w-xs">
             <StatCard title="Total Pelatihan" value={totalPelatihan} icon={GraduationCap} color="blue" />
           </div>
@@ -785,7 +876,7 @@ function PesertaRiwayatView() {
           <PesertaDokumenSection pesertaId={selectedId} pesertaNama={selectedPeserta?.nama || ''} pesertaNip={selectedPeserta?.nip || ''} />
 
           <div className="grid lg:grid-cols-2 gap-4">
-            {/* Riwayat Pelatihan (hanya angkatan biasa, tanpa uji kompetensi) */}
+            {/* Riwayat Pelatihan */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader className="pb-2 border-b border-slate-100">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -891,48 +982,24 @@ function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { peserta
       if (res.ok) {
         const data = await res.json()
         setDokumen(Array.isArray(data) ? data : [])
-      } else {
-        setDokumen([])
-      }
-    } catch {
-      setDokumen([])
-    } finally {
-      setLoading(false)
-    }
+      } else { setDokumen([]) }
+    } catch { setDokumen([]) } finally { setLoading(false) }
   }, [pesertaId])
 
-  useEffect(() => {
-    fetchDokumen()
-  }, [fetchDokumen])
+  useEffect(() => { fetchDokumen() }, [fetchDokumen])
 
   const handleUpload = async () => {
-    if (!uploadFile || !uploadTipe) {
-      toast({ title: 'Validasi', description: 'Pilih tipe dokumen dan file', variant: 'destructive' })
-      return
-    }
+    if (!uploadFile || !uploadTipe) { toast({ title: 'Validasi', description: 'Pilih tipe dokumen dan file', variant: 'destructive' }); return }
     setUploading(true)
     try {
       const fd = new FormData()
       fd.append('file', uploadFile)
       fd.append('tipe', uploadTipe)
-      const res = await fetch(`/api/peserta/${pesertaId}/dokumen`, {
-        method: 'POST',
-        body: fd,
-        credentials: 'same-origin',
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || 'Gagal upload')
-      }
+      const res = await fetch(`/api/peserta/${pesertaId}/dokumen`, { method: 'POST', body: fd, credentials: 'same-origin' })
+      if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Gagal upload') }
       toast({ title: 'Berhasil', description: 'Dokumen berhasil diupload' })
-      setUploadFile(null)
-      setUploadTipe('')
-      fetchDokumen()
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setUploading(false)
-    }
+      setUploadFile(null); setUploadTipe(''); fetchDokumen()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setUploading(false) }
   }
 
   const handleDownload = async (doc: DokumenPesertaItem) => {
@@ -942,15 +1009,10 @@ function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { peserta
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = doc.namaFile
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      a.href = url; a.download = doc.namaFile
+      document.body.appendChild(a); a.click(); document.body.removeChild(a)
       URL.revokeObjectURL(url)
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    }
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) }
   }
 
   const handleDelete = async () => {
@@ -960,13 +1022,8 @@ function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { peserta
       const res = await fetch(`/api/peserta/${pesertaId}/dokumen/${deleteTarget.tipe}`, { method: 'DELETE', credentials: 'same-origin' })
       if (!res.ok) throw new Error('Gagal hapus')
       toast({ title: 'Berhasil', description: 'Dokumen dihapus' })
-      setDeleteTarget(null)
-      fetchDokumen()
-    } catch (e) {
-      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
-    } finally {
-      setDeleting(false)
-    }
+      setDeleteTarget(null); fetchDokumen()
+    } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) } finally { setDeleting(false) }
   }
 
   return (
@@ -974,50 +1031,29 @@ function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { peserta
       <CardHeader className="pb-2 border-b border-slate-100">
         <CardTitle className="text-base flex items-center gap-2">
           <FileText className="w-4 h-4 text-[#0F4C81]" /> Dokumen Peserta
-          <span className="text-xs font-normal text-slate-400 ml-2">
-            — Upload dokumen (KTP, NPWP, Rekening, dll) untuk peserta
-          </span>
+          <span className="text-xs font-normal text-slate-400 ml-2">— Upload dokumen (KTP, NPWP, Rekening, dll)</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 space-y-4">
-        {/* Upload Form */}
         <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
           <div className="space-y-1.5 flex-1">
             <Label className="text-xs font-semibold text-slate-600">Tipe Dokumen</Label>
             <Select value={uploadTipe} onValueChange={setUploadTipe}>
-              <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Pilih tipe dokumen..." />
-              </SelectTrigger>
+              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Pilih tipe dokumen..." /></SelectTrigger>
               <SelectContent>
-                {DOKUMEN_PESERTA_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label} — {t.desc}</SelectItem>
-                ))}
+                {DOKUMEN_PESERTA_TYPES.map((t) => (<SelectItem key={t.value} value={t.value}>{t.label} — {t.desc}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5 flex-1">
             <Label className="text-xs font-semibold text-slate-600">File (PDF/JPG/PNG, max 10MB)</Label>
-            <Input
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-              className="h-9 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-[#0F4C81]/10 file:text-[#0F4C81] hover:file:bg-[#0F4C81]/20"
-            />
+            <Input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setUploadFile(e.target.files?.[0] || null)} className="h-9 text-sm file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-[#0F4C81]/10 file:text-[#0F4C81] hover:file:bg-[#0F4C81]/20" />
           </div>
-          <Button
-            onClick={handleUpload}
-            disabled={uploading || !uploadFile || !uploadTipe}
-            className="h-9 bg-[#0F4C81] hover:bg-[#0a3a63] text-sm flex-shrink-0"
-          >
-            {uploading ? (
-              <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Uploading...</>
-            ) : (
-              <><Upload className="w-4 h-4 mr-1" /> Upload</>
-            )}
+          <Button onClick={handleUpload} disabled={uploading || !uploadFile || !uploadTipe} className="h-9 bg-[#0F4C81] hover:bg-[#0a3a63] text-sm flex-shrink-0">
+            {uploading ? (<><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> Uploading...</>) : (<><Upload className="w-4 h-4 mr-1" /> Upload</>)}
           </Button>
         </div>
 
-        {/* List Dokumen */}
         {loading ? (
           <div className="flex items-center justify-center py-6 text-sm text-slate-400">
             <div className="w-4 h-4 border-2 border-slate-300 border-t-[#0F4C81] rounded-full animate-spin mr-2" /> Memuat dokumen...
@@ -1039,31 +1075,13 @@ function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { peserta
                       <FileText className="w-4 h-4 text-[#0F4C81]" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">
-                        {tipeInfo?.label || doc.tipe}
-                      </p>
+                      <p className="text-sm font-medium text-slate-800 truncate">{tipeInfo?.label || doc.tipe}</p>
                       <p className="text-xs text-slate-400 truncate">{doc.namaFile} · {doc.ukuranFile}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(doc)}
-                      className="h-8 w-8 p-0 text-[#0F4C81] border-[#0F4C81]/20 hover:bg-[#0F4C81]/5"
-                      title="Download"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteTarget(doc)}
-                      className="h-8 w-8 p-0 text-slate-400 hover:text-red-600"
-                      title="Hapus"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDownload(doc)} className="h-8 w-8 p-0 text-[#0F4C81] border-[#0F4C81]/20 hover:bg-[#0F4C81]/5" title="Download"><Download className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteTarget(doc)} className="h-8 w-8 p-0 text-slate-400 hover:text-red-600" title="Hapus"><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
                 </div>
               )
@@ -1071,24 +1089,15 @@ function PesertaDokumenSection({ pesertaId, pesertaNama, pesertaNip }: { peserta
           </div>
         )}
 
-        {/* Delete Confirmation */}
         <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Hapus Dokumen?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Yakin ingin menghapus dokumen <span className="font-semibold">{DOKUMEN_PESERTA_TYPES.find((t) => t.value === deleteTarget?.tipe)?.label || deleteTarget?.tipe}</span> ({deleteTarget?.namaFile})? Tindakan ini tidak dapat dibatalkan.
-              </AlertDialogDescription>
+              <AlertDialogDescription>Yakin ingin menghapus dokumen <span className="font-semibold">{DOKUMEN_PESERTA_TYPES.find((t) => t.value === deleteTarget?.tipe)?.label || deleteTarget?.tipe}</span> ({deleteTarget?.namaFile})? Tindakan ini tidak dapat dibatalkan.</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                disabled={deleting}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                {deleting ? 'Menghapus...' : 'Hapus'}
-              </AlertDialogAction>
+              <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">{deleting ? 'Menghapus...' : 'Hapus'}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
