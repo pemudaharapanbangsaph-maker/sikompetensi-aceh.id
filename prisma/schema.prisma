@@ -81,6 +81,7 @@ model Peserta {
   kehadiran  Kehadiran[]
   evaluasi   Evaluasi[]
   sertifikat Sertifikat[]
+  dokumenPeserta DokumenPeserta[]
 }
 
 model Pelatihan {
@@ -408,4 +409,19 @@ model Pengaturan {
   value     String   @db.Text
   kategori  String   @default("UMUM") @db.VarChar(50)
   updatedAt DateTime @updatedAt
+}
+
+// ====================== DOKUMEN PESERTA ======================
+
+model DokumenPeserta {
+  id          String   @id @default(cuid()) @db.VarChar(30)
+  pesertaId   String   @db.VarChar(30)
+  peserta     Peserta  @relation(fields: [pesertaId], references: [id], onDelete: Cascade)
+  tipe        String   @db.VarChar(30) // KTP | NPWP | REK_BANK | SURAT_TUGAS | LAINNYA
+  namaFile    String   @db.VarChar(255)
+  ukuranFile  String   @db.VarChar(50)
+  filePath    String   @db.VarChar(500)
+  createdAt   DateTime @default(now())
+
+  @@unique([pesertaId, tipe])
 }
