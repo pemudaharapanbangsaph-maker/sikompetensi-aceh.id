@@ -179,14 +179,14 @@ export function LoginPage() {
               </div>
               <div className="mt-2 sm:mt-4">
                 <p className="font-serif-georgia text-white text-xl sm:text-3xl font-bold tracking-wide">SIKOMPETENSI ACEH</p>
-                <p className="font-serif-georgia text-[10px] sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1 sm:mt-1.5 font-semibold">CORPORATE UNIVERSITY</p>
+                <p className="font-serif-georgia text-[10px] sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1 sm:mt-1.5 font-semibold">Sistem Informasi Kompetensi Teknis Inti</p>
               </div>
               <div className="flex items-center justify-center mt-2 sm:mt-4 mb-2 sm:mb-4">
                 <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-amber-400/60" />
                 <div className="h-[2px] w-12 sm:w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
                 <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-amber-400/60" />
               </div>
-              <p className="font-serif-georgia text-amber-300/90 text-[9px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Pemerintah Aceh</p>
+              <p className="font-serif-georgia text-amber-300/90 text-[9px] sm:text-xs font-semibold uppercase tracking-[0.3em]">BPSDM Aceh</p>
               <h2 className="font-serif-georgia text-white text-sm sm:text-lg lg:text-xl font-bold mt-2 sm:mt-3 leading-snug max-w-xs sm:max-w-sm mx-auto">
                 Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
               </h2>
