@@ -610,7 +610,7 @@ function LoginRight({
           </p>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -701,7 +701,7 @@ function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, on
           </Button>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -1133,7 +1133,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
+      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Aceh</p></div>
     </motion.div>
   )
 }
