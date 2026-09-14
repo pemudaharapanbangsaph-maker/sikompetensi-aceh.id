@@ -199,7 +199,7 @@ export function LoginPage() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative z-10 px-6 pb-6">
                   <div className="bg-white/[0.06] rounded-lg p-3.5">
                     <p className="text-[10px] text-white/50 leading-relaxed text-center">
-                      Sistem internal Pemerintah Aceh untuk aparatur sipil negara.
+                      Sistem internal Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti untuk aparatur sipil negara.
                       Akses tidak sah dilarang. Butuh bantuan? Hubungi{' '}
                       <span className="font-semibold text-white/80">BPSDM Aceh</span>.
                     </p>
@@ -278,7 +278,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
       </div>
       <div className="relative z-10 max-w-xl w-full">
         <h1 className="font-serif-georgia text-lg sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
-          Mewujudkan ASN Aceh yang Kompeten, Profesional & <span className="text-[#195737]">Berintegritas.</span>
+          Mewujudkan ASN Aceh yang Kompeten, Profesional & <span className="text-[#195737]">berintegritas.</span>
         </h1>
         <p className="text-slate-500 text-xs sm:text-base mt-3 sm:mt-6 leading-relaxed max-w-lg">
           Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
@@ -398,9 +398,9 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
         </button>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Program Diklat</h2>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">Program Pelatihan/Diklat</h2>
             <p className="text-sm text-slate-500 mt-1">
-              Katalog program diklat BPSDM Aceh berdasarkan analisis kebutuhan —{' '}
+              Katalog program Pelatihan/diklat BPSDM Aceh berdasarkan analisis kebutuhan —{' '}
               <span className="font-semibold text-[#195737]">{total} program</span> tersedia.
             </p>
           </div>
@@ -451,7 +451,7 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
             </div>
             <p className="text-slate-600 font-semibold">Belum ada program</p>
             <p className="text-slate-400 text-sm mt-1 max-w-xs">
-              Program diklat akan ditampilkan setelah data dimasukkan melalui menu Input Analisis Diklat oleh admin.
+              Program Pelatihan/diklat akan ditampilkan setelah data dimasukkan melalui menu Input Analisis oleh admin.
             </p>
           </div>
         ) : (
@@ -514,7 +514,7 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
       {/* Footer */}
       <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60">
         <p className="text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
