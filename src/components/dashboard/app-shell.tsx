@@ -265,7 +265,7 @@ export function AppShell() {
             </span>
 
             <span className="text-blue-200 hidden sm:inline">
-, BPSDM Aceh
+  - BPSDM Aceh
             </span>
           </div>
 
