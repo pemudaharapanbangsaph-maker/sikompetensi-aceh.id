@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -9,8 +9,8 @@ const inter = Inter({
   display: "swap",
 });
 
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
   display: "swap",
   weight: ["400", "500", "600", "700", "800", "900"],
@@ -42,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="id" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${playfair.variable} antialiased bg-background text-foreground`}
+       className={`${inter.variable} ${jakarta.variable} antialiased bg-background text-foreground`}
       >
         {children}
         <Toaster />
