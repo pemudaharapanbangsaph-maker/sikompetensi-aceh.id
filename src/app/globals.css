@@ -305,6 +305,6 @@ button, a, [role="button"] {
 
 /* Font Playfair Display serif khusus teks branding halaman depan */
 .font-serif-georgia {
-  font-family: var(--font-sans), Georgia, "Arial Bold", serif;
+  font-family: var(--font-sans), Georgia, "Cambria", "Sitka Text", serif;
 }
 
