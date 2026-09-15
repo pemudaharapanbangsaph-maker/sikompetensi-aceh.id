@@ -201,7 +201,7 @@ export function LoginPage() {
                 <div className="h-[2px] w-16 sm:w-20 bg-gradient-to-r from-amber-500/80 via-amber-400 to-amber-500/80" />
                 <div className="h-[1px] w-10 bg-gradient-to-l from-transparent to-amber-400/60" />
               </div>
-              <p className="font-serif-georgia text-amber-300/90 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Bidang Pengembangan dan Sertifikasi Teknis Inti - BPSDM Aceh</p>
+              <p className="font-serif-georgia text-amber-300/90 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti - BPSDM Aceh</p>
               <h2 className="font-serif-georgia text-white text-base sm:text-lg lg:text-xl font-bold mt-2.5 sm:mt-3 leading-snug max-w-sm mx-auto">
                 Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
               </h2>
