@@ -294,12 +294,12 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
 
       {/* ===== TRANSPARENT HEADER ===== */}
       {/* Layout mengikuti referensi: empty left | center menus | right buttons */}
-     <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-12">
-  <nav className="flex w-full items-center justify-center gap-3 overflow-x-auto whitespace-nowrap sm:gap-5 lg:gap-7">
+    <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-12">
+  <nav className="flex w-full items-center justify-start gap-3 overflow-x-auto whitespace-nowrap pl-2 sm:gap-5 sm:pl-6 lg:gap-7 lg:pl-10">
     <button
       type="button"
       onClick={onProfilBidang}
-      className="shrink-0 text-sm font-medium text-slate-700 hover:text-[#195737]"
+      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Profil Bidang
     </button>
@@ -307,7 +307,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onTentang}
-      className="shrink-0 text-sm font-medium text-slate-700 hover:text-[#195737]"
+      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Tentang
     </button>
@@ -315,23 +315,23 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onVisiMisi}
-      className="shrink-0 text-sm font-medium text-slate-700 hover:text-[#195737]"
+      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Visi-misi
     </button>
-    
+
     <button
       type="button"
       onClick={onPrograms}
-      className="shrink-0 text-sm font-medium text-slate-700 hover:text-[#195737]"
+      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Program
     </button>
-    
+
     <button
       type="button"
       onClick={onPendaftaran}
-      className="flex shrink-0 items-center gap-2 rounded-lg bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0F4227]"
+      className="flex shrink-0 items-center gap-2 rounded-lg bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-[#0F4227] hover:shadow-lg active:translate-y-0 active:scale-95"
     >
       <ClipboardList className="h-4 w-4" />
       Pendaftaran Peserta
@@ -340,7 +340,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onCekStatus}
-      className="flex shrink-0 items-center gap-2 rounded-lg bg-[#0F4C81] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0a3a63]"
+      className="flex shrink-0 items-center gap-2 rounded-lg bg-[#0F4C81] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-[#0a3a63] hover:shadow-lg active:translate-y-0 active:scale-95"
     >
       <FileCheck2 className="h-4 w-4" />
       Cek Status Pendaftaran
