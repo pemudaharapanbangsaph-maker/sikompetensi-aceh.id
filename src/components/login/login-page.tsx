@@ -327,6 +327,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     >
       Program
     </button>
+  </nav>
 </header>
       <div className="relative z-10 max-w-xl w-full">
         <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
