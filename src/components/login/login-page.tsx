@@ -5,11 +5,11 @@ import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound, Printer, FileCheck2, XCircle, Hourglass, Info } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound, Printer, FileCheck2, XCircle, Hourglass, Info, Users, Menu as MenuIcon, X as XIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
 
-type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran' | 'cek-status'
+type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran' | 'cek-status' | 'profil-bidang' | 'tentang' | 'visi-misi'
 
 interface Program {
   id: string
@@ -167,6 +167,21 @@ export function LoginPage() {
         <AnimatePresence mode="wait">
           <CekStatusRight onBack={goBack} onDaftar={() => setView('pendaftaran')} />
         </AnimatePresence>
+      ) : view === 'profil-bidang' || view === 'tentang' || view === 'visi-misi' ? (
+        /* ===== FULL-SCREEN: INFORMATION PAGES ===== */
+        <AnimatePresence mode="wait">
+          <InformationPage
+            onBack={goBack}
+            pageType={view}
+            onPendaftaran={() => setView('pendaftaran')}
+            onCekStatus={() => setView('cek-status')}
+            onPrograms={() => setView('programs')}
+            onLogin={() => setView('login')}
+            onProfilBidang={() => setView('profil-bidang')}
+            onTentang={() => setView('tentang')}
+            onVisiMisi={() => setView('visi-misi')}
+          />
+        </AnimatePresence>
       ) : (
         /* ===== SPLIT SCREEN: LANDING / LOGIN ===== */
         <div className="flex-1 flex flex-col lg:flex-row">
@@ -218,7 +233,7 @@ export function LoginPage() {
           {/* ===== RIGHT PANEL ===== */}
           <AnimatePresence mode="wait">
             {view === 'landing' && (
-              <LandingRight onEnter={() => setView('login')} onPrograms={() => setView('programs')} onPendaftaran={() => setView('pendaftaran')} onCekStatus={() => setView('cek-status')} />
+              <LandingRight onEnter={() => setView('login')} onPrograms={() => setView('programs')} onPendaftaran={() => setView('pendaftaran')} onCekStatus={() => setView('cek-status')} onProfilBidang={() => setView('profil-bidang')} onTentang={() => setView('tentang')} onVisiMisi={() => setView('visi-misi')} />
             )}
             {view === 'login' && !pending2FA && (
               <LoginRight
@@ -253,7 +268,8 @@ export function LoginPage() {
 // RIGHT PANEL: LANDING
 // ==========================================================================
 
-function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onEnter: () => void; onPrograms: () => void; onPendaftaran: () => void; onCekStatus: () => void }) {
+function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfilBidang, onTentang, onVisiMisi }: { onEnter: () => void; onPrograms: () => void; onPendaftaran: () => void; onCekStatus: () => void; onProfilBidang: () => void; onTentang: () => void; onVisiMisi: () => void }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   return (
     <motion.div
       key="landing-right"
@@ -261,8 +277,52 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus }: { onE
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 lg:flex-1 relative flex items-center px-5 sm:px-12 lg:px-16 py-8 sm:py-12 bg-[#FFFEF9] overflow-hidden"
+      className="flex-1 lg:flex-1 relative flex items-center px-5 sm:px-12 lg:px-16 pt-28 sm:pt-32 pb-8 sm:pb-12 bg-[#FFFEF9] overflow-hidden"
     >
+      {/* ===== TRANSPARENT HEADER ===== */}
+      <header className="absolute top-0 inset-x-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:px-10 py-3 sm:py-3.5">
+        <div className="min-w-0" />
+        <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-sm text-slate-700 font-medium justify-self-center">
+          <button type="button" onClick={onProfilBidang} className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap">Profil Bidang</button>
+          <button type="button" onClick={onTentang} className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap">Tentang</button>
+          <button type="button" onClick={onVisiMisi} className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap">Visi-misi</button>
+          <button type="button" onClick={onPrograms} className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap">Program</button>
+        </nav>
+        <div className="hidden md:flex items-center justify-end gap-2 lg:gap-3 min-w-0">
+          <button type="button" onClick={onPendaftaran} className="flex items-center gap-1.5 sm:gap-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-[#195737] hover:bg-[#0F4227] text-white text-xs lg:text-sm font-semibold rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap">
+            <ClipboardList className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden lg:inline">Pendaftaran Peserta</span>
+            <span className="lg:hidden">Daftar</span>
+          </button>
+          <button type="button" onClick={onCekStatus} className="flex items-center gap-1.5 sm:gap-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-[#0F4C81] hover:bg-[#0a3a63] text-white text-xs lg:text-sm font-semibold rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap">
+            <FileCheck2 className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden xl:inline">Cek Status Pendaftaran</span>
+            <span className="hidden lg:inline xl:hidden">Cek Status</span>
+            <span className="lg:hidden">Status</span>
+          </button>
+        </div>
+        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors justify-self-end" aria-label="Toggle menu">
+          {mobileMenuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+        </button>
+      </header>
+
+      {/* ===== MOBILE DROPDOWN MENU ===== */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="absolute top-14 inset-x-0 z-40 md:hidden bg-white border-b border-slate-200 shadow-lg">
+            <nav className="flex flex-col py-2">
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onProfilBidang() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><Building2 className="w-4 h-4" /> Profil Bidang</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onTentang() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><Info className="w-4 h-4" /> Tentang</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onVisiMisi() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><Target className="w-4 h-4" /> Visi-misi</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onPrograms() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><BookOpen className="w-4 h-4" /> Program</button>
+              <div className="border-t border-slate-200 my-2" />
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onPendaftaran() }} className="flex items-center gap-3 px-5 py-3 text-sm text-white bg-[#195737] hover:bg-[#0F4227] transition-colors mx-3 rounded-lg mb-2"><ClipboardList className="w-4 h-4" /> Pendaftaran Peserta</button>
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onCekStatus() }} className="flex items-center gap-3 px-5 py-3 text-sm text-white bg-[#0F4C81] hover:bg-[#0a3a63] transition-colors mx-3 rounded-lg mb-2"><FileCheck2 className="w-4 h-4" /> Cek Status Pendaftaran</button>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2/3 h-2/3 opacity-[0.04] pointer-events-none hidden lg:block">
         <svg viewBox="0 0 400 500" fill="none" className="w-full h-full text-amber-800">
           <path d="M200 20L20 180h360L200 20z" stroke="currentColor" strokeWidth="1" fill="none" />
@@ -610,7 +670,7 @@ function LoginRight({
           </p>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -701,7 +761,7 @@ function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, on
           </Button>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Provinsi Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -1133,7 +1193,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
+      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Aceh</p></div>
     </motion.div>
   )
 }
@@ -1417,7 +1477,353 @@ function CekStatusRight({ onBack, onDaftar }: { onBack: () => void; onDaftar: ()
         </div>
       </div>
 
-      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
+      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Aceh</p></div>
     </motion.div>
   )
+}
+
+// ===========================================================================
+// INFORMATION PAGE: Profil Bidang, Tentang, Visi-misi (mobile-friendly)
+// ===========================================================================
+
+interface InformationPageProps {
+  onBack: () => void
+  pageType: 'profil-bidang' | 'tentang' | 'visi-misi'
+  onPendaftaran: () => void
+  onCekStatus: () => void
+  onPrograms: () => void
+  onLogin: () => void
+  onProfilBidang: () => void
+  onTentang: () => void
+  onVisiMisi: () => void
+}
+
+function InformationPage({ onBack, pageType, onPendaftaran, onCekStatus, onPrograms, onLogin, onProfilBidang, onTentang, onVisiMisi }: InformationPageProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const content = getContent(pageType)
+
+  return (
+    <motion.div
+      key={`info-${pageType}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen flex flex-col bg-[#FFFEF9]"
+    >
+      {/* ===== TRANSPARENT HEADER (sticky) ===== */}
+      <header className="sticky top-0 z-30 bg-[#FFFEF9]/90 backdrop-blur-sm border-b border-slate-200/50 grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-6 lg:px-10 py-3 sm:py-3.5">
+        <button onClick={onBack} className="flex items-center gap-2 text-slate-700 hover:text-[#195737] transition-colors text-xs sm:text-sm font-medium min-w-0">
+          <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+          <span className="hidden sm:inline truncate">Kembali</span>
+        </button>
+        <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-sm text-slate-700 font-medium justify-self-center">
+          <button onClick={onProfilBidang} className={`transition-colors duration-200 whitespace-nowrap ${pageType === 'profil-bidang' ? 'text-[#195737] font-semibold' : 'hover:text-[#195737]'}`}>Profil Bidang</button>
+          <button onClick={onTentang} className={`transition-colors duration-200 whitespace-nowrap ${pageType === 'tentang' ? 'text-[#195737] font-semibold' : 'hover:text-[#195737]'}`}>Tentang</button>
+          <button onClick={onVisiMisi} className={`transition-colors duration-200 whitespace-nowrap ${pageType === 'visi-misi' ? 'text-[#195737] font-semibold' : 'hover:text-[#195737]'}`}>Visi-misi</button>
+          <button onClick={onPrograms} className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap">Program</button>
+        </nav>
+        <div className="hidden md:flex items-center justify-end gap-2 lg:gap-3 min-w-0">
+          <button onClick={onPendaftaran} className="flex items-center gap-1.5 sm:gap-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-[#195737] hover:bg-[#0F4227] text-white text-xs lg:text-sm font-semibold rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap">
+            <ClipboardList className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden lg:inline">Pendaftaran Peserta</span>
+            <span className="lg:hidden">Daftar</span>
+          </button>
+          <button onClick={onCekStatus} className="flex items-center gap-1.5 sm:gap-2 px-3 lg:px-4 py-2 lg:py-2.5 bg-[#0F4C81] hover:bg-[#0a3a63] text-white text-xs lg:text-sm font-semibold rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap">
+            <FileCheck2 className="w-4 h-4 flex-shrink-0" />
+            <span className="hidden xl:inline">Cek Status Pendaftaran</span>
+            <span className="hidden lg:inline xl:hidden">Cek Status</span>
+            <span className="lg:hidden">Status</span>
+          </button>
+        </div>
+        <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors justify-self-end" aria-label="Toggle menu">
+          {mobileMenuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+        </button>
+      </header>
+
+      {/* ===== MOBILE DROPDOWN MENU ===== */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} className="sticky top-[57px] z-40 md:hidden bg-white border-b border-slate-200 shadow-lg">
+            <nav className="flex flex-col py-2">
+              <button onClick={() => { setMobileMenuOpen(false); onProfilBidang() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><Building2 className="w-4 h-4" /> Profil Bidang</button>
+              <button onClick={() => { setMobileMenuOpen(false); onTentang() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><Info className="w-4 h-4" /> Tentang</button>
+              <button onClick={() => { setMobileMenuOpen(false); onVisiMisi() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><Target className="w-4 h-4" /> Visi-misi</button>
+              <button onClick={() => { setMobileMenuOpen(false); onPrograms() }} className="flex items-center gap-3 px-5 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#195737] transition-colors"><BookOpen className="w-4 h-4" /> Program</button>
+              <div className="border-t border-slate-200 my-2" />
+              <button onClick={() => { setMobileMenuOpen(false); onPendaftaran() }} className="flex items-center gap-3 px-5 py-3 text-sm text-white bg-[#195737] hover:bg-[#0F4227] transition-colors mx-3 rounded-lg mb-2"><ClipboardList className="w-4 h-4" /> Pendaftaran Peserta</button>
+              <button onClick={() => { setMobileMenuOpen(false); onCekStatus() }} className="flex items-center gap-3 px-5 py-3 text-sm text-white bg-[#0F4C81] hover:bg-[#0a3a63] transition-colors mx-3 rounded-lg mb-2"><FileCheck2 className="w-4 h-4" /> Cek Status Pendaftaran</button>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== CONTENT ===== */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8 lg:px-12 py-8 sm:py-12 lg:py-16">
+          <div className="text-center mb-8 sm:mb-12">
+            {content.icon && (
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-[#195737]/10 mb-4 sm:mb-6">
+                {content.icon}
+              </div>
+            )}
+            <p className="font-serif-georgia text-[10px] sm:text-sm font-semibold uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[#195737] mb-2 sm:mb-3">{content.eyebrow}</p>
+            <h1 className="font-serif-georgia text-xl sm:text-3xl lg:text-5xl font-bold text-slate-900 leading-tight px-2">
+              {content.title}
+            </h1>
+            {content.subtitle && (
+              <p className="text-slate-500 text-xs sm:text-base mt-3 sm:mt-5 max-w-2xl mx-auto leading-relaxed px-2">
+                {content.subtitle}
+              </p>
+            )}
+          </div>
+
+          <div className="max-w-none">
+            {content.sections.map((section, idx) => (
+              <section key={idx} className="mb-6 sm:mb-10">
+                {section.heading && (
+                  <h2 className="font-serif-georgia text-lg sm:text-2xl font-bold text-slate-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    {section.icon && <span className="text-[#195737] flex-shrink-0">{section.icon}</span>}
+                    {section.heading}
+                  </h2>
+                )}
+                {section.paragraphs.map((p, pi) => (
+                  <p key={pi} className="text-slate-600 text-xs sm:text-base leading-relaxed mb-3 sm:mb-4">
+                    {p}
+                  </p>
+                ))}
+                {section.list && (
+                  <ul className="space-y-2 sm:space-y-3 mt-3 sm:mt-4">
+                    {section.list.map((item, li) => (
+                      <li key={li} className="flex items-start gap-2 sm:gap-3 text-slate-600 text-xs sm:text-base">
+                        <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#195737] flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {section.cards && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 mt-4 sm:mt-6">
+                    {section.cards.map((card, ci) => (
+                      <div key={ci} className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 hover:border-[#195737]/30 hover:shadow-md transition-all duration-200">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#195737]/10 flex items-center justify-center mb-3 sm:mb-4">
+                          {card.icon}
+                        </div>
+                        <h3 className="font-bold text-slate-900 text-sm sm:text-base mb-2">{card.title}</h3>
+                        <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">{card.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ))}
+          </div>
+
+          <div className="mt-8 sm:mt-14 bg-gradient-to-br from-[#195737] to-[#0F4227] rounded-2xl p-6 sm:p-10 text-center">
+            <h3 className="font-serif-georgia text-base sm:text-2xl font-bold text-white mb-2 sm:mb-3">
+              {content.ctaTitle}
+            </h3>
+            <p className="text-white/80 text-xs sm:text-base mb-5 sm:mb-6 max-w-xl mx-auto">
+              {content.ctaDescription}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button onClick={onPendaftaran} className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-white text-[#195737] hover:bg-amber-50 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200 shadow-sm">
+                <ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" />
+                Pendaftaran Peserta
+              </button>
+              <button onClick={onLogin} className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 border border-white/30 text-white hover:bg-white/10 font-semibold text-xs sm:text-sm rounded-xl transition-colors duration-200">
+                <LogIn className="w-4 h-4 sm:w-5 sm:h-5" />
+                Masuk Portal
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60">
+        <p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Aceh</p>
+      </div>
+    </motion.div>
+  )
+}
+
+// ===========================================================================
+// KONTEN HALAMAN INFORMASI
+// ===========================================================================
+// ⚠️ UBAH TEKS DI BAWAH INI UNTUK EDIT KONTEN HALAMAN:
+// - Profil Bidang: alamat, email, telp, deskripsi, struktur organisasi
+// - Tentang: deskripsi sistem, fitur, pengguna
+// - Visi-misi: visi, misi, nilai-nilai, tujuan
+// ===========================================================================
+
+interface ContentSection {
+  heading?: string
+  icon?: React.ReactNode
+  paragraphs: string[]
+  list?: string[]
+  cards?: { icon: React.ReactNode; title: string; description: string }[]
+}
+
+interface PageContent {
+  eyebrow: string
+  title: string
+  subtitle?: string
+  icon?: React.ReactNode
+  sections: ContentSection[]
+  ctaTitle: string
+  ctaDescription: string
+}
+
+function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageContent {
+  if (pageType === 'profil-bidang') {
+    return {
+      eyebrow: 'Profil Bidang',
+      title: 'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti',
+      subtitle: 'Unit pelaksana teknis di lingkungan BPSDM Aceh yang mengelola pengembangan kompetensi teknis ASN.',
+      icon: <Building2 className="w-7 h-7 sm:w-10 sm:h-10 text-[#195737]" />,
+      sections: [
+        {
+          heading: 'Tugas dan Fungsi',
+          icon: <Target className="w-5 h-5 sm:w-6 sm:h-6" />,
+          paragraphs: [
+            'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti (BPSDM Aceh) memiliki tugas melaksanakan pengembangan kompetensi teknis aparatur sipil negara di lingkungan Pemerintah Aceh melalui pelatihan, sertifikasi, dan uji kompetensi.',
+            'Fungsi utama bidang ini mencakup:',
+          ],
+          list: [
+            'Penyusunan analisis kebutuhan diklat teknis tahunan',
+            'Perencanaan dan pelaksanaan program pelatihan teknis',
+            'Penyelenggaraan uji kompetensi dan sertifikasi ASN',
+            'Manajemen data peserta, angkatan, dan sertifikat',
+            'Evaluasi dan pelaporan capaian program pengembangan kompetensi',
+          ],
+        },
+        {
+          heading: 'Struktur Organisasi',
+          icon: <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />,
+          paragraphs: [
+            'Bidang ini terdiri dari beberapa sub-bidang yang bekerja secara terintegrasi untuk mewujudkan ASN Aceh yang kompeten dan profesional.',
+          ],
+          cards: [
+            { icon: <Target className="w-5 h-5 text-[#195737]" />, title: 'Sub-bidang Perencanaan', description: 'Menyusun analisis kebutuhan diklat dan program prioritas tahunan.' },
+            { icon: <GraduationCap className="w-5 h-5 text-[#195737]" />, title: 'Sub-bidang Pelatihan', description: 'Menyelenggarakan pelatihan teknis tatap muka, daring, dan blended.' },
+            { icon: <Shield className="w-5 h-5 text-[#195737]" />, title: 'Sub-bidang Sertifikasi', description: 'Mengelola uji kompetensi dan penerbitan sertifikat ASN.' },
+          ],
+        },
+        {
+          heading: 'Kontak',
+          icon: <Info className="w-5 h-5 sm:w-6 sm:h-6" />,
+          paragraphs: [
+            'Badan Pengembangan Sumber Daya Manusia Aceh',
+            'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti',
+            'Jl. T. Iskandar No. 1, Banda Aceh 23000',
+            'Email: bpsdm@acehprov.go.id | Telp: (0651) 12345',
+          ],
+        },
+      ],
+      ctaTitle: 'Ingin mendaftar pelatihan?',
+      ctaDescription: 'Akses portal SIKOMPETENSI ACEH untuk mendaftar program pelatihan teknis atau cek status pendaftaran Anda.',
+    }
+  }
+
+  if (pageType === 'tentang') {
+    return {
+      eyebrow: 'Tentang',
+      title: 'SIKOMPETENSI ACEH',
+      subtitle: 'Sistem Informasi Kompetensi Teknis — satu pintu untuk pengembangan kompetensi ASN Pemerintah Aceh.',
+      icon: <BookOpen className="w-7 h-7 sm:w-10 sm:h-10 text-[#195737]" />,
+      sections: [
+        {
+          heading: 'Tentang Sistem',
+          icon: <Info className="w-5 h-5 sm:w-6 sm:h-6" />,
+          paragraphs: [
+            'SIKOMPETENSI ACEH (Sistem Informasi Kompetensi Teknis) adalah platform digital terintegrasi yang dikembangkan oleh BPSDM Aceh untuk mengelola seluruh siklus pengembangan kompetensi ASN di lingkungan Pemerintah Aceh.',
+            'Sistem ini mengintegrasikan pembelajaran formal, sosial, dan berbasis pengalaman dalam satu ekosistem yang terhubung — mulai dari analisis kebutuhan diklat, perencanaan program, pendaftaran peserta, pelaksanaan pelatihan, hingga penerbitan sertifikat.',
+          ],
+        },
+        {
+          heading: 'Fitur Utama',
+          icon: <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />,
+          paragraphs: [
+            'Platform ini menyediakan berbagai fitur untuk mendukung pengembangan kompetensi ASN:',
+          ],
+          cards: [
+            { icon: <Target className="w-5 h-5 text-[#195737]" />, title: 'Analisis Kebutuhan Diklat', description: 'Identifikasi kebutuhan pelatihan berbasis kompetensi dan prioritas RPJMA.' },
+            { icon: <Calendar className="w-5 h-5 text-[#195737]" />, title: 'Manajemen Pelatihan', description: 'Kelola jadwal, angkatan, dan peserta pelatihan secara terpusat.' },
+            { icon: <FileCheck2 className="w-5 h-5 text-[#195737]" />, title: 'Sertifikasi Digital', description: 'Penerbitan dan pengelolaan sertifikat pelatihan dalam format digital.' },
+            { icon: <ClipboardList className="w-5 h-5 text-[#195737]" />, title: 'Portal Pendaftaran', description: 'Pendaftaran online untuk program pelatihan dan cek status real-time.' },
+            { icon: <BarChart3 className="w-5 h-5 text-[#195737]" />, title: 'Dashboard & Laporan', description: 'Monitoring capaian dan laporan komprehensif untuk pengambilan keputusan.' },
+            { icon: <Shield className="w-5 h-5 text-[#195737]" />, title: 'Keamanan Data', description: 'Sistem berlapis dengan otentikasi 2FA dan audit log untuk keamanan data ASN.' },
+          ],
+        },
+        {
+          heading: 'Pengguna Sistem',
+          icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" />,
+          paragraphs: [
+            'SIKOMPETENSI ACEH melayani berbagai peran dalam ekosistem pengembangan kompetensi:',
+          ],
+          list: [
+            'SUPER ADMIN — Kelola seluruh sistem, user, dan konfigurasi',
+            'ADMIN BIDANG — Kelola data pelatihan, peserta, dan sertifikat',
+            'OPERATOR — Input data harian dan manajemen pelaksanaan',
+            'ASN/Peserta — Daftar pelatihan dan cek status pendaftaran',
+          ],
+        },
+      ],
+      ctaTitle: 'Siap mengembangkan kompetensi Anda?',
+      ctaDescription: 'Masuk ke portal SIKOMPETENSI ACEH atau daftar program pelatihan yang tersedia.',
+    }
+  }
+
+  // visi-misi
+  return {
+    eyebrow: 'Visi & Misi',
+    title: 'Visi dan Misi',
+    subtitle: 'Mengarahkan pengembangan kompetensi ASN Aceh menuju profesionalisme dan integritas.',
+    icon: <Target className="w-7 h-7 sm:w-10 sm:h-10 text-[#195737]" />,
+    sections: [
+      {
+        heading: 'Visi',
+        icon: <Target className="w-5 h-5 sm:w-6 sm:h-6" />,
+        paragraphs: [
+          'Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas melalui pengembangan kompetensi teknis yang terpadu dan berkelanjutan.',
+        ],
+      },
+      {
+        heading: 'Misi',
+        icon: <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />,
+        paragraphs: [
+          'Untuk mewujudkan visi tersebut, Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti menjalankan misi:',
+        ],
+        list: [
+          'Menyelenggarakan analisis kebutuhan diklat teknis yang akurat dan berbasis data',
+          'Menyediakan program pelatihan teknis yang relevan dengan kebutuhan Pemerintah Aceh',
+          'Menyelenggarakan uji kompetensi dan sertifikasi yang kredibel dan bermutu',
+          'Mengembangkan ekosistem pembelajaran berbasis teknologi digital',
+          'Membangun budaya belajar berkelanjutan bagi ASN Pemerintah Aceh',
+          'Menjalin kemitraan dengan institusi pendidikan dan industri',
+        ],
+      },
+      {
+        heading: 'Nilai-Nilai',
+        icon: <Shield className="w-5 h-5 sm:w-6 sm:h-6" />,
+        paragraphs: [
+          'Dalam pelaksanaan tugas, kami berpegang pada nilai-nilai:',
+        ],
+        cards: [
+          { icon: <CheckCircle2 className="w-5 h-5 text-[#195737]" />, title: 'Integritas', description: 'Menjunjung tinggi kejujuran, transparansi, dan akuntabilitas.' },
+          { icon: <Target className="w-5 h-5 text-[#195737]" />, title: 'Profesional', description: 'Bekerja dengan kompetensi, dedikasi, dan standar tertinggi.' },
+          { icon: <BookOpen className="w-5 h-5 text-[#195737]" />, title: 'Inovasi', description: 'Terus belajar dan mengembangkan metode pembelajaran terkini.' },
+        ],
+      },
+      {
+        heading: 'Tujuan',
+        icon: <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" />,
+        paragraphs: [
+          'Tercapainya ASN Aceh yang memiliki kompetensi teknis sesuai standar nasional dan internasional, mampu memberikan pelayanan publik prima, serta berkontribusi nyata terhadap pembangunan Aceh yang maju dan berkelanjutan.',
+        ],
+      },
+    ],
+    ctaTitle: 'Bergabung dalam pengembangan kompetensi',
+    ctaDescription: 'Daftar program pelatihan teknis atau masuk ke portal SIKOMPETENSI ACEH untuk memulai perjalanan pengembangan kompetensi Anda.',
+  }
 }
