@@ -349,7 +349,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
             </button>
             <button
               onClick={onPrograms}
-              className="cursor-pointer flex items-center gap-3 px-8 py-4 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+              className="flex items-center gap-3 px-10 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200 cursor-pointer"
             >
               <Search className="w-5 h-5" />
               Jelajahi Program
