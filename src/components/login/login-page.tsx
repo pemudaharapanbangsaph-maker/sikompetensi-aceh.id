@@ -327,25 +327,6 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     >
       Program
     </button>
-
-    <button
-      type="button"
-      onClick={onPendaftaran}
-      className="flex shrink-0 items-center gap-2 rounded-lg bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-[#0F4227] hover:shadow-lg active:translate-y-0 active:scale-95"
-    >
-      <ClipboardList className="h-4 w-4" />
-      Pendaftaran Peserta
-    </button>
-
-    <button
-      type="button"
-      onClick={onCekStatus}
-      className="flex shrink-0 items-center gap-2 rounded-lg bg-[#0F4C81] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-[#0a3a63] hover:shadow-lg active:translate-y-0 active:scale-95"
-    >
-      <FileCheck2 className="h-4 w-4" />
-      Cek Status Pendaftaran
-    </button>
-  </nav>
 </header>
       <div className="relative z-10 max-w-xl w-full">
         <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
