@@ -179,7 +179,7 @@ export function LoginPage() {
               </div>
               <div className="mt-2 sm:mt-4">
                 <p className="font-serif-georgia text-white text-xl sm:text-3xl font-bold tracking-wide">SIKOMPETENSI ACEH</p>
-                <p className="font-serif-georgia text-[10px] sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1 sm:mt-1.5 font-semibold">Sistem Informasi Kompetensi Teknis Inti</p>
+                <p className="font-serif-georgia text-[10px] sm:text-sm tracking-[0.25em] sm:tracking-[0.35em] text-[#86EFAC]/90 mt-1 sm:mt-1.5 font-semibold">Sistem Informasi Kompetensi Teknis</p>
               </div>
               <div className="flex items-center justify-center mt-2 sm:mt-4 mb-2 sm:mb-4">
                 <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-amber-400/60" />
