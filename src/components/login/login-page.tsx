@@ -1417,7 +1417,7 @@ function CekStatusRight({ onBack, onDaftar }: { onBack: () => void; onDaftar: ()
         </div>
       </div>
 
-      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Provinsi Aceh</p></div>
+      <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60"><p className="text-center text-xs text-slate-400">© {new Date().getFullYear()} BPSDM Aceh</p></div>
     </motion.div>
   )
 }
