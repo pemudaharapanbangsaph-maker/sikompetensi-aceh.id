@@ -294,7 +294,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
 
       {/* ===== TRANSPARENT HEADER ===== */}
       {/* Layout mengikuti referensi: empty left | center menus | right buttons */}
-    <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-12">
+    <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-8">
   <nav className="flex w-full items-center justify-start gap-3 overflow-x-auto whitespace-nowrap pl-2 sm:gap-5 sm:pl-6 lg:gap-7 lg:pl-10">
     <button
       type="button"
