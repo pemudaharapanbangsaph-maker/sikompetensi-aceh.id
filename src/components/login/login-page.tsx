@@ -294,65 +294,69 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
 
       {/* ===== TRANSPARENT HEADER ===== */}
       {/* Layout mengikuti referensi: empty left | center menus | right buttons */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-5 sm:px-8 lg:px-12 py-3.5 sm:py-4">
-        {/* LEFT: spacer (bisa diisi logo nanti) */}
-        <div className="flex-1 min-w-0" />
+      <header className="absolute inset-x-0 top-0 z-30 flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-3.5 sm:px-8 sm:py-4 lg:flex-nowrap lg:gap-6 lg:px-12">
+  {/* LEFT: spacer */}
+  <div className="hidden lg:block lg:flex-1" />
 
-        {/* CENTER: 4 menu items */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8 text-sm text-slate-700 font-medium">
-          <button
-            type="button"
-            onClick={onProfilBidang}
-            className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap"
-          >
-            Profil Bidang
-          </button>
-          <button
-            type="button"
-            onClick={onTentang}
-            className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap"
-          >
-            Tentang
-          </button>
-          <button
-            type="button"
-            onClick={onVisiMisi}
-            className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap"
-          >
-            Visi-misi
-          </button>
-          <button
-            type="button"
-            onClick={onPrograms}
-            className="hover:text-[#195737] transition-colors duration-200 whitespace-nowrap"
-          >
-            Program
-          </button>
-        </nav>
+  {/* RIGHT: action buttons */}
+  <div className="order-1 ml-auto flex max-w-full flex-wrap items-center justify-end gap-2 sm:gap-3 lg:order-3 lg:flex-1">
+    <button
+      type="button"
+      onClick={onPendaftaran}
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#195737] px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#0F4227] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
+    >
+      <ClipboardList className="h-4 w-4 shrink-0" />
+      <span className="hidden sm:inline">Pendaftaran Peserta</span>
+      <span className="sm:hidden">Daftar</span>
+    </button>
 
-        {/* RIGHT: 2 action buttons */}
-        <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={onPendaftaran}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#195737] hover:bg-[#0F4227] text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap"
-          >
-            <ClipboardList className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Pendaftaran Peserta</span>
-            <span className="sm:hidden">Daftar</span>
-          </button>
-          <button
-            type="button"
-            onClick={onCekStatus}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#0F4C81] hover:bg-[#0a3a63] text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap"
-          >
-            <FileCheck2 className="w-4 h-4 flex-shrink-0" />
-            <span className="hidden lg:inline">Cek Status Pendaftaran</span>
-            <span className="hidden sm:inline lg:hidden">Cek Status</span>
-            <span className="sm:hidden">Status</span>
-          </button>
-        </div>
-      </header>
+    <button
+      type="button"
+      onClick={onCekStatus}
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#0F4C81] px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-[#0a3a63] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
+    >
+      <FileCheck2 className="h-4 w-4 shrink-0" />
+      <span className="hidden sm:inline lg:hidden">Cek Status</span>
+      <span className="hidden lg:inline">Cek Status Pendaftaran</span>
+      <span className="sm:hidden">Status</span>
+    </button>
+  </div>
+
+  {/* CENTER: menu items */}
+  <nav className="order-2 flex w-full items-center justify-center gap-4 text-sm font-medium text-slate-700 sm:gap-6 lg:order-2 lg:w-auto lg:gap-8">
+    <button
+      type="button"
+      onClick={onProfilBidang}
+      className="whitespace-nowrap transition-colors duration-200 hover:text-[#195737]"
+    >
+      Profil Bidang
+    </button>
+
+    <button
+      type="button"
+      onClick={onTentang}
+      className="whitespace-nowrap transition-colors duration-200 hover:text-[#195737]"
+    >
+      Tentang
+    </button>
+
+    <button
+      type="button"
+      onClick={onVisiMisi}
+      className="whitespace-nowrap transition-colors duration-200 hover:text-[#195737]"
+    >
+      Visi-misi
+    </button>
+
+    <button
+      type="button"
+      onClick={onPrograms}
+      className="whitespace-nowrap transition-colors duration-200 hover:text-[#195737]"
+    >
+      Program
+    </button>
+  </nav>
+</header>
 
       <div className="relative z-10 max-w-xl w-full">
         <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
