@@ -308,4 +308,13 @@ button, a, [role="button"] {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+}
 
+button:disabled,
+a[aria-disabled="true"] {
+  cursor: not-allowed;
+}
