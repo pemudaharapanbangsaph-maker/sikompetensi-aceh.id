@@ -301,7 +301,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onProfilBidang}
       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      Profil Bidang
+      PROFIL BIDANG
     </button>
 
     <button
@@ -309,7 +309,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onTentang}
        className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      Tentang
+      TENTANG
     </button>
 
     <button
@@ -317,7 +317,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onVisiMisi}
        className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      Visi-misi
+      VISI-MISI BPSDM ACEH
     </button>
 
     <button
@@ -325,7 +325,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onPrograms}
        className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      Program Aktif
+      PROGRAM AKTIF
     </button>
   </nav>
 </header>
