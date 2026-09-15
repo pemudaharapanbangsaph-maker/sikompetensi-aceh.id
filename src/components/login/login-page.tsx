@@ -299,7 +299,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onProfilBidang}
-      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+     className="shrink-0 rounded-md px-2 py-2 text-base font-bold text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Profil Bidang
     </button>
@@ -307,7 +307,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onTentang}
-      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+      className="shrink-0 rounded-md px-2 py-2 text-base font-bold text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Tentang
     </button>
@@ -315,7 +315,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onVisiMisi}
-      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+      className="shrink-0 rounded-md px-2 py-2 text-base font-bold text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Visi-misi
     </button>
@@ -323,7 +323,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onPrograms}
-      className="shrink-0 rounded-md px-2 py-2 text-sm font-medium text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+      className="shrink-0 rounded-md px-2 py-2 text-base font-bold text-slate-700 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       Program
     </button>
