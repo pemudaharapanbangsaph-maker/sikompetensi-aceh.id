@@ -294,7 +294,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
 
       {/* ===== TRANSPARENT HEADER ===== */}
       {/* Layout mengikuti referensi: empty left | center menus | right buttons */}
-    <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-8">
+    <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-6">
   <nav className="flex w-full items-center justify-start gap-3 overflow-x-auto whitespace-nowrap pl-2 sm:gap-5 sm:pl-6 lg:gap-7 lg:pl-10">
     <button
       type="button"
@@ -349,21 +349,21 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
             </button>
             <button
               onClick={onPrograms}
-              className="flex items-center gap-2.5 px-8 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+              className="cursor-pointer flex items-center gap-3 px-8 py-4 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
             >
               <Search className="w-5 h-5" />
               Jelajahi Program
             </button>
             <button
               onClick={onPendaftaran}
-              className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="cursor-pointer flex items-center gap-3 px-10 py-4 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <ClipboardList className="w-6 h-6" />
               Pendaftaran Pelatihan
             </button>
             <button
               onClick={onCekStatus}
-              className="flex items-center justify-center gap-3 px-10 py-4 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="cursor-pointer flex items-center gap-3 px-10 py-4 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
             >
               <FileCheck2 className="w-6 h-6" />
               Cek Status Pendaftaran
@@ -374,7 +374,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
           <div className="lg:hidden space-y-3">
             <button
               onClick={onEnter}
-              className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200 shadow-sm"
+              className="w-full cursor-pointer flex items-center gap-2.5 px-6 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200 shadow-sm"
             >
               <LogIn className="w-5 h-5" />
               Masuk Portal
