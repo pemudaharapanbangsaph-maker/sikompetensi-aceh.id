@@ -299,7 +299,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onProfilBidang}
-      className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+      className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       PROFIL BIDANG
     </button>
@@ -307,7 +307,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onTentang}
-       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       TENTANG
     </button>
@@ -315,7 +315,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onVisiMisi}
-       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       VISI-MISI BPSDM ACEH
     </button>
@@ -323,7 +323,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
     <button
       type="button"
       onClick={onPrograms}
-       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-lg font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
+       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
       PROGRAM AKTIF
     </button>
