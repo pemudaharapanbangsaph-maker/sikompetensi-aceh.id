@@ -301,7 +301,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onProfilBidang}
       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      PROFIL BIDANG
+      Profil Bidang
     </button>
 
     <button
@@ -309,7 +309,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onTentang}
        className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      TENTANG
+      Tentang
     </button>
 
     <button
@@ -317,7 +317,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onVisiMisi}
        className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      VISI-MISI BPSDM ACEH
+      Visi & Misi
     </button>
 
     <button
@@ -325,7 +325,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       onClick={onPrograms}
        className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
     >
-      PROGRAM AKTIF
+      Program Aktif
     </button>
   </nav>
 </header>
@@ -349,7 +349,7 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
             </button>
             <button
               onClick={onPrograms}
-              className="relative z-10 flex items-center gap-3 px-10 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+              className="relative z-10 flex items-center gap-3 px-10 py-4 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
             >
               <Search className="w-5 h-5" />
               Jelajahi Program
