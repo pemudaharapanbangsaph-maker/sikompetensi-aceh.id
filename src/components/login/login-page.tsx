@@ -359,108 +359,93 @@ function LandingRight({
         </svg>
       </div>
 
-      {/* Header */}
-      <header className="relative z-30 border-b border-slate-200/60 bg-[#FFFEF9]/95 px-5 py-4 backdrop-blur-sm sm:px-8 lg:px-10">
-        <div className="flex items-center justify-between gap-4">
-          {/* Logo dan nama aplikasi */}
-          <div className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3">
-            <LogoPancaCita
-              size={58}
-              className="drop-shadow-md sm:h-[66px] sm:w-[66px]"
-            />
+     {/* Header putih */}
+<header className="relative z-30 border-b border-slate-200/60 bg-[#FFFEF9]/95 px-5 py-4 backdrop-blur-sm sm:px-8 lg:px-10">
+  <div className="flex items-center justify-between gap-4">
+    {/* Ruang kosong kiri agar menu tetap berada di kanan/tengah */}
+    <div className="hidden flex-1 md:block" />
 
-            <div className="leading-tight">
-              <p className="font-serif-georgia text-sm font-bold tracking-wide text-[#195737] sm:text-base lg:text-lg">
-                SIKOMPETENSI
-              </p>
-              <p className="font-serif-georgia text-[10px] font-semibold tracking-[0.24em] text-slate-600 sm:text-xs lg:text-sm">
-                ACEH
-              </p>
-            </div>
-          </div>
+    {/* Menu navigasi */}
+    <nav className="hidden items-center justify-center gap-4 md:flex lg:gap-6">
+      <button
+        type="button"
+        onClick={onProfilBidang}
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+      >
+        Profil Bidang
+      </button>
 
-          {/* Menu navigasi */}
-          <nav className="hidden items-center justify-center gap-4 md:flex lg:gap-6">
-            <button
-              type="button"
-              onClick={onProfilBidang}
-              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
-            >
-              Profil Bidang
-            </button>
+      <button
+        type="button"
+        onClick={onTentang}
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+      >
+        Tentang
+      </button>
 
-            <button
-              type="button"
-              onClick={onTentang}
-              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
-            >
-              Tentang
-            </button>
+      <button
+        type="button"
+        onClick={onVisiMisi}
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+      >
+        Visi & Misi
+      </button>
 
-            <button
-              type="button"
-              onClick={onVisiMisi}
-              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
-            >
-              Visi & Misi
-            </button>
+      <button
+        type="button"
+        onClick={onPrograms}
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+      >
+        Program Aktif
+      </button>
+    </nav>
 
-            <button
-              type="button"
-              onClick={onPrograms}
-              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
-            >
-              Program Aktif
-            </button>
-          </nav>
+    {/* Tombol Masuk Portal di header */}
+    <button
+      type="button"
+      onClick={onEnter}
+      className="flex shrink-0 items-center gap-2 rounded-xl bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md"
+    >
+      <LogIn className="h-4 w-4 sm:h-5 sm:w-5" />
+      <span>Masuk Portal</span>
+    </button>
+  </div>
 
-          {/* Tombol Masuk Portal */}
-          <button
-            type="button"
-            onClick={onEnter}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[#195737] px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md sm:gap-2 sm:px-4 sm:text-sm"
-          >
-            <LogIn className="h-4 w-4 sm:h-5 sm:w-5" />
-            <span>Masuk Portal</span>
-          </button>
-        </div>
+  {/* Navigasi mobile */}
+  <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 md:hidden">
+    <button
+      type="button"
+      onClick={onProfilBidang}
+      className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+    >
+      Profil Bidang
+    </button>
 
-        {/* Navigasi mobile */}
-        <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 md:hidden">
-          <button
-            type="button"
-            onClick={onProfilBidang}
-            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-          >
-            Profil Bidang
-          </button>
+    <button
+      type="button"
+      onClick={onTentang}
+      className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+    >
+      Tentang
+    </button>
 
-          <button
-            type="button"
-            onClick={onTentang}
-            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-          >
-            Tentang
-          </button>
+    <button
+      type="button"
+      onClick={onVisiMisi}
+      className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+    >
+      Visi & Misi
+    </button>
 
-          <button
-            type="button"
-            onClick={onVisiMisi}
-            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-          >
-            Visi & Misi
-          </button>
-
-          <button
-            type="button"
-            onClick={onPrograms}
-            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
-          >
-            Program Aktif
-          </button>
-        </nav>
-      </header>
-
+    <button
+      type="button"
+      onClick={onPrograms}
+      className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+    >
+      Program Aktif
+    </button>
+  </nav>
+</header>
       {/* Konten utama */}
       <main className="relative z-10 flex flex-1 items-center px-5 py-10 sm:px-10 sm:py-14 lg:px-16">
         <div className="w-full max-w-2xl">
@@ -479,44 +464,48 @@ function LandingRight({
           </p>
 
           {/* Tombol utama seperti pada gambar referensi */}
-          <div className="mt-8 flex flex-wrap gap-3 sm:mt-10">
-            <button
-              type="button"
-              onClick={onEnter}
-              className="flex items-center gap-2.5 rounded-xl bg-[#195737] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md sm:px-7"
-            >
-              <LogIn className="h-5 w-5" />
-              Masuk Portal
-            </button>
+          {/* Tombol utama dan tombol layanan */}
+<div className="mt-8 sm:mt-10">
+  {/* Tombol utama */}
+  <button
+    type="button"
+    onClick={onEnter}
+    className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#195737] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md sm:w-fit sm:min-w-[190px]"
+  >
+    <LogIn className="h-5 w-5" />
+    Masuk Portal
+  </button>
 
-            <button
-              type="button"
-              onClick={onPrograms}
-              className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
-            >
-              <Search className="h-5 w-5" />
-              Jelajahi Program
-            </button>
+  {/* Tiga tombol di bawahnya */}
+  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <button
+      type="button"
+      onClick={onPrograms}
+      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
+    >
+      <Search className="h-4 w-4" />
+      <span>Jelajahi Program</span>
+    </button>
 
-            <button
-              type="button"
-              onClick={onPendaftaran}
-              className="flex items-center gap-2.5 rounded-xl border-2 border-[#195737]/40 bg-white px-5 py-3.5 text-sm font-semibold text-[#195737] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:bg-[#195737] hover:text-white hover:shadow-md"
-            >
-              <ClipboardList className="h-5 w-5" />
-              Pendaftaran Pelatihan
-            </button>
+    <button
+      type="button"
+      onClick={onPendaftaran}
+      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
+    >
+      <ClipboardList className="h-4 w-4" />
+      <span>Pendaftaran Pelatihan</span>
+    </button>
 
-            <button
-              type="button"
-              onClick={onCekStatus}
-              className="flex items-center gap-2.5 rounded-xl border-2 border-[#0F4C81]/40 bg-white px-5 py-3.5 text-sm font-semibold text-[#0F4C81] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0F4C81] hover:bg-[#0F4C81] hover:text-white hover:shadow-md"
-            >
-              <FileCheck2 className="h-5 w-5" />
-              Cek Status
-            </button>
-          </div>
-
+    <button
+      type="button"
+      onClick={onCekStatus}
+      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
+    >
+      <FileCheck2 className="h-4 w-4" />
+      <span>Cek Status</span>
+    </button>
+  </div>
+</div>
           {/* Keterangan tambahan */}
           <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400 sm:mt-12">
             <span>Pelatihan ASN</span>
