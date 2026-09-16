@@ -478,7 +478,7 @@ function LandingRight({
     <button
       type="button"
       onClick={onPrograms}
-      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
+      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
     >
       <Search className="h-4 w-4" />
       <span>Jelajahi Program</span>
@@ -487,7 +487,7 @@ function LandingRight({
     <button
       type="button"
       onClick={onPendaftaran}
-      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
+      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
     >
       <ClipboardList className="h-4 w-4" />
       <span>Pendaftaran Pelatihan</span>
@@ -496,7 +496,7 @@ function LandingRight({
     <button
       type="button"
       onClick={onCekStatus}
-      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
+      className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-4 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
     >
       <FileCheck2 className="h-4 w-4" />
       <span>Cek Status</span>
