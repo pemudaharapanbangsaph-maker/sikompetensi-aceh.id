@@ -1799,8 +1799,9 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
           paragraphs: [
             'Badan Pengembangan Sumber Daya Manusia Aceh',
             'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti',
-            'Jl. T. Iskandar No. 1, Banda Aceh 23000',
-            'Email: bpsdm@acehprov.go.id | Telp: (0651) 12345',
+            'JL. T.PANGLIMA NYAK MAKAM NO. 8 - LAMPINENG',
+            'Telp : 0651 - : (0651) 7552564, Fax : (0651) 7552565 email : bpsdm[at]acehprov.go.id',
+            'Contact Person Admin Bidang (PKSTI): @Edo Mulyana - 08126910393',
           ],
         },
       ],
