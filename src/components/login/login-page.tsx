@@ -401,8 +401,7 @@ function LandingRight({
     <button
       type="button"
       onClick={onEnter}
-      className="ml-auto flex shrink-0 items-center gap-2 rounded-xl bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md"
-    >
+      className="ml-auto hidden shrink-0 items-center gap-2 rounded-xl bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md md:flex"
       <LogIn className="h-4 w-4 sm:h-5 sm:w-5" />
       <span>Masuk Portal</span>
     </button>
