@@ -468,13 +468,13 @@ function LandingRight({
 <div className="mt-8 sm:mt-10">
   {/* Tombol utama */}
   <button
-    type="button"
-    onClick={onEnter}
-    className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#195737] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md sm:w-fit sm:min-w-[190px]"
-  >
-    <LogIn className="h-5 w-5" />
-    Masuk Portal
-  </button>
+  type="button"
+  onClick={onEnter}
+  className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#195737] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md"
+>
+  <LogIn className="h-5 w-5" />
+  Masuk Portal
+  </button> 
 
   {/* Tiga tombol di bawahnya */}
   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
