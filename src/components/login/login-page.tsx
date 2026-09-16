@@ -268,7 +268,23 @@ export function LoginPage() {
 // RIGHT PANEL: LANDING
 // ==========================================================================
 
-function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfilBidang, onTentang, onVisiMisi }: { onEnter: () => void; onPrograms: () => void; onPendaftaran: () => void; onCekStatus: () => void; onProfilBidang: () => void; onTentang: () => void; onVisiMisi: () => void }) {
+function LandingRight({
+  onEnter,
+  onPrograms,
+  onPendaftaran,
+  onCekStatus,
+  onProfilBidang,
+  onTentang,
+  onVisiMisi,
+}: {
+  onEnter: () => void
+  onPrograms: () => void
+  onPendaftaran: () => void
+  onCekStatus: () => void
+  onProfilBidang: () => void
+  onTentang: () => void
+  onVisiMisi: () => void
+}) {
   return (
     <motion.div
       key="landing-right"
@@ -276,139 +292,244 @@ function LandingRight({ onEnter, onPrograms, onPendaftaran, onCekStatus, onProfi
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.4 }}
-      className="flex-1 lg:flex-1 relative flex items-center px-5 sm:px-12 lg:px-16 pt-24 sm:pt-28 pb-8 sm:pb-12 bg-[#FFFEF9] overflow-hidden"
+      className="relative flex min-h-screen flex-1 flex-col overflow-hidden bg-[#FFFEF9]"
     >
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2/3 h-2/3 opacity-[0.04] pointer-events-none hidden lg:block">
-        <svg viewBox="0 0 400 500" fill="none" className="w-full h-full text-amber-800">
-          <path d="M200 20L20 180h360L200 20z" stroke="currentColor" strokeWidth="1" fill="none" />
-          <path d="M60 180v260h280V180" stroke="currentColor" strokeWidth="1" fill="none" />
-          <path d="M200 20v-10m0 490v-20M20 180h-10m380 0h10" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="200" cy="100" r="30" stroke="currentColor" strokeWidth="0.8" fill="none" />
-          <path d="M200 130v50m-20 0h40" stroke="currentColor" strokeWidth="0.8" />
-          <rect x="140" y="220" width="120" height="80" rx="4" stroke="currentColor" strokeWidth="0.8" fill="none" />
-          <path d="M140 260h120m-60-40v80" stroke="currentColor" strokeWidth="0.5" />
-          <path d="M80 180v120m240-120v120" stroke="currentColor" strokeWidth="0.5" />
-          <path d="M100 300l100 120 100-120" stroke="currentColor" strokeWidth="0.8" fill="none" />
+      {/* Dekorasi latar */}
+      <div className="pointer-events-none absolute right-0 top-1/2 hidden h-2/3 w-2/3 -translate-y-1/2 opacity-[0.04] lg:block">
+        <svg
+          viewBox="0 0 400 500"
+          fill="none"
+          className="h-full w-full text-amber-800"
+        >
+          <path
+            d="M200 20L20 180h360L200 20z"
+            stroke="currentColor"
+            strokeWidth="1"
+            fill="none"
+          />
+          <path
+            d="M60 180v260h280V180"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
+          <path
+            d="M200 20v-10m0 490v-20M20 180h-10m380 0h10"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <circle
+            cx="200"
+            cy="100"
+            r="30"
+            stroke="currentColor"
+            strokeWidth="0.8"
+            fill="none"
+          />
+          <path
+            d="M200 130v50m-20 0h40"
+            stroke="currentColor"
+            strokeWidth="0.8"
+          />
+          <rect
+            x="140"
+            y="220"
+            width="120"
+            height="80"
+            rx="4"
+            stroke="currentColor"
+            strokeWidth="0.8"
+            fill="none"
+          />
+          <path
+            d="M140 260h120m-60-40v80"
+            stroke="currentColor"
+            strokeWidth="0.5"
+          />
+          <path
+            d="M80 180v120m240-120v120"
+            stroke="currentColor"
+            strokeWidth="0.5"
+          />
+          <path
+            d="M100 300l100 120 100-120"
+            stroke="currentColor"
+            strokeWidth="0.8"
+            fill="none"
+          />
         </svg>
       </div>
 
-      {/* ===== TRANSPARENT HEADER ===== */}
-      {/* Layout mengikuti referensi: empty left | center menus | right buttons */}
-    <header className="absolute inset-x-0 top-0 z-30 px-4 py-4 sm:px-8 lg:px-6">
-  <nav className="flex w-full items-center justify-start gap-2 overflow-x-auto whitespace-nowrap pl-2 sm:gap-5 sm:pl-6 lg:gap-7 lg:pl-10">
-    <button
-      type="button"
-      onClick={onProfilBidang}
-      className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
-    >
-      Profil Bidang
-    </button>
+      {/* Header */}
+      <header className="relative z-30 border-b border-slate-200/60 bg-[#FFFEF9]/95 px-5 py-4 backdrop-blur-sm sm:px-8 lg:px-10">
+        <div className="flex items-center justify-between gap-4">
+          {/* Logo dan nama aplikasi */}
+          <div className="flex min-w-0 shrink-0 items-center gap-2.5 sm:gap-3">
+            <LogoPancaCita
+              size={58}
+              className="drop-shadow-md sm:h-[66px] sm:w-[66px]"
+            />
 
-    <button
-      type="button"
-      onClick={onTentang}
-       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
-    >
-      Tentang
-    </button>
+            <div className="leading-tight">
+              <p className="font-serif-georgia text-sm font-bold tracking-wide text-[#195737] sm:text-base lg:text-lg">
+                SIKOMPETENSI
+              </p>
+              <p className="font-serif-georgia text-[10px] font-semibold tracking-[0.24em] text-slate-600 sm:text-xs lg:text-sm">
+                ACEH
+              </p>
+            </div>
+          </div>
 
-    <button
-      type="button"
-      onClick={onVisiMisi}
-       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
-    >
-      Visi & Misi
-    </button>
-
-    <button
-      type="button"
-      onClick={onPrograms}
-       className="shrink-0 cursor-pointer rounded-md px-2 py-2 text-base font-bold text-slate-800 transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-105 hover:bg-slate-100 hover:text-[#195737] active:scale-95"
-    >
-      Program Aktif
-    </button>
-  </nav>
-</header>
-      <div className="relative z-10 max-w-xl w-full">
-        <h1 className="font-serif-georgia text-xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight">
-          Mewujudkan ASN Aceh yang Kompeten, Profesional & <span className="text-[#195737]">Berintegritas.</span>
-        </h1>
-        <p className="text-slate-500 text-sm sm:text-base mt-4 sm:mt-6 leading-relaxed max-w-lg">
-          Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan 
-          berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
-        </p>
-        <div className="mt-8 sm:mt-10">
-          {/* Desktop: semua tombol dalam satu baris */}
-          <div className="hidden lg:flex flex-wrap gap-3">
+          {/* Menu navigasi */}
+          <nav className="hidden items-center justify-center gap-4 md:flex lg:gap-6">
             <button
-              onClick={onEnter}
-              className="flex items-center gap-2.5 px-8 py-3 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200"
+              type="button"
+              onClick={onProfilBidang}
+              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
             >
-              <LogIn className="w-5 h-5" />
+              Profil Bidang
+            </button>
+
+            <button
+              type="button"
+              onClick={onTentang}
+              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+            >
+              Tentang
+            </button>
+
+            <button
+              type="button"
+              onClick={onVisiMisi}
+              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+            >
+              Visi & Misi
+            </button>
+
+            <button
+              type="button"
+              onClick={onPrograms}
+              className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+            >
+              Program Aktif
+            </button>
+          </nav>
+
+          {/* Tombol Masuk Portal */}
+          <button
+            type="button"
+            onClick={onEnter}
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[#195737] px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md sm:gap-2 sm:px-4 sm:text-sm"
+          >
+            <LogIn className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span>Masuk Portal</span>
+          </button>
+        </div>
+
+        {/* Navigasi mobile */}
+        <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 md:hidden">
+          <button
+            type="button"
+            onClick={onProfilBidang}
+            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+          >
+            Profil Bidang
+          </button>
+
+          <button
+            type="button"
+            onClick={onTentang}
+            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+          >
+            Tentang
+          </button>
+
+          <button
+            type="button"
+            onClick={onVisiMisi}
+            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+          >
+            Visi & Misi
+          </button>
+
+          <button
+            type="button"
+            onClick={onPrograms}
+            className="shrink-0 rounded-md bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700"
+          >
+            Program Aktif
+          </button>
+        </nav>
+      </header>
+
+      {/* Konten utama */}
+      <main className="relative z-10 flex flex-1 items-center px-5 py-10 sm:px-10 sm:py-14 lg:px-16">
+        <div className="w-full max-w-2xl">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-[#195737] sm:text-sm">
+            Sistem Informasi Kompetensi Teknis
+          </p>
+
+          <h1 className="font-serif-georgia text-3xl font-bold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            Mewujudkan ASN Aceh yang Kompeten, Profesional &{' '}
+            <span className="text-[#195737]">Berintegritas.</span>
+          </h1>
+
+          <p className="mt-5 max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">
+            Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan
+            berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
+          </p>
+
+          {/* Tombol utama seperti pada gambar referensi */}
+          <div className="mt-8 flex flex-wrap gap-3 sm:mt-10">
+            <button
+              type="button"
+              onClick={onEnter}
+              className="flex items-center gap-2.5 rounded-xl bg-[#195737] px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md sm:px-7"
+            >
+              <LogIn className="h-5 w-5" />
               Masuk Portal
             </button>
+
             <button
+              type="button"
               onClick={onPrograms}
-              className="relative z-10 flex items-center gap-3 px-10 py-4 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
+              className="flex items-center gap-2.5 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:text-[#195737] hover:shadow-sm"
             >
-              <Search className="w-5 h-5" />
+              <Search className="h-5 w-5" />
               Jelajahi Program
             </button>
+
             <button
+              type="button"
               onClick={onPendaftaran}
-              className="cursor-pointer flex items-center gap-3 px-10 py-4 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center gap-2.5 rounded-xl border-2 border-[#195737]/40 bg-white px-5 py-3.5 text-sm font-semibold text-[#195737] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#195737] hover:bg-[#195737] hover:text-white hover:shadow-md"
             >
-              <ClipboardList className="w-6 h-6" />
+              <ClipboardList className="h-5 w-5" />
               Pendaftaran Pelatihan
             </button>
+
             <button
+              type="button"
               onClick={onCekStatus}
-              className="cursor-pointer flex items-center gap-3 px-10 py-4 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-bold text-base rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+              className="flex items-center gap-2.5 rounded-xl border-2 border-[#0F4C81]/40 bg-white px-5 py-3.5 text-sm font-semibold text-[#0F4C81] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0F4C81] hover:bg-[#0F4C81] hover:text-white hover:shadow-md"
             >
-              <FileCheck2 className="w-6 h-6" />
-              Cek Status Pendaftaran
+              <FileCheck2 className="h-5 w-5" />
+              Cek Status
             </button>
           </div>
 
-          {/* Mobile: primary CTA full-width + grid 2 kolom untuk aksi sekunder */}
-          <div className="lg:hidden space-y-3">
-            <button
-              onClick={onEnter}
-              className="w-full cursor-pointer flex items-center gap-2.5 px-6 py-3.5 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-sm rounded-xl transition-colors duration-200 shadow-sm"
-            >
-              <LogIn className="w-5 h-5" />
-              Masuk Portal
-            </button>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={onPendaftaran}
-                className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-[#195737]/40 hover:bg-[#195737] hover:text-white hover:border-[#195737] text-[#195737] font-semibold text-xs sm:text-sm rounded-xl transition-all duration-200"
-              >
-                <ClipboardList className="w-5 h-5" />
-                Pendaftaran
-              </button>
-              <button
-                onClick={onCekStatus}
-                className="flex items-center justify-center gap-2 px-3 py-3 border-2 border-[#0F4C81]/40 hover:bg-[#0F4C81] hover:text-white hover:border-[#0F4C81] text-[#0F4C81] font-semibold text-xs sm:text-sm rounded-xl transition-all duration-200"
-              >
-                <FileCheck2 className="w-5 h-5" />
-                Cek Status
-              </button>
-            </div>
-            <button
-              onClick={onPrograms}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 hover:border-[#195737]/40 hover:text-[#195737] text-slate-700 font-medium text-sm rounded-xl transition-colors duration-200"
-            >
-              <Search className="w-5 h-5" />
-              Jelajahi Program
-            </button>
+          {/* Keterangan tambahan */}
+          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-400 sm:mt-12">
+            <span>Pelatihan ASN</span>
+            <span>•</span>
+            <span>Sertifikasi Kompetensi</span>
+            <span>•</span>
+            <span>BPSDM Aceh</span>
           </div>
         </div>
-      </div>
+      </main>
     </motion.div>
   )
 }
-
 // ==========================================================================
 // RIGHT PANEL: PROGRAMS CATALOG
 // ==========================================================================
