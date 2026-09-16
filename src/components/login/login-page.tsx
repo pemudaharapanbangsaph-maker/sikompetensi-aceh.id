@@ -360,17 +360,14 @@ function LandingRight({
       </div>
 
      {/* Header putih */}
-<header className="relative z-30 border-b border-slate-200/60 bg-[#FFFEF9]/95 px-5 py-4 backdrop-blur-sm sm:px-8 lg:px-10">
-  <div className="flex items-center justify-between gap-4">
-    {/* Ruang kosong kiri agar menu tetap berada di kanan/tengah */}
-    <div className="hidden flex-1 md:block" />
-
-    {/* Menu navigasi */}
-    <nav className="hidden items-center justify-center gap-4 md:flex lg:gap-6">
+<header className="relative z-30 border-b border-slate-200/60 bg-[#FFFEF9]/95 px-5 py-4 backdrop-blur-sm sm:px-10 lg:px-16">
+  <div className="flex items-center gap-4">
+    {/* Menu dibuat rata kiri dengan konten utama */}
+    <nav className="hidden items-center justify-start gap-4 md:flex lg:gap-6">
       <button
         type="button"
         onClick={onProfilBidang}
-        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
       >
         Profil Bidang
       </button>
@@ -378,7 +375,7 @@ function LandingRight({
       <button
         type="button"
         onClick={onTentang}
-        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
       >
         Tentang
       </button>
@@ -386,7 +383,7 @@ function LandingRight({
       <button
         type="button"
         onClick={onVisiMisi}
-        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
       >
         Visi & Misi
       </button>
@@ -394,17 +391,17 @@ function LandingRight({
       <button
         type="button"
         onClick={onPrograms}
-        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
+        className="rounded-md px-2 py-2 text-sm font-bold text-slate-800 transition-all hover:-translate-y-0.5 hover:bg-slate-100 hover:text-[#195737]"
       >
         Program Aktif
       </button>
     </nav>
 
-    {/* Tombol Masuk Portal di header */}
+    {/* Tombol tetap berada di sebelah kanan */}
     <button
       type="button"
       onClick={onEnter}
-      className="flex shrink-0 items-center gap-2 rounded-xl bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md"
+      className="ml-auto flex shrink-0 items-center gap-2 rounded-xl bg-[#195737] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#0F4227] hover:shadow-md"
     >
       <LogIn className="h-4 w-4 sm:h-5 sm:w-5" />
       <span>Masuk Portal</span>
