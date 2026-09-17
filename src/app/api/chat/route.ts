@@ -333,7 +333,7 @@ async function callGemini(
     ],
   }
 
-    let response: Response | undefined
+  let response: Response | undefined
   let responseText = ''
 
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -382,40 +382,31 @@ async function callGemini(
     )
   }
 
-  let data: any
+    let data: any
 
   try {
     data = JSON.parse(responseText)
-    } catch (error) {
-    console.error('[CHAT API] Error lengkap:', {
+  } catch (error) {
+    console.error('[CHAT API] Response Gemini bukan JSON:', {
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      model: GEMINI_MODEL,
-      hasApiKey: Boolean(GEMINI_API_KEY),
+      body: responseText,
     })
 
-    if (error instanceof GeminiApiError) {
-      const errorMessage =
-        error.status === 503
-          ? 'Layanan AI sedang sibuk. Silakan coba lagi beberapa saat.'
-          : error.status === 429
-            ? 'Batas penggunaan layanan AI sedang tercapai. Silakan coba lagi nanti.'
-            : 'Layanan AI sedang mengalami gangguan.'
-
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: error.status }
-      )
-    }
-
-    return NextResponse.json(
-      {
-        error:
-          'Maaf, terjadi kesalahan pada layanan chat. Silakan coba lagi beberapa saat kemudian.',
-      },
-      { status: 500 }
-    )
+    throw new Error('Response dari Gemini bukan JSON yang valid')
   }
+
+  const text =
+    data?.candidates?.[0]?.content?.parts
+      ?.map((part: { text?: string }) => part.text || '')
+      .join('')
+      .trim() || ''
+
+  if (!text) {
+    console.error('[CHAT API] Response Gemini tidak berisi teks:', data)
+    throw new Error('Gemini tidak mengembalikan jawaban')
+  }
+
+  return text
 }
 // ====================================================================
 // POST HANDLER
@@ -423,16 +414,16 @@ async function callGemini(
 export async function POST(request: Request) {
   try {
     // Cek API key
-    if (!GEMINI_API_KEY) {
-  console.error('[CHAT API] GEMINI_API_KEY belum dikonfigurasi')
+       if (!GEMINI_API_KEY) {
+      console.error('[CHAT API] GEMINI_API_KEY belum dikonfigurasi')
 
-  return NextResponse.json(
-    {
-      error: 'Layanan chat belum dikonfigurasi oleh administrator.',
-    },
-    { status: 503 }
-  )
-}
+      return NextResponse.json(
+        {
+          error: 'Layanan chat belum dikonfigurasi oleh administrator.',
+        },
+        { status: 503 }
+      )
+    }
     const body = await request.json()
     const { message, sessionId } = body
 
@@ -507,13 +498,27 @@ export async function POST(request: Request) {
       response: aiResponse,
       sessionId: sid,
     })
-     } catch (error) {
+      } catch (error) {
     console.error('[CHAT API] Error lengkap:', {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       model: GEMINI_MODEL,
       hasApiKey: Boolean(GEMINI_API_KEY),
     })
+
+    if (error instanceof GeminiApiError) {
+      const errorMessage =
+        error.status === 503
+          ? 'Layanan AI sedang sibuk. Silakan coba lagi beberapa saat.'
+          : error.status === 429
+            ? 'Batas penggunaan layanan AI sedang tercapai. Silakan coba lagi nanti.'
+            : 'Layanan AI sedang mengalami gangguan.'
+
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: error.status }
+      )
+    }
 
     return NextResponse.json(
       {
