@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { NextResponse } from 'next'
 export const runtime = 'nodejs'
 
 // ====================================================================
@@ -468,7 +467,7 @@ export async function POST(request: Request) {
       response: aiResponse,
       sessionId: sid,
     })
-    } catch (error) {
+     } catch (error) {
     console.error('[CHAT API] Error lengkap:', {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
@@ -484,6 +483,7 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
 
 // ====================================================================
 // DELETE HANDLER - Reset percakapan
@@ -492,11 +492,16 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
+
     if (sessionId) {
       conversations.delete(sessionId)
     }
+
     return NextResponse.json({ success: true })
   } catch {
-    return NextResponse.json({ success: false }, { status: 500 })
+    return NextResponse.json(
+      { success: false },
+      { status: 500 }
+    )
   }
 }
