@@ -15,6 +15,7 @@ const PUBLIC_ROUTES = [
   "/api/portal/pelatihan-list",
   "/api/programs/public",
   "/api/settings/logo",
+  "/api/chat",
 ];
 
 const SETUP_ROUTES = [
