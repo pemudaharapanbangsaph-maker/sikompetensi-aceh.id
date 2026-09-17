@@ -7,7 +7,7 @@ export const runtime = 'nodejs'
 // Set GEMINI_API_KEY di .env atau environment variable Hostinger
 // Dapatkan API key gratis di: https://aistudio.google.com/app/apikey
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
 class GeminiApiError extends Error {
   status: number
@@ -336,7 +336,7 @@ async function callGemini(
   let response: Response | undefined
   let responseText = ''
 
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     response = await fetch(GEMINI_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -360,7 +360,7 @@ async function callGemini(
       break
     }
 
-    const delay = 1000 * Math.pow(2, attempt)
+    const delay = 2000 * Math.pow(2, attempt)
     await new Promise((resolve) => setTimeout(resolve, delay))
   }
 
