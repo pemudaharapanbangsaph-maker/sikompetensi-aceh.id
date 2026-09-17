@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Eye, EyeOff, Lock, User, Loader2, AlertCircle, ArrowRight, BookOpen, Shield, ArrowLeft, Clock, GraduationCap, Building2, Target, Calendar, BarChart3, LogIn, Search, FileText, Upload as UploadIcon, ClipboardList, CheckCircle2, Smartphone, KeyRound, Printer, FileCheck2, XCircle, Hourglass, Info, Users } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogoPancaCita } from '@/components/shared/logo-pancacita'
+import { AdminPsktiChat } from '@/components/chat/admin-pskti-chat'
 
 type ViewMode = 'landing' | 'login' | 'programs' | 'pendaftaran' | 'cek-status' | 'profil-bidang' | 'tentang' | 'visi-misi'
 
@@ -260,6 +261,9 @@ export function LoginPage() {
           </AnimatePresence>
         </div>
       )}
+
+      {/* ===== FLOATING CHAT WIDGET: Admin PSKTI ===== */}
+      <AdminPsktiChat />
     </div>
   )
 }
