@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { NextResponse } from 'next'
+export const runtime = 'nodejs'
 
 // ====================================================================
 // CONFIGURATION
@@ -275,19 +277,25 @@ const MAX_MESSAGES = 20 // batasi history untuk hindari token berlebih
 // ====================================================================
 // GEMINI API CALL
 // ====================================================================
-async function callGemini(messages: Array<{ role: string; content: string }>): Promise<string> {
-  // Gemini menggunakan format: systemInstruction + contents[]
-  // role: "user" dan "model" (bukan "assistant")
+async function callGemini(
+  messages: Array<{ role: string; content: string }>
+): Promise<string> {
   const systemInstruction = {
     parts: [{ text: SYSTEM_PROMPT }],
   }
 
   const contents = messages
-    .filter((m) => m.role !== 'assistant' || m.content !== SYSTEM_PROMPT)
+    .filter(
+      (m) => !(m.role === 'assistant' && m.content === SYSTEM_PROMPT)
+    )
     .map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: m.content }],
     }))
+
+  if (contents.length === 0) {
+    throw new Error('Isi percakapan kosong')
+  }
 
   const requestBody = {
     systemInstruction,
@@ -299,41 +307,75 @@ async function callGemini(messages: Array<{ role: string; content: string }>): P
       topK: 40,
     },
     safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_MEDIUM_AND_ABOVE',
+      },
     ],
   }
 
   const response = await fetch(GEMINI_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(requestBody),
+    cache: 'no-store',
   })
 
+  const responseText = await response.text()
+
   if (!response.ok) {
-    const errorBody = await response.text()
-    console.error('[CHAT API] Gemini API error:', response.status, errorBody)
-    throw new Error(`Gemini API error: ${response.status}`)
+    console.error('[CHAT API] Gemini API error:', {
+      status: response.status,
+      body: responseText,
+      model: GEMINI_MODEL,
+      hasApiKey: Boolean(GEMINI_API_KEY),
+    })
+
+    throw new Error(`Gemini API gagal dengan status ${response.status}`)
   }
 
-  const data = await response.json()
+  let data: any
 
-  // Cek jika response diblokir safety settings
-  if (data.candidates && data.candidates.length === 0) {
-    return 'Maaf, saya tidak dapat memberikan jawaban untuk pertanyaan tersebut. Silakan coba pertanyaan lain atau hubungi BPSDM Aceh langsung.'
-  }
-
-  if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-    return data.candidates[0].content.parts[0].text
+  try {
+    data = JSON.parse(responseText)
+  } catch {
+    console.error('[CHAT API] Response Gemini bukan JSON:', responseText)
+    throw new Error('Response Gemini tidak valid')
   }
 
   if (data.promptFeedback?.blockReason) {
     return 'Maaf, pertanyaan Anda tidak dapat saya proses karena alasan keamanan. Silakan coba pertanyaan lain.'
   }
 
-  throw new Error('Invalid response format from Gemini')
+  if (!data.candidates || data.candidates.length === 0) {
+    return 'Maaf, saya tidak dapat memberikan jawaban untuk pertanyaan tersebut. Silakan coba pertanyaan lain atau hubungi BPSDM Aceh langsung.'
+  }
+
+  const text = data.candidates[0]?.content?.parts
+    ?.map((part: { text?: string }) => part.text || '')
+    .join('')
+    .trim()
+
+  if (!text) {
+    console.error('[CHAT API] Gemini tidak mengembalikan teks:', data)
+    throw new Error('Response Gemini tidak memiliki teks')
+  }
+
+  return text
 }
 
 // ====================================================================
@@ -343,16 +385,15 @@ export async function POST(request: Request) {
   try {
     // Cek API key
     if (!GEMINI_API_KEY) {
-      console.error('[CHAT API] GEMINI_API_KEY not set')
-      return NextResponse.json(
-        {
-          error:
-            'Layanan chat belum dikonfigurasi. Admin sistem perlu menambahkan GEMINI_API_KEY di environment variable. Dapatkan API key gratis di https://aistudio.google.com/app/apikey',
-        },
-        { status: 503 }
-      )
-    }
+  console.error('[CHAT API] GEMINI_API_KEY belum dikonfigurasi')
 
+  return NextResponse.json(
+    {
+      error: 'Layanan chat belum dikonfigurasi oleh administrator.',
+    },
+    { status: 503 }
+  )
+}
     const body = await request.json()
     const { message, sessionId } = body
 
@@ -427,17 +468,22 @@ export async function POST(request: Request) {
       response: aiResponse,
       sessionId: sid,
     })
-  } catch (error) {
-    console.error('[CHAT API] Error:', error)
+    } catch (error) {
+    console.error('[CHAT API] Error lengkap:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      model: GEMINI_MODEL,
+      hasApiKey: Boolean(GEMINI_API_KEY),
+    })
+
     return NextResponse.json(
       {
         error:
-          'Maaf, terjadi kesalahan pada sistem. Silakan coba beberapa saat lagi atau hubungi BPSDM Aceh via email bpsdm@acehprov.go.id.',
+          'Maaf, terjadi kesalahan pada layanan chat. Silakan coba lagi beberapa saat kemudian.',
       },
       { status: 500 }
     )
   }
-}
 
 // ====================================================================
 // DELETE HANDLER - Reset percakapan
