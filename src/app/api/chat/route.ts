@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 // ====================================================================
 // Set GEMINI_API_KEY di .env atau environment variable Hostinger
 // Dapatkan API key gratis di: https://aistudio.google.com/app/apikey
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AQ.Ab8RN6Iuul1_YX5bn75ojrO86J1Qi3vV9Y8QfASYqVKncFGUmg'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash-001'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
 
