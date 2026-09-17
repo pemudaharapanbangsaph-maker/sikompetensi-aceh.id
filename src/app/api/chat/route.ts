@@ -9,7 +9,15 @@ export const runtime = 'nodejs'
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash'
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
+class GeminiApiError extends Error {
+  status: number
 
+  constructor(status: number, message: string) {
+    super(message)
+    this.name = 'GeminiApiError'
+    this.status = status
+  }
+}
 // ====================================================================
 // SYSTEM PROMPT - Admin PSKTI
 // ====================================================================
@@ -325,16 +333,40 @@ async function callGemini(
     ],
   }
 
-  const response = await fetch(GEMINI_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-    cache: 'no-store',
-  })
+    let response: Response | undefined
+  let responseText = ''
 
-  const responseText = await response.text()
+  for (let attempt = 0; attempt < 3; attempt++) {
+    response = await fetch(GEMINI_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      cache: 'no-store',
+    })
+
+    responseText = await response.text()
+
+    if (response.ok) {
+      break
+    }
+
+    const retryableStatus = [429, 500, 502, 503, 504].includes(
+      response.status
+    )
+
+    if (!retryableStatus || attempt === 2) {
+      break
+    }
+
+    const delay = 1000 * Math.pow(2, attempt)
+    await new Promise((resolve) => setTimeout(resolve, delay))
+  }
+
+  if (!response) {
+    throw new Error('Tidak ada response dari Gemini API')
+  }
 
   if (!response.ok) {
     console.error('[CHAT API] Gemini API error:', {
@@ -344,39 +376,47 @@ async function callGemini(
       hasApiKey: Boolean(GEMINI_API_KEY),
     })
 
-    throw new Error(`Gemini API gagal dengan status ${response.status}`)
+    throw new GeminiApiError(
+      response.status,
+      `Gemini API gagal dengan status ${response.status}`
+    )
   }
 
   let data: any
 
   try {
     data = JSON.parse(responseText)
-  } catch {
-    console.error('[CHAT API] Response Gemini bukan JSON:', responseText)
-    throw new Error('Response Gemini tidak valid')
+    } catch (error) {
+    console.error('[CHAT API] Error lengkap:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      model: GEMINI_MODEL,
+      hasApiKey: Boolean(GEMINI_API_KEY),
+    })
+
+    if (error instanceof GeminiApiError) {
+      const errorMessage =
+        error.status === 503
+          ? 'Layanan AI sedang sibuk. Silakan coba lagi beberapa saat.'
+          : error.status === 429
+            ? 'Batas penggunaan layanan AI sedang tercapai. Silakan coba lagi nanti.'
+            : 'Layanan AI sedang mengalami gangguan.'
+
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: error.status }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        error:
+          'Maaf, terjadi kesalahan pada layanan chat. Silakan coba lagi beberapa saat kemudian.',
+      },
+      { status: 500 }
+    )
   }
-
-  if (data.promptFeedback?.blockReason) {
-    return 'Maaf, pertanyaan Anda tidak dapat saya proses karena alasan keamanan. Silakan coba pertanyaan lain.'
-  }
-
-  if (!data.candidates || data.candidates.length === 0) {
-    return 'Maaf, saya tidak dapat memberikan jawaban untuk pertanyaan tersebut. Silakan coba pertanyaan lain atau hubungi BPSDM Aceh langsung.'
-  }
-
-  const text = data.candidates[0]?.content?.parts
-    ?.map((part: { text?: string }) => part.text || '')
-    .join('')
-    .trim()
-
-  if (!text) {
-    console.error('[CHAT API] Gemini tidak mengembalikan teks:', data)
-    throw new Error('Response Gemini tidak memiliki teks')
-  }
-
-  return text
 }
-
 // ====================================================================
 // POST HANDLER
 // ====================================================================
