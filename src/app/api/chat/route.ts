@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server'
+import { mkdir, writeFile } from 'fs/promises'
+import path from 'path'
 export const runtime = 'nodejs'
 
 // ====================================================================
@@ -282,7 +284,23 @@ function sanitizeMessage(message: string): string {
   sanitized = sanitized.replace(/\b(08)\d{8,12}\b/g, '$1*********')
   return sanitized
 }
+function safeFilename(filename: string) {
+  return filename
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/\.\./g, '_')
+}
 
+async function createGeneratedFile(filename: string, content: string) {
+  const cleanFilename = safeFilename(filename)
+  const outputDir = path.join(process.cwd(), 'public', 'generated')
+
+  await mkdir(outputDir, { recursive: true })
+
+  const outputPath = path.join(outputDir, cleanFilename)
+  await writeFile(outputPath, content, 'utf8')
+
+  return `/generated/${cleanFilename}`
+}
 // ====================================================================
 // IN-MEMORY CONVERSATION STORE
 // ====================================================================
@@ -459,6 +477,21 @@ export async function POST(request: Request) {
         sessionId: sessionId || `anon-${Date.now()}`,
         blocked: true,
         blockedType: sensitiveCheck.type,
+      })
+    }
+        const fileCommand = message.match(
+      /^buat file\s+([a-zA-Z0-9._-]+)\s*:\s*([\s\S]+)$/i
+    )
+
+    if (fileCommand) {
+      const [, filename, content] = fileCommand
+      const fileUrl = await createGeneratedFile(filename, content)
+
+      return NextResponse.json({
+        success: true,
+        response: `File berhasil dibuat: ${filename}`,
+        fileUrl,
+        sessionId: sessionId || `anon-${Date.now()}`,
       })
     }
 
