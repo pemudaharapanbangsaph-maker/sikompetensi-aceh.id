@@ -36,7 +36,7 @@ interface PendaftaranItem {
   nomorHP: string
   email: string
   nomorRekening: string
-  npwp: number
+  npwp: string
   pelatihan: string
   pelatihanKategori: string
   pelatihanMetode: string
@@ -268,7 +268,7 @@ function PendaftaranListView() {
         )
       },
     },
-    { key: 'jumlahDokumen', header: 'Dok', render: (row) => <span className="text-center block font-medium">{row.jumlahDokumen}/2</span> },
+    { key: 'jumlahDokumen', header: 'Dok', render: (row) => <span className="text-center block font-medium">{row.jumlahDokumen}/4</span> },
     { key: 'createdAt', header: 'Tgl Daftar', render: (row) => <span className="text-slate-500 text-xs whitespace-nowrap">{formatTanggalSingkat(row.createdAt)}</span> },
   ]
 
@@ -677,7 +677,7 @@ function PendaftaranDokumenView() {
                   <tbody className="divide-y divide-slate-100">
                     {listData.map((item, idx) => {
                       const Icon = STATUS_ICON[item.status] || AlertCircle
-                      const docComplete = item.jumlahDokumen >= 2
+                      const docComplete = item.jumlahDokumen >= 4
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-2.5 px-3 text-slate-500 text-xs">{idx + 1}</td>
@@ -864,7 +864,7 @@ function PendaftaranDokumenView() {
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-bold text-slate-900">
-            Dokumen Unggahan ({data.dokumen?.length || 0}/2)
+            Dokumen Unggahan ({data.dokumen?.length || 0}/4)
           </CardTitle>
         </CardHeader>
         <CardContent>
