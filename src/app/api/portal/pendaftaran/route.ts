@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     await ensurePendaftaranEmailColumn()
 
     const body = await req.json()
-    const { nama, nip, pangkatGolongan, jenisKelamin, tempatLahir, tanggalLahir, jabatan, unitKerja, instansi, nomorHP, email, nomorRekening, npwp, pelatihanId } = body
+    const { nama, nip, pangkatGolongan, jenisKelamin, tempatLahir, tanggalLahir, jabatan, unitKerja, instansi, nomorHP, email, pelatihanId } = body
 
     // Validasi wajib
     if (!nama?.trim()) return NextResponse.json({ error: 'Nama wajib diisi' }, { status: 400 })
