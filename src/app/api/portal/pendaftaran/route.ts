@@ -49,8 +49,8 @@ export async function POST(req: Request) {
         instansi: instansi?.trim() || null,
         nomorHP: nomorHP?.trim() || null,
         email: email.trim(),
-        nomorRekening: nomorRekening?.trim() || null,
-        npwp: npwp?.trim() || null,
+        //nomorRekening: nomorRekening?.trim() || null,
+        //npwp: npwp?.trim() || null,
         analisisDiklatItemId: pelatihanId || null,
       },
     })
