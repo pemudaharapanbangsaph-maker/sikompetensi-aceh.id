@@ -1170,7 +1170,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 {renderField('unitKerja', 'Unit Kerja', { placeholder: 'Nama unit kerja/OPD' })}
                 {renderField('instansi', 'Instansi', { placeholder: 'Nama instansi/pemerintah', colSpan: true })}
                 {renderField('nomorHP', 'No. HP', { placeholder: '08xxxxxxxxxx' })}
-                {/* renderField('npwp', 'NPWP', { placeholder: 'Nomor NPWP' */})}
+                {/* renderField('npwp', 'NPWP', { placeholder: 'Nomor NPWP' })*/}
                 {renderField('email', 'Email', { type: 'email', placeholder: 'nama@email.com', maxLength: 191, colSpan: true })}
                 {renderField('nomorRekening', 'Nomor REK Bank Aceh', { placeholder: 'Nomor rekening Bank Aceh', colSpan: true })}
               </div>
