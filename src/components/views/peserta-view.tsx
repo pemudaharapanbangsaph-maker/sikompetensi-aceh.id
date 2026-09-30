@@ -554,6 +554,8 @@ function PesertaRiwayatView() {
 
   // Selected peserta (for riwayat detail)
   const [selectedId, setSelectedId] = useState<string>('')
+  // === Import nilai (Pre-Test & Post-Test) via Excel ===
+  const [nilaiImportLoading, setNilaiImportLoading] = useState(false)
   const [riwayat, setRiwayat] = useState<RiwayatData | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -642,9 +644,54 @@ function PesertaRiwayatView() {
     }
   }
 
-  const TIPE_DOKUMEN_LABELS: Record<string, string> = {
+    const TIPE_DOKUMEN_LABELS: Record<string, string> = {
     KTP: 'KTP', SURAT_TUGAS: 'Surat Tugas', NPWP: 'NPWP', REK_BANK: 'REK Bank Aceh',
   }
+
+  // === Handler: Download Template Nilai (Pre-Test & Post-Test) ===
+  const handleDownloadNilaiTemplate = () => {
+    if (!selectedAngkatanId) {
+      toast({ title: 'Pilih Angkatan', description: 'Pilih pelatihan/angkatan dulu sebelum download template', variant: 'destructive' })
+      return
+    }
+    api.angkatan.downloadNilaiTemplate(selectedAngkatanId)
+  }
+
+  // === Handler: Import Nilai dari Excel ===
+  const handleImportNilai = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!selectedAngkatanId) {
+      toast({ title: 'Pilih Angkatan', description: 'Pilih pelatihan/angkatan dulu sebelum import', variant: 'destructive' })
+      e.target.value = ''
+      return
+    }
+    const name = file.name.toLowerCase()
+    if (!name.endsWith('.xlsx') && !name.endsWith('.xls')) {
+      toast({ title: 'Format Salah', description: 'File harus .xlsx atau .xls', variant: 'destructive' })
+      e.target.value = ''
+      return
+    }
+    setNilaiImportLoading(true)
+    try {
+      const res = await api.angkatan.importNilai(selectedAngkatanId, file)
+      toast({
+        title: 'Import Berhasil',
+        description: `${res.message}${res.errors && res.errors.length > 0 ? ` (${res.errors.length} error)` : ''}`,
+      })
+      try {
+        const fresh = await api.angkatan.get(selectedAngkatanId)
+        if (fresh.peserta) setPesertaInAngkatan(fresh.peserta)
+      } catch { /* silent */ }
+    } catch (err) {
+      toast({ title: 'Import Gagal', description: (err as Error).message, variant: 'destructive' })
+    } finally {
+      setNilaiImportLoading(false)
+      e.target.value = ''
+    }
+  }
+
+  const selectedPeserta = pesertaInAngkatan.find((p) => p.pesertaId === selectedId)?.peserta || null
 
   const selectedPeserta = pesertaInAngkatan.find((p) => p.pesertaId === selectedId)?.peserta || null
   const pelatihanBiasa = riwayat?.angkatan || []
@@ -727,14 +774,61 @@ function PesertaRiwayatView() {
             <StatCard title="Total Peserta" value={pesertaInAngkatan.length} icon={Users} color="blue" />
           </div>
 
-          <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2 border-b border-slate-100">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#0F4C81]" /> Daftar Peserta
-                <span className="text-xs font-normal text-slate-400 ml-2">
-                  — Klik peserta untuk melihat riwayat pelatihan
-                </span>
-              </CardTitle>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#0F4C81]" /> Daftar Peserta
+                  <span className="text-xs font-normal text-slate-400 ml-2">
+                    — Klik peserta untuk melihat riwayat pelatihan
+                  </span>
+                </CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDownloadNilaiTemplate}
+                    disabled={!selectedAngkatanId}
+                    className="h-8 text-xs border-[#0F4C81] text-[#0F4C81] hover:bg-[#0F4C81]/10"
+                    title="Download template Excel untuk input nilai Pre-Test & Post-Test"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span className="hidden sm:inline">Template Nilai</span>
+                    <span className="sm:hidden">Template</span>
+                  </Button>
+                  <label className="cursor-pointer">
+                    <Button
+                      size="sm"
+                      asChild
+                      disabled={!selectedAngkatanId || nilaiImportLoading}
+                      className="h-8 text-xs bg-[#195737] hover:bg-[#0F4227] text-white"
+                      title="Upload file Excel berisi nilai Pre-Test & Post-Test"
+                    >
+                      <span>
+                        {nilaiImportLoading ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span className="hidden sm:inline">Mengimpor...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            <span className="hidden sm:inline">Import Nilai</span>
+                            <span className="sm:hidden">Import</span>
+                          </>
+                        )}
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                      onChange={handleImportNilai}
+                      disabled={nilaiImportLoading || !selectedAngkatanId}
+                    />
+                  </label>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <div className="max-h-[400px] overflow-y-auto">
