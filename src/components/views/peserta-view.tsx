@@ -692,7 +692,6 @@ function PesertaRiwayatView() {
   }
 
   const selectedPeserta = pesertaInAngkatan.find((p) => p.pesertaId === selectedId)?.peserta || null
-  
   const pelatihanBiasa = riwayat?.angkatan || []
   const totalPelatihan = pelatihanBiasa.length
   const selectedAngkatan = angkatanList.find((a) => a.id === selectedAngkatanId) || null
