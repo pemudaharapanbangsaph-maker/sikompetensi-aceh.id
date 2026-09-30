@@ -719,6 +719,9 @@ function PesertaPerKegiatanView() {
   const [syncResult, setSyncResult] = useState<{ added: number; skipped: number; skippedNames: string[]; message: string } | null>(null)
   const [syncDialogOpen, setSyncDialogOpen] = useState(false)
 
+  // === Import nilai (Pre-Test & Post-Test) via Excel ===
+  const [nilaiImportLoading, setNilaiImportLoading] = useState(false)
+  
   const angkatan = selectedId ? angkatanData : null
 
   useEffect(() => {
@@ -827,10 +830,50 @@ function PesertaPerKegiatanView() {
     api.angkatan.downloadPesertaTemplate(selectedId)
   }
 
-  const openImportDialog = () => {
+    const openImportDialog = () => {
     setImportFile(null)
     setImportResult(null)
     setImportOpen(true)
+  }
+
+  // === Handler: Download Template Nilai (Pre-Test & Post-Test) ===
+  const handleDownloadNilaiTemplate = () => {
+    if (!selectedId) {
+      toast({ title: 'Pilih Kegiatan', description: 'Pilih kegiatan/angkatan dulu sebelum download template', variant: 'destructive' })
+      return
+    }
+    api.angkatan.downloadNilaiTemplate(selectedId)
+  }
+
+  // === Handler: Import Nilai dari Excel ===
+  const handleImportNilai = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!selectedId) {
+      toast({ title: 'Pilih Kegiatan', description: 'Pilih kegiatan/angkatan dulu sebelum import', variant: 'destructive' })
+      e.target.value = ''
+      return
+    }
+    const name = file.name.toLowerCase()
+    if (!name.endsWith('.xlsx') && !name.endsWith('.xls')) {
+      toast({ title: 'Format Salah', description: 'File harus .xlsx atau .xls', variant: 'destructive' })
+      e.target.value = ''
+      return
+    }
+    setNilaiImportLoading(true)
+    try {
+      const res = await api.angkatan.importNilai(selectedId, file)
+      toast({
+        title: 'Import Berhasil',
+        description: `${res.message}${res.errors && res.errors.length > 0 ? ` (${res.errors.length} error)` : ''}`,
+      })
+      reloadAngkatan()
+    } catch (err) {
+      toast({ title: 'Import Gagal', description: (err as Error).message, variant: 'destructive' })
+    } finally {
+      setNilaiImportLoading(false)
+      e.target.value = ''
+    }
   }
 
   // ===== SYNC DARI PENDAFTAR =====
@@ -903,6 +946,45 @@ function PesertaPerKegiatanView() {
                 <Button onClick={handleDownloadTemplate} size="sm" variant="outline" className="h-9 border-slate-300 text-slate-600 hover:bg-slate-50">
                   <Download className="w-4 h-4" /> Template
                 </Button>
+                {/* === Tombol Template Nilai & Import Nilai (Pre-Test & Post-Test) === */}
+                <Button
+                  onClick={handleDownloadNilaiTemplate}
+                  disabled={!selectedId}
+                  size="sm"
+                  variant="outline"
+                  className="h-9 border-[#0F4C81] text-[#0F4C81] hover:bg-[#0F4C81]/10"
+                  title="Download template Excel untuk input nilai Pre-Test & Post-Test"
+                >
+                  <FileSpreadsheet className="w-4 h-4" /> Template Nilai
+                </Button>
+                <label className="cursor-pointer">
+                  <Button
+                    asChild
+                    disabled={!selectedId || nilaiImportLoading}
+                    size="sm"
+                    className="h-9 bg-[#195737] hover:bg-[#0F4227] text-white"
+                    title="Upload file Excel berisi nilai Pre-Test & Post-Test"
+                  >
+                    <span>
+                      {nilaiImportLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Mengimpor...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" /> Import Nilai
+                        </>
+                      )}
+                    </span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={handleImportNilai}
+                    disabled={nilaiImportLoading || !selectedId}
+                  />
+                </label>
                 <Button onClick={handleExportXls} disabled={!selectedId || pesertaList.length === 0} size="sm" variant="outline" className="h-9">
                   <FileSpreadsheet className="w-4 h-4" /> Excel
                 </Button>
