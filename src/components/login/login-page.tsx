@@ -878,7 +878,7 @@ function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, on
 
 const DOKUMEN_WAJIB = [
   { tipe: 'KTP', label: 'KTP', desc: 'Kartu Tanda Penduduk' },
-  // { tipe: 'NPWP', label: 'NPWP', desc: 'Kartu Nomor Pokok Wajib Pajak' },
+  { tipe: 'NPWP', label: 'NPWP', desc: 'Kartu Nomor Pokok Wajib Pajak' },
   { tipe: 'REK_BANK', label: 'REK Bank Aceh', desc: 'Bukti rekening Bank Aceh' },
 ]
 
@@ -932,7 +932,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
     nomorHP: 'No. HP wajib diisi',
     email: 'Email wajib diisi',
     nomorRekening: 'Nomor rekening wajib diisi',
-    //npwp: 'NPWP wajib diisi',
+    npwp: 'NPWP wajib diisi',
     pelatihanId: 'Pilih pelatihan yang diikuti',
   }
 
@@ -1170,7 +1170,7 @@ function PendaftaranRight({ onBack }: { onBack: () => void }) {
                 {renderField('unitKerja', 'Unit Kerja', { placeholder: 'Nama unit kerja/OPD' })}
                 {renderField('instansi', 'Instansi', { placeholder: 'Nama instansi/pemerintah', colSpan: true })}
                 {renderField('nomorHP', 'No. HP', { placeholder: '08xxxxxxxxxx' })}
-                {/* renderField('npwp', 'NPWP', { placeholder: 'Nomor NPWP' })*/}
+                {renderField('npwp', 'NPWP', { placeholder: 'Nomor NPWP' })}
                 {renderField('email', 'Email', { type: 'email', placeholder: 'nama@email.com', maxLength: 191, colSpan: true })}
                 {renderField('nomorRekening', 'Nomor REK Bank Aceh', { placeholder: 'Nomor rekening Bank Aceh', colSpan: true })}
               </div>
