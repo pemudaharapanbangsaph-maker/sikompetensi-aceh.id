@@ -117,8 +117,20 @@ export const api = {
         { method: 'POST', body: fd, headers: {} }
       )
     },
-    downloadPesertaTemplate: (id: string) => {
+        downloadPesertaTemplate: (id: string) => {
       window.location.href = `${BASE}/angkatan/${id}/peserta/import/template`
+    },
+    // === Import nilai Pre-Test & Post-Test via Excel ===
+    downloadNilaiTemplate: (id: string) => {
+      window.location.href = `${BASE}/angkatan/${id}/nilai/template`
+    },
+    importNilai: (id: string, file: File) => {
+      const fd = new FormData()
+      fd.append('file', file)
+      return request<{ success: boolean; imported: number; updated: number; skipped: number; errors?: string[]; message: string }>(
+        `/angkatan/${id}/nilai/import`,
+        { method: 'POST', body: fd, headers: {} }
+      )
     },
   },
 
