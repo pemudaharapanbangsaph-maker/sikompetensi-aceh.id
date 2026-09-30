@@ -22,7 +22,41 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       },
     })
     if (!item) return NextResponse.json({ error: 'Angkatan tidak ditemukan' }, { status: 404 })
-    return NextResponse.json(item)
+
+    // === Auto-compute nilaiAkhir dari data Evaluasi (PRE_TEST + POST_TEST) ===
+    // Alasan: tabel PesertaAngkatan punya field nilaiAkhir, tapi field ini tidak
+    // pernah di-update otomatis saat user input pre-test/post-test (yang disimpan
+    // di tabel Evaluasi). PDF export sudah compute on-the-fly; supaya tampilan
+    // "Peserta per Kegiatan" juga konsisten, kita augment response di sini.
+    const evaluasiMap = new Map<string, { preTest?: number; postTest?: number }>()
+    for (const ev of item.evaluasi || []) {
+      if (!ev.pesertaId) continue
+      if (ev.jenisEvaluasi !== 'PRE_TEST' && ev.jenisEvaluasi !== 'POST_TEST') continue
+      const entry = evaluasiMap.get(ev.pesertaId) || {}
+      if (ev.jenisEvaluasi === 'PRE_TEST') {
+        // Bisa multiple aspek — jumlahkan
+        entry.preTest = entry.preTest === undefined ? ev.nilai : entry.preTest + ev.nilai
+      } else {
+        entry.postTest = entry.postTest === undefined ? ev.nilai : entry.postTest + ev.nilai
+      }
+      evaluasiMap.set(ev.pesertaId, entry)
+    }
+
+    const pesertaAugmented = item.peserta.map((pa) => {
+      // Jika nilaiAkhir sudah ada, pakai apa adanya
+      if (pa.nilaiAkhir != null) return pa
+      // Compute dari evaluasi map
+      const ev = evaluasiMap.get(pa.pesertaId)
+      if (ev && ev.preTest !== undefined && ev.postTest !== undefined) {
+        const computed = (ev.preTest + ev.postTest) / 2
+        // Bulatkan ke 1 desimal supaya konsisten dengan PDF
+        const rounded = Math.round(computed * 10) / 10
+        return { ...pa, nilaiAkhir: rounded }
+      }
+      return pa
+    })
+
+    return NextResponse.json({ ...item, peserta: pesertaAugmented })
   } catch (e) {
     console.error('angkatan get error:', e)
     return NextResponse.json({ error: 'Gagal memuat data' }, { status: 500 })
