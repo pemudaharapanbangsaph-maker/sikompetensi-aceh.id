@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getSession, auditLog } from '@/lib/auth'
+
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -11,26 +12,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const [totalPelatihan, totalAngkatan, totalAsesor, totalAnalisis] = await Promise.all([
-  db.pelatihan.count({
-    where: { deleted: false },
-  }),
-  db.angkatan.count({
-    where: { pelatihan: { deleted: false }, deleted: false },
-  }),
-  db.asesor.count(),
-  db.analisisKebutuhan.count(),
-])
-
-// Count peserta unik yang terdaftar di angkatan (matching dengan grafik peserta per angkatan)
-const totalPesertaRaw = await db.pesertaAngkatan.findMany({
-  where: { 
-    peserta: { deleted: { not: true } }
-  },
-  select: { pesertaId: true },
-  distinct: ['pesertaId'],
-})
-const totalPeserta = totalPesertaRaw.length
+    const [totalPelatihan, totalAngkatan, totalPeserta, totalAsesor, totalAnalisis] = await Promise.all([
+      db.pelatihan.count({
+        where: { deleted: false },
+      }),
+      db.angkatan.count({
+        where: { pelatihan: { deleted: false }, deleted: false },
+      }),
+      // === Count PesertaAngkatan (total kepesertaan, bukan peserta unik) ===
+      // 1 peserta ikut multiple angkatan akan dihitung multiple kali
+      // Supaya konsisten dengan grafik peserta per angkatan (30 + 40 = 70)
+      db.pesertaAngkatan.count({
+        where: {
+          peserta: { deleted: { not: true } },
+        },
+      }),
+      db.asesor.count(),
+      db.analisisKebutuhan.count(),
+    ])
 
     const pelatihanBerjalan = await db.angkatan.count({
       where: { status: 'BERJALAN', pelatihan: { deleted: false }, deleted: false },
@@ -42,6 +41,7 @@ const totalPeserta = totalPesertaRaw.length
       db.pendaftaranPortal.count(),
       db.pendaftaranPortal.count({ where: { status: 'MENUNGGU' } }),
     ])
+
     // Trend: angkatan bulan ini vs bulan lalu
     const now = new Date()
     const startBulanIni = new Date(now.getFullYear(), now.getMonth(), 1)
