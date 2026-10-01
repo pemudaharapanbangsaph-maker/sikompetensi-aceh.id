@@ -16,7 +16,7 @@ export async function GET() {
       db.angkatan.count({
         where: { pelatihan: { deleted: false }, deleted: false },
       }),
-      db.peserta.count({ where: { deleted: false } }),
+      db.peserta.count({ where: { deleted: { not: true } } }),
       db.asesor.count(),
       db.analisisKebutuhan.count(),
     ])
