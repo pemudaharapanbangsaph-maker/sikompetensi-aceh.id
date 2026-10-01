@@ -11,17 +11,26 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const [totalPelatihan, totalAngkatan, totalPeserta, totalAsesor, totalAnalisis] = await Promise.all([
-      db.pelatihan.count({
-        where: { deleted: false },
-      }),
-      db.angkatan.count({
-        where: { pelatihan: { deleted: false }, deleted: false },
-      }),
-      db.peserta.count({ where: { deleted: { not: true } } }),
-      db.asesor.count(),
-      db.analisisKebutuhan.count(),
-    ])
+    const [totalPelatihan, totalAngkatan, totalAsesor, totalAnalisis] = await Promise.all([
+  db.pelatihan.count({
+    where: { deleted: false },
+  }),
+  db.angkatan.count({
+    where: { pelatihan: { deleted: false }, deleted: false },
+  }),
+  db.asesor.count(),
+  db.analisisKebutuhan.count(),
+])
+
+// Count peserta unik yang terdaftar di angkatan (matching dengan grafik peserta per angkatan)
+const totalPesertaRaw = await db.pesertaAngkatan.findMany({
+  where: { 
+    peserta: { deleted: { not: true } }
+  },
+  select: { pesertaId: true },
+  distinct: ['pesertaId'],
+})
+const totalPeserta = totalPesertaRaw.length
 
     const pelatihanBerjalan = await db.angkatan.count({
       where: { status: 'BERJALAN', pelatihan: { deleted: false }, deleted: false },
