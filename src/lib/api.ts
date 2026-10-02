@@ -254,7 +254,7 @@ export const api = {
   },
 
   // ===== Sertifikat =====
-  sertifikat: {
+    sertifikat: {
     list: (params?: Record<string, string | number | undefined>) => {
       const qs = params ? '?' + new URLSearchParams(
         Object.entries(params).filter(([, v]) => v !== undefined && v !== '').reduce((acc, [k, v]) => ({ ...acc, [k]: String(v) }), {} as Record<string, string>)
@@ -264,6 +264,11 @@ export const api = {
     get: (id: string) => request<Sertifikat>(`/sertifikat/${id}`),
     create: (data: FormData) =>
       request<Sertifikat>('/sertifikat', { method: 'POST', body: data, headers: {} }),
+    // === Edit data sertifikat (nomorSertifikat, tanggalTerbit, catatan, dll) ===
+    // Dipakai untuk update nomor sertifikat setelah upload.
+    // File PDF tidak bisa diganti via ini — gunakan upload ulang.
+    update: (id: string, data: Partial<{ nomorSertifikat: string; namaPeserta: string; namaKegiatan: string; tanggalTerbit: string; catatan: string }>) =>
+      request<Sertifikat>(`/sertifikat/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     remove: (id: string) => request<void>(`/sertifikat/${id}`, { method: 'DELETE' }),
     downloadFile: (id: string) => { window.location.href = `${BASE}/sertifikat/${id}/file` },
     viewFile: (id: string) => { window.open(`${BASE}/sertifikat/${id}/file`, '_blank', 'noopener,noreferrer') },
