@@ -1803,9 +1803,9 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
           paragraphs: [
             'Badan Pengembangan Sumber Daya Manusia Aceh',
             'Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti',
-            'JL. T.PANGLIMA NYAK MAKAM NO. 8 - LAMPINENG',
+            'JL. T.PANGLIMA NYAK MAKAM NO. 8 - LAMPINEUNG',
             'Telp : 0651 - : (0651) 7552564, Fax : (0651) 7552565 email : bpsdm[at]acehprov.go.id',
-            'Contact Person Admin Bidang (PKSTI): @Edo Mulyana - 08126910393',
+            'Contact Person Admin Bidang (PSKTI): @Edo Mulyana - 08126910393',
           ],
         },
       ],
@@ -1818,15 +1818,16 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
     return {
       eyebrow: 'Tentang',
       title: 'SIKOMPETENSI ACEH',
-      subtitle: 'Sistem Informasi Kompetensi Teknis — satu pintu untuk pengembangan kompetensi ASN Pemerintah Aceh.',
+      subtitle: 'Sistem Informasi Kompetensi Teknis - satu pintu untuk pengembangan kompetensi ASN Pemerintah Aceh.',
       icon: <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-[#195737]" />,
       sections: [
         {
           heading: 'Tentang Sistem',
           icon: <Info className="w-6 h-6" />,
           paragraphs: [
-            'SIKOMPETENSI ACEH (Sistem Informasi Kompetensi Teknis) adalah platform digital terintegrasi yang dikembangkan oleh BPSDM Aceh untuk mengelola seluruh siklus pengembangan kompetensi ASN di lingkungan Pemerintah Aceh.',
-            'Sistem ini mengintegrasikan pembelajaran formal, sosial, dan berbasis pengalaman dalam satu ekosistem yang terhubung — mulai dari analisis kebutuhan diklat, perencanaan program, pendaftaran peserta, pelaksanaan pelatihan, hingga penerbitan sertifikat.',
+            'SIKOMPETENSI ACEH (Sistem Informasi Kompetensi Teknis) adalah platform digital yang dikembangkan oleh BPSDM Aceh untuk mendukung pengelolaan dan pelaksanaan pengembangan kompetensi ASN di lingkungan Pemerintah Aceh.',
+            'Melalui sistem ini, program pengembangan kompetensi yang telah ditetapkan oleh bidang dapat disajikan dalam satu portal, sehingga ASN dapat melihat program yang tersedia, memilih program sesuai kebutuhan dan persyaratan, serta melakukan pendaftaran secara terintegrasi.',
+            'SIKOMPETENSI ACEH mendukung proses pengembangan kompetensi secara terpadu, mulai dari perencanaan program, publikasi program, pendaftaran peserta, pelaksanaan kegiatan, hingga pengelolaan hasil dan sertifikasi kompetensi.'
           ],
         },
         {
@@ -1838,7 +1839,7 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
           cards: [
             { icon: <Target className="w-5 h-5 text-[#195737]" />, title: 'Analisis Kebutuhan Diklat', description: 'Identifikasi kebutuhan pelatihan berbasis kompetensi dan prioritas RPJMA.' },
             { icon: <Calendar className="w-5 h-5 text-[#195737]" />, title: 'Manajemen Pelatihan', description: 'Kelola jadwal, angkatan, dan peserta pelatihan secara terpusat.' },
-            { icon: <FileCheck2 className="w-5 h-5 text-[#195737]" />, title: 'Sertifikasi Digital', description: 'Penerbitan dan pengelolaan sertifikat pelatihan dalam format digital.' },
+            { icon: <FileCheck2 className="w-5 h-5 text-[#195737]" />, title: 'Sertifikasi Digital', description: 'Pengarsipan sertifikat pelatihan dalam format digital.' },
             { icon: <ClipboardList className="w-5 h-5 text-[#195737]" />, title: 'Portal Pendaftaran', description: 'Pendaftaran online untuk program pelatihan dan cek status real-time.' },
             { icon: <BarChart3 className="w-5 h-5 text-[#195737]" />, title: 'Dashboard & Laporan', description: 'Monitoring capaian dan laporan komprehensif untuk pengambilan keputusan.' },
             { icon: <Shield className="w-5 h-5 text-[#195737]" />, title: 'Keamanan Data', description: 'Sistem berlapis dengan otentikasi 2FA dan audit log untuk keamanan data ASN.' },
@@ -1851,10 +1852,10 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
             'SIKOMPETENSI ACEH melayani berbagai peran dalam ekosistem pengembangan kompetensi:',
           ],
           list: [
-            'SUPER ADMIN — Kelola seluruh sistem, user, dan konfigurasi',
-            'ADMIN BIDANG — Kelola data pelatihan, peserta, dan sertifikat',
-            'OPERATOR — Input data harian dan manajemen pelaksanaan',
-            'ASN/Peserta — Daftar pelatihan dan cek status pendaftaran',
+            'SUPER ADMIN - Kelola seluruh sistem, user, dan konfigurasi',
+            'ADMIN BIDANG - Kelola data pelatihan, peserta, dan sertifikat',
+            'OPERATOR - Input data harian dan manajemen pelaksanaan',
+            'ASN/Peserta - Daftar pelatihan dan cek status pendaftaran',
           ],
         },
       ],
@@ -1874,7 +1875,7 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
         heading: 'Visi',
         icon: <Target className="w-6 h-6" />,
         paragraphs: [
-          'Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas melalui pengembangan kompetensi teknis yang terpadu dan berkelanjutan.',
+          'Terwujudnya kompetensi teknis ASN Pemerintah Aceh yang profesional, berintegritas, dan sesuai dengan kebutuhan penyelenggaraan pemerintahan.',
         ],
       },
       {
@@ -1884,12 +1885,12 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
           'Untuk mewujudkan visi tersebut, Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti menjalankan misi:',
         ],
         list: [
-          'Menyelenggarakan analisis kebutuhan diklat teknis yang akurat dan berbasis data',
-          'Menyediakan program pelatihan teknis yang relevan dengan kebutuhan Pemerintah Aceh',
-          'Menyelenggarakan uji kompetensi dan sertifikasi yang kredibel dan bermutu',
-          'Mengembangkan ekosistem pembelajaran berbasis teknologi digital',
-          'Membangun budaya belajar berkelanjutan bagi ASN Pemerintah Aceh',
-          'Menjalin kemitraan dengan institusi pendidikan dan industri',
+          'Mengembangkan Kompetensi Teknis - Menyusun dan menyelenggarakan program pengembangan kompetensi teknis inti yang sesuai dengan kebutuhan penyelenggaraan urusan pemerintahan dan perangkat daerah.',
+          'Menjamin Relevansi dan Standar Pembelajaran - Mengembangkan standar dan perangkat pembelajaran kompetensi teknis inti yang mendukung peningkatan kualitas dan profesionalisme ASN.',
+          'Memperkuat Uji dan Sertifikasi Kompetensi - Menyelenggarakan uji kompetensi dan sertifikasi kompetensi teknis inti secara objektif, terukur, dan sesuai standar yang ditetapkan.',
+          'Memperluas Fasilitasi dan Kemitraan - Membangun sinergi dan pola kemitraan dengan SKPA, pemerintah kabupaten/kota, instansi vertikal, dan lembaga terkait dalam pengembangan serta uji kompetensi teknis.',
+          'Meningkatkan Kualitas Pengelolaan Program - Melaksanakan pembinaan, fasilitasi, pemantauan, evaluasi, dan pelaporan untuk memastikan pengembangan kompetensi teknis berjalan secara efektif dan berkelanjutan.',
+          'Mendorong Pengembangan Kompetensi Berbasis Kebutuhan - Mendukung pengembangan kompetensi ASN berdasarkan kebutuhan jabatan dan penyelenggaraan urusan pemerintahan sehingga kompetensi yang dikembangkan dapat diterapkan dalam pelaksanaan tugas dan pelayanan kepada masyarakat.',
         ],
       },
       {
@@ -1899,16 +1900,18 @@ function getContent(pageType: 'profil-bidang' | 'tentang' | 'visi-misi'): PageCo
           'Dalam pelaksanaan tugas, kami berpegang pada nilai-nilai:',
         ],
         cards: [
-          { icon: <CheckCircle2 className="w-5 h-5 text-[#195737]" />, title: 'Integritas', description: 'Menjunjung tinggi kejujuran, transparansi, dan akuntabilitas.' },
-          { icon: <Target className="w-5 h-5 text-[#195737]" />, title: 'Profesional', description: 'Bekerja dengan kompetensi, dedikasi, dan standar tertinggi.' },
-          { icon: <BookOpen className="w-5 h-5 text-[#195737]" />, title: 'Inovasi', description: 'Terus belajar dan mengembangkan metode pembelajaran terkini.' },
+          { icon: <CheckCircle2 className="w-5 h-5 text-[#195737]" />, title: 'Integritas', description: 'Menjalankan pengembangan dan sertifikasi kompetensi secara objektif, transparan, akuntabel, dan bertanggung jawab.' },
+          { icon: <Target className="w-5 h-5 text-[#195737]" />, title: 'Profesional', description: 'Mengembangkan kompetensi berdasarkan standar, kebutuhan jabatan, dan tuntutan penyelenggaraan pemerintahan..' },
+          { icon: <BookOpen className="w-5 h-5 text-[#195737]" />, title: 'Kualitas', description: 'Mengutamakan mutu dalam penyusunan program, pembelajaran, pelaksanaan pengembangan kompetensi, serta uji dan sertifikasi.' },
+          { icon: <BookOpen className="w-5 h-5 text-[#195737]" />, title: 'Kolaborasi', description: 'Membangun sinergi dengan SKPA, pemerintah kabupaten/kota, instansi vertikal, dan mitra terkait dalam pengembangan kompetensi teknis.' },
+          { icon: <BookOpen className="w-5 h-5 text-[#195737]" />, title: 'Berkelanjutan', description: 'Mendorong pengembangan kompetensi yang berkesinambungan sesuai perubahan kebutuhan pemerintahan dan perkembangan tuntutan pelayanan publik.' },
         ],
       },
       {
         heading: 'Tujuan',
         icon: <BarChart3 className="w-6 h-6" />,
         paragraphs: [
-          'Tercapainya ASN Aceh yang memiliki kompetensi teknis sesuai standar nasional dan internasional, mampu memberikan pelayanan publik prima, serta berkontribusi nyata terhadap pembangunan Aceh yang maju dan berkelanjutan.',
+          'Meningkatnya kualitas kompetensi teknis ASN Pemerintah Aceh melalui pengembangan kompetensi, uji kompetensi, dan sertifikasi teknis inti yang sesuai dengan kebutuhan penyelenggaraan pemerintahan.',
         ],
       },
     ],
