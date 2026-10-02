@@ -204,10 +204,10 @@ export function LoginPage() {
               </div>
               <p className="font-serif-georgia text-amber-300/90 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.3em]">Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti - BPSDM Aceh</p>
               <h2 className="font-serif-georgia text-white text-base sm:text-lg lg:text-xl font-bold mt-2.5 sm:mt-3 leading-snug max-w-sm mx-auto">
-                Mewujudkan ASN Aceh yang Kompeten, Profesional, dan Berintegritas.
+                Pusat Pengembangan Kompetensi ASN Aceh.
               </h2>
               <p className="font-serif-georgia text-white/55 text-xs mt-2.5 sm:mt-3 max-w-xs mx-auto leading-relaxed">
-                Satu pintu untuk pengembangan kompetensi, pelatihan, dan sertifikasi ASN Pemerintah Aceh.
+                Pilih program pengembangan kompetensi yang sudah di tentukan oleh Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti dan ikuti proses pendaftaran dalam satu sistem.
               </p>
             </div>
             <AnimatePresence>
@@ -455,13 +455,13 @@ function LandingRight({
           </p>
 
           <h1 className="font-serif-georgia text-3xl font-bold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            Mewujudkan ASN Aceh yang Kompeten, Profesional &{' '}
-            <span className="text-[#195737]">Berintegritas.</span>
+            Portal Pengembangan Kompetensi ASN &{' '}
+            <span className="text-[#195737]">Temukan Program Kompetensi yang Sesuai untuk Anda.</span>
           </h1>
 
           <p className="mt-5 max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">
-            Sikompetensi Aceh mengintegrasikan pembelajaran formal, sosial, dan
-            berbasis pengalaman dalam satu ekosistem pengembangan kompetensi ASN.
+            Jelajahi program yang tersedia, pilih pelatihan atau sertifikasi sesuai kebutuhan,
+            dan lakukan pendaftaran melalui SIKOMPETENSI ACEH.
           </p>
 
           {/* Tombol utama seperti pada gambar referensi */}
@@ -678,7 +678,7 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
       {/* Footer */}
       <div className="px-6 sm:px-10 py-4 border-t border-slate-200/60">
         <p className="text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh - Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -774,7 +774,7 @@ function LoginRight({
           </p>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh - Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
@@ -865,7 +865,7 @@ function TwoFARight({ email, totpCode, setTotpCode, error, setError, loading, on
           </Button>
         </form>
         <p className="text-center text-xs text-slate-400 mt-10">
-          © {new Date().getFullYear()} BPSDM Aceh — Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
+          © {new Date().getFullYear()} BPSDM Aceh - Bidang Pengembangan dan Sertifikasi Kompetensi Teknis Inti
         </p>
       </div>
     </motion.div>
