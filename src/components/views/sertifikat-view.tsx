@@ -19,7 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Download, Trash2, Plus, Save, X, FileText, Upload, Award, Eye, BookOpen, Users, CheckCircle2, Loader2 } from 'lucide-react'
+import { Download, Trash2, Plus, Save, X, FileText, Upload, Award, Eye, BookOpen, Users, CheckCircle2, Loader2, Pencil } from 'lucide-react'
 
 export function SertifikatView() {
   return (
@@ -73,6 +73,18 @@ function SertifikatDataTable({ jenis }: { jenis: string }) {
   const [deleteTarget, setDeleteTarget] = useState<Sertifikat | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // === State untuk Edit Sertifikat ===
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState<Sertifikat | null>(null)
+  const [editForm, setEditForm] = useState({
+    nomorSertifikat: '',
+    namaPeserta: '',
+    namaKegiatan: '',
+    tanggalTerbit: '',
+    catatan: '',
+  })
+  const [editSaving, setEditSaving] = useState(false)
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
@@ -116,6 +128,44 @@ function SertifikatDataTable({ jenis }: { jenis: string }) {
   const handleDownload = (item: Sertifikat) => { api.sertifikat.downloadFile(item.id) }
   const handleView = (item: Sertifikat) => { api.sertifikat.viewFile(item.id) }
 
+  // === Handler: Buka dialog Edit sertifikat ===
+  const openEdit = (item: Sertifikat) => {
+    setEditTarget(item)
+    // Format tanggal untuk input date (YYYY-MM-DD)
+    const tglTerbit = item.tanggalTerbit
+      ? new Date(item.tanggalTerbit).toISOString().split('T')[0]
+      : ''
+    setEditForm({
+      nomorSertifikat: item.nomorSertifikat || '',
+      namaPeserta: item.namaPeserta || '',
+      namaKegiatan: item.namaKegiatan || '',
+      tanggalTerbit: tglTerbit,
+      catatan: item.catatan || '',
+    })
+    setEditDialogOpen(true)
+  }
+
+  // === Handler: Simpan perubahan sertifikat ===
+  const handleEditSave = async () => {
+    if (!editTarget) return
+    setEditSaving(true)
+    try {
+      await api.sertifikat.update(editTarget.id, {
+        nomorSertifikat: editForm.nomorSertifikat,
+        namaPeserta: editForm.namaPeserta,
+        namaKegiatan: editForm.namaKegiatan,
+        tanggalTerbit: editForm.tanggalTerbit,
+        catatan: editForm.catatan,
+      })
+      toast({ title: 'Berhasil', description: 'Sertifikat berhasil diperbarui' })
+      setEditDialogOpen(false)
+      setEditTarget(null)
+      fetchData()
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally { setEditSaving(false) }
+  }
+
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleting(true)
@@ -145,6 +195,7 @@ function SertifikatDataTable({ jenis }: { jenis: string }) {
         rowKey={(r) => r.id} emptyMessage="Belum ada data sertifikat"
         actions={(row) => (
           <>
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-emerald-600" onClick={() => openEdit(row)} title="Edit"><Pencil className="w-4 h-4" /></Button>
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => handleView(row)} title="Lihat"><Eye className="w-4 h-4" /></Button>
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-[#0F4C81]" onClick={() => handleDownload(row)} title="Download"><Download className="w-4 h-4" /></Button>
             <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-500 hover:text-red-600" onClick={() => setDeleteTarget(row)} title="Hapus"><Trash2 className="w-4 h-4" /></Button>
@@ -179,6 +230,61 @@ function SertifikatDataTable({ jenis }: { jenis: string }) {
           <AlertDialogFooter><AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel><AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">{deleting ? 'Menghapus...' : 'Hapus'}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* === Dialog Edit Sertifikat === */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Pencil className="w-5 h-5 text-emerald-600" /> Edit Sertifikat</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+            <div className="sm:col-span-2 space-y-1.5">
+              <Label>Nomor Sertifikat</Label>
+              <Input
+                value={editForm.nomorSertifikat}
+                onChange={(e) => setEditForm({ ...editForm, nomorSertifikat: e.target.value })}
+                placeholder="Masukkan nomor sertifikat"
+              />
+              <p className="text-xs text-slate-400 mt-1">Nomor sertifikat yang akan tampil di kolom "No. Sertifikat"</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nama Peserta</Label>
+              <Input
+                value={editForm.namaPeserta}
+                onChange={(e) => setEditForm({ ...editForm, namaPeserta: e.target.value })}
+                placeholder="Nama lengkap peserta"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nama Kegiatan</Label>
+              <Input
+                value={editForm.namaKegiatan}
+                onChange={(e) => setEditForm({ ...editForm, namaKegiatan: e.target.value })}
+                placeholder="Nama pelatihan"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tanggal Terbit</Label>
+              <Input
+                type="date"
+                value={editForm.tanggalTerbit}
+                onChange={(e) => setEditForm({ ...editForm, tanggalTerbit: e.target.value })}
+              />
+            </div>
+            <div className="sm:col-span-2 space-y-1.5">
+              <Label>Catatan</Label>
+              <Textarea
+                value={editForm.catatan}
+                onChange={(e) => setEditForm({ ...editForm, catatan: e.target.value })}
+                placeholder="Catatan tambahan (opsional)"
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline" disabled={editSaving}><X className="w-4 h-4" /> Batal</Button></DialogClose>
+            <Button onClick={handleEditSave} disabled={editSaving} className="bg-emerald-600 hover:bg-emerald-700"><Save className="w-4 h-4" /> {editSaving ? 'Menyimpan...' : 'Simpan'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
@@ -191,6 +297,15 @@ function SertifikatByAngkatan() {
   const [pesertaLoading, setPesertaLoading] = useState(false)
   const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [sertifikatStatus, setSertifikatStatus] = useState<Record<string, boolean>>({})
+  // Map: pesertaId → sertifikatId (untuk edit nomor sertifikat)
+  const [sertifikatIds, setSertifikatIds] = useState<Record<string, string>>({})
+  // Map: pesertaId → nomor sertifikat saat ini (untuk tampilkan di UI)
+  const [sertifikatNomor, setSertifikatNomor] = useState<Record<string, string>>({})
+
+  // === State untuk Edit Nomor Sertifikat (inline) ===
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editNomor, setEditNomor] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
 
   useEffect(() => {
     api.angkatan.listAll().then(setAngkatanList).catch(() => toast({ title: 'Gagal', description: 'Gagal memuat daftar angkatan', variant: 'destructive' })).finally(() => setAngkatanLoading(false))
@@ -205,6 +320,8 @@ function SertifikatByAngkatan() {
 
   const checkSertifikatStatus = async (peserta: PesertaAngkatanView[]) => {
     const status: Record<string, boolean> = {}
+    const idsMap: Record<string, string> = {}
+    const nomorMap: Record<string, string> = {}
     await Promise.all(peserta.map(async (p) => {
       try {
         const res = await fetch(`/api/sertifikat?search=${encodeURIComponent(p.peserta?.nama || '')}&pageSize=100`, { credentials: 'same-origin' })
@@ -212,10 +329,16 @@ function SertifikatByAngkatan() {
           const data = await res.json()
           const existing = data.data?.find((s: Sertifikat) => s.pesertaId === p.pesertaId && s.angkatanId === selectedAngkatanId)
           status[p.pesertaId] = !!existing
+          if (existing) {
+            idsMap[p.pesertaId] = existing.id
+            nomorMap[p.pesertaId] = existing.nomorSertifikat || ''
+          }
         }
       } catch {}
     }))
     setSertifikatStatus(status)
+    setSertifikatIds(idsMap)
+    setSertifikatNomor(nomorMap)
   }
 
   const selectedAngkatan = angkatanList.find((a) => a.id === selectedAngkatanId) || null
@@ -237,6 +360,8 @@ function SertifikatByAngkatan() {
       await api.sertifikat.create(fd)
       toast({ title: 'Berhasil', description: `Sertifikat ${pesertaName} berhasil diupload` })
       setSertifikatStatus((prev) => ({ ...prev, [pesertaId]: true }))
+      // Refresh untuk dapat sertifikatId baru
+      checkSertifikatStatus(pesertaList)
     } catch (e) { toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' }) }
     finally { setUploadingId(null) }
   }
@@ -250,6 +375,38 @@ function SertifikatByAngkatan() {
       if (sertif) api.sertifikat.downloadFile(sertif.id)
       else toast({ title: 'Tidak ditemukan', description: 'Sertifikat belum diupload', variant: 'destructive' })
     } catch { toast({ title: 'Gagal', description: 'Gagal mencari sertifikat', variant: 'destructive' }) }
+  }
+
+  // === Handler: Mulai edit nomor sertifikat (inline) ===
+  const startEditNomor = (pesertaId: string) => {
+    setEditId(pesertaId)
+    setEditNomor(sertifikatNomor[pesertaId] || '')
+  }
+
+  // === Handler: Simpan nomor sertifikat yang diedit ===
+  const handleSaveNomor = async (pesertaId: string) => {
+    const sertifId = sertifikatIds[pesertaId]
+    if (!sertifId) {
+      toast({ title: 'Error', description: 'Sertifikat belum diupload', variant: 'destructive' })
+      return
+    }
+    setEditSaving(true)
+    try {
+      await api.sertifikat.update(sertifId, { nomorSertifikat: editNomor })
+      toast({ title: 'Berhasil', description: 'Nomor sertifikat disimpan' })
+      // Update state lokal
+      setSertifikatNomor((prev) => ({ ...prev, [pesertaId]: editNomor }))
+      setEditId(null)
+      setEditNomor('')
+    } catch (e) {
+      toast({ title: 'Gagal', description: (e as Error).message, variant: 'destructive' })
+    } finally { setEditSaving(false) }
+  }
+
+  // === Handler: Batal edit nomor sertifikat ===
+  const cancelEditNomor = () => {
+    setEditId(null)
+    setEditNomor('')
   }
 
   return (
@@ -288,16 +445,57 @@ function SertifikatByAngkatan() {
                 {pesertaList.map((pa, i) => {
                   const hasSertifikat = sertifikatStatus[pa.pesertaId]
                   const isUploading = uploadingId === pa.pesertaId
+                  const nomorSertifikat = sertifikatNomor[pa.pesertaId] || ''
+                  const isEditing = editId === pa.pesertaId
                   return (
                     <div key={pa.id} className="flex items-center justify-between px-4 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors gap-3">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><span className="text-xs font-semibold text-slate-600">{i + 1}</span></div>
-                        <div className="min-w-0"><p className="text-sm font-medium text-slate-900 truncate">{pa.peserta?.nama || '-'}</p><p className="text-xs text-slate-400 font-mono truncate">{pa.peserta?.nip || '-'}</p></div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-900 truncate">{pa.peserta?.nama || '-'}</p>
+                          <p className="text-xs text-slate-400 font-mono truncate">{pa.peserta?.nip || '-'}</p>
+                          {/* === Tampilkan Nomor Sertifikat (atau input edit inline) === */}
+                          {hasSertifikat && (
+                            isEditing ? (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <Input
+                                  value={editNomor}
+                                  onChange={(e) => setEditNomor(e.target.value)}
+                                  placeholder="Nomor sertifikat"
+                                  className="h-7 text-xs max-w-[200px]"
+                                  disabled={editSaving}
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveNomor(pa.pesertaId)
+                                    if (e.key === 'Escape') cancelEditNomor()
+                                  }}
+                                />
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-emerald-600" onClick={() => handleSaveNomor(pa.pesertaId)} disabled={editSaving} title="Simpan">
+                                  {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-slate-400" onClick={cancelEditNomor} disabled={editSaving} title="Batal">
+                                  <X className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                <span className="text-slate-400">No. Sertifikat:</span>{' '}
+                                <span className="font-mono font-medium text-[#0F4C81]">{nomorSertifikat || '-'}</span>
+                              </p>
+                            )
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {hasSertifikat ? (
                           <>
                             <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-xs"><CheckCircle2 className="w-3 h-3 mr-1" /> Sudah ada</Badge>
+                            {/* === Tombol Edit Nomor Sertifikat === */}
+                            {!isEditing && (
+                              <Button variant="outline" size="sm" onClick={() => startEditNomor(pa.pesertaId)} className="h-8 w-8 p-0 text-emerald-600 border-emerald-600/20 hover:bg-emerald-50" title="Edit nomor sertifikat">
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
                             <Button variant="outline" size="sm" onClick={() => handleDownloadSertifikat(pa.pesertaId)} className="h-8 w-8 p-0 text-[#0F4C81] border-[#0F4C81]/20 hover:bg-[#0F4C81]/5" title="Download"><Download className="w-3.5 h-3.5" /></Button>
                           </>
                         ) : (<Badge variant="outline" className="text-xs text-slate-400">Belum ada</Badge>)}
