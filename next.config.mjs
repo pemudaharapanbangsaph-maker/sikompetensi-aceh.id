@@ -23,8 +23,10 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: false,
 
-  // Sementara boleh digunakan, tetapi sebaiknya dimatikan
-  // setelah semua error TypeScript diperbaiki.
+  experimental: {
+    cpus: 2,
+  },
+
   typescript: {
     ignoreBuildErrors: true,
   },
