@@ -765,7 +765,7 @@ function LoginRight({
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" /><span>{info}</span>
             </div>
           )}
-          <Button type="submit" disabled={loading} className="login-btn w-full h-12 bg-[#195737] hover:bg-[#0F4227] text-white font-semibold text-base rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+          <Button type="submit" disabled={loading} className="login-btn w-full h-12 bg-[#0F4C81] hover:bg-[#0a3a63] text-white font-semibold text-base rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
             {loading ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses...</>) : 'Masuk'}
           </Button>
           <p className="text-center text-sm text-slate-500">
