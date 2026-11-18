@@ -570,7 +570,7 @@ function ProgramsRight({ onBack, onLogin }: { onBack: () => void; onLogin: () =>
           </div>
           <button
             onClick={onLogin}
-            className="flex items-center justify-center gap-2.5 px-6 py-3 bg-[#195737] hover:bg-[#0F4227] text-white text-sm font-semibold rounded-xl transition-colors duration-200 w-full sm:w-auto"
+            className="flex items-center justify-center gap-2.5 px-6 py-3 bg-[#0F4C81] hover:bg-[#0a3a63] text-white text-sm font-semibold rounded-xl transition-colors duration-200 w-full sm:w-auto"
           >
             <LogIn className="w-5 h-5" />
             Masuk Portal
